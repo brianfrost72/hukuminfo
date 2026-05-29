@@ -50,23 +50,23 @@
                 <div class="col-md-6">
                     <ul class="list-inline ">
                         <li class="list-inline-item">
-                            <a href="#" class="text-dark ">
+                            <a href="privacy-policy.php" class="text-dark ">
                                 privacy
                             </a>
                         </li>
                         <li class="list-inline-item">
-                            <a href="#" class="text-dark ">
+                            <a href="kontak-kami.php" class="text-dark ">
                                 contact
                             </a>
                         </li>
                         <li class="list-inline-item">
-                            <a href="#" class="text-dark ">
+                            <a href="about-us.php" class="text-dark ">
                                 about
                             </a>
                         </li>
                         <li class="list-inline-item">
-                            <a href="#" class="text-dark ">
-                                faq
+                            <a href="terms-of-service.php" class="text-dark ">
+                                Kebijakan Layanan
                             </a>
                         </li>
                     </ul>

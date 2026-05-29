@@ -185,7 +185,7 @@
                     </div> <!-- dropdown-mega-menu.// -->
                 </li>
                 <!-- <li class="nav-item"><a class="nav-link" href="#"> Kategori </a></li> -->
-                <li class="nav-item"><a class="nav-link" href="contact.html"> Kontak Kami </a></li>
+                <li class="nav-item"><a class="nav-link" href="kontak-kami.php"> Kontak Kami </a></li>
             </ul>
 
             <ul
