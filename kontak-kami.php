@@ -75,7 +75,7 @@
                     <!-- Breadcrumb -->
                     <ul class="breadcrumbs bg-light mb-4">
                         <li class="breadcrumbs__item">
-                            <a href="index.html" class="breadcrumbs__url">
+                            <a href="/" class="breadcrumbs__url">
                                 <i class="fa fa-home"></i> Beranda</a>
                         </li>
                         <li class="breadcrumbs__item breadcrumbs__item--current">
@@ -137,83 +137,12 @@
                             <div class="row mb-3">
                                 <div class="col-md-12 text-center">
                                     <button class="btn btn-primary bg-gradient rounded-pill btn-lg col-md-4"><i class="fa fa-paper-plane"></i> Send Message</button>
-                                    <?php
-                                    if (! empty($message)) {
-                                    ?>
-                                        <p class='<?php echo $type; ?>Message'><?php echo $message; ?></p>
-                                    <?php
-                                    }
-                                    ?>
                                 </div>
                             </div>
                         </form>
                     </div>
                 </div>
-                <script>
-                    $(function() {
-                        $('#contact-form').submit(function(e) {
-                            e.preventDefault();
-                            var _this = $(this)
-                            $('.pop-msg').remove()
-                            var _el = $("<div>")
-                            _el.addClass("alert pop-msg my-2")
-                            _el.html('<div class="d-flex w-100 align-items-center">' +
-                                '<div class="text-msg col-11"></div>' +
-                                '<div class="col-1"><button class="btn-close" id="pop-msg-btn"></button></div>' +
-                                '</div>')
-                            _el.hide()
-                            _el.find('#pop-msg-btn').click(function() {
-                                _el.hide('slideUp')
-                                setTimeout(() => {
-                                    _el.remove()
-                                }, 1000);
-                            })
-                            if (_this[0].checkValidity() == false) {
-                                _this[0].reportValidity();
-                                return false;
-                            }
-                            console.log(_this.serialize())
-                            _this.find('input,select,textarea').attr('readonly', true)
-                            _this.find('button').attr('disabled', true)
-                            $.ajax({
-                                url: 'Actions.php?a=save_message',
-                                method: 'POST',
-                                type: 'POST',
-                                data: $(this).serialize(),
-                                dataType: 'json',
-                                error: err => {
-                                    console.log(err)
-                                    _el.addClass('alert-danger')
-                                    _el.find('.text-msg').text("An error occurred.")
-                                    _this.before(_el)
-                                    _el.show()
-                                    _this.find('input,select,textarea').attr('readonly', false)
-                                    _this.find('button').attr('disabled', false)
-                                },
-                                success: function(resp) {
-                                    if (!!resp.msg) {
-                                        _el.find('.text-msg').text(resp.msg)
-                                    }
-                                    if (resp.status == 'success') {
-                                        _el.addClass('alert-success')
-                                        _this[0].reset(0)
-                                    } else {
-                                        _el.addClass('alert-danger')
-                                        if (!resp.msg) {
-                                            _el.find('.text-msg').text('An error occurred.')
-                                        }
-                                    }
-                                    _this.before(_el)
-                                    _el.show()
-                                    _this.find('input,select,textarea').attr('readonly', false)
-                                    _this.find('button').attr('disabled', false)
-                                }
-                            })
-                        })
-                    })
-                </script>
-
-
+                
                 <div class="col-md-4">
                     <h5>Info location</h5>
                     <div class="wrap__contact-form-office">
@@ -300,47 +229,5 @@
 
     <script type="text/javascript" src="./js/index.bundle.js?537a1bbd0e5129401d28"></script>
 </body>
-<script src="https://code.jquery.com/jquery-2.1.1.min.js"
-    type="text/javascript"></script>
-<script type="text/javascript">
-    function validateContactForm() {
-        var valid = true;
-
-        $(".info").html("");
-        $(".input-field").css('border', '#e0dfdf 1px solid');
-        var userName = $("#userName").val();
-        var userEmail = $("#userEmail").val();
-        var subject = $("#subject").val();
-        var content = $("#content").val();
-
-        if (userName == "") {
-            $("#userName-info").html("Required.");
-            $("#userName").css('border', '#e66262 1px solid');
-            valid = false;
-        }
-        if (userEmail == "") {
-            $("#userEmail-info").html("Required.");
-            $("#userEmail").css('border', '#e66262 1px solid');
-            valid = false;
-        }
-        if (!userEmail.match(/^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/)) {
-            $("#userEmail-info").html("Invalid Email Address.");
-            $("#userEmail").css('border', '#e66262 1px solid');
-            valid = false;
-        }
-
-        if (subject == "") {
-            $("#subject-info").html("Required.");
-            $("#subject").css('border', '#e66262 1px solid');
-            valid = false;
-        }
-        if (content == "") {
-            $("#userMessage-info").html("Required.");
-            $("#content").css('border', '#e66262 1px solid');
-            valid = false;
-        }
-        return valid;
-    }
-</script>
 
 </html>

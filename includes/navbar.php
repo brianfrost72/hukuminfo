@@ -7,14 +7,14 @@
         </div>
         <figure class="mb-0 mx-auto">
             <a href="/homepage-v1.html">
-                <img src="images/placeholder/logo.jpg" alt="" class="img-fluid logo">
+                <img src="images/placeholder/logo.png" alt="" class="img-fluid logo">
             </a>
         </figure>
 
         <div class="collapse navbar-collapse justify-content-between" id="main_nav99">
             <ul class="navbar-nav ml-auto ">
-                <li class="nav-item"><a class="nav-link" href="#"> Beranda </a></li>
-                <li class="nav-item"><a class="nav-link" href="about-us.html"> Tentang Kami </a></li>
+                <li class="nav-item"><a class="nav-link" href="/"> Beranda </a></li>
+                <li class="nav-item"><a class="nav-link" href="tentang-kami.php"> Tentang Kami </a></li>
 
                 <li class="nav-item dropdown has-megamenu">
                     <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown"> Trending Topik </a>

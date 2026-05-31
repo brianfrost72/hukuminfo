@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
 
     <!-- google fonts -->
     <link
@@ -95,18 +95,21 @@
                     <!-- Pembina -->
                     <details class="mb-3">
                         <summary><strong>Pembina</strong></summary>
+                        <div class="mt-3">
+                            <a href="redaksi-detail.php" class="text-dark text-decoration-none">
+                                <div class="media">
+                                    <img src="images/redaksi/pembina.jpg"
+                                        class="rounded-circle mr-3"
+                                        width="80"
+                                        height="80"
+                                        alt="Pembina">
 
-                        <div class="media mt-3">
-                            <img src="images/redaksi/pembina.jpg"
-                                class="rounded-circle mr-3"
-                                width="80"
-                                height="80"
-                                alt="Pembina">
-
-                            <div>
-                                <h5 class="mb-1">Nama Pembina</h5>
-                                <p class="mb-0">Pembina</p>
-                            </div>
+                                    <div>
+                                        <h5 class="mb-1">Nama Pembina</h5>
+                                        <p class="mb-0">Pembina</p>
+                                    </div>
+                                </div>
+                            </a>
                         </div>
                     </details>
 
@@ -114,17 +117,21 @@
                     <details class="mb-3">
                         <summary><strong>Pemimpin Redaksi</strong></summary>
 
-                        <div class="media mt-3">
-                            <img src="images/redaksi/pemred.jpg"
-                                class="rounded-circle mr-3"
-                                width="80"
-                                height="80"
-                                alt="Pemimpin Redaksi">
+                        <div class="mt-3">
+                            <a href="redaksi-detail.php" class="text-dark text-decoration-none">
+                                <div class="media">
+                                    <img src="images/redaksi/pemred.jpg"
+                                        class="rounded-circle mr-3"
+                                        width="80"
+                                        height="80"
+                                        alt="Pemimpin Redaksi">
 
-                            <div>
-                                <h5 class="mb-1">Nama Pemimpin Redaksi</h5>
-                                <p class="mb-0">Pemimpin Redaksi</p>
-                            </div>
+                                    <div>
+                                        <h5 class="mb-1">Nama Pemimpin Redaksi</h5>
+                                        <p class="mb-0">Pemimpin Redaksi</p>
+                                    </div>
+                                </div>
+                            </a>
                         </div>
                     </details>
 
@@ -132,16 +139,20 @@
                     <details class="mb-3">
                         <summary><strong>Wakil Pemimpin Redaksi</strong></summary>
 
-                        <div class="media mt-3">
-                            <img src="images/redaksi/wapemred.jpg"
-                                class="rounded-circle mr-3"
-                                width="80"
-                                height="80">
+                        <div class="mt-3">
+                            <a href="redaksi-detail.php" class="text-dark text-decoration-none">
+                                <div class="media">
+                                    <img src="images/redaksi/wapemred.jpg"
+                                        class="rounded-circle mr-3"
+                                        width="80"
+                                        height="80">
 
-                            <div>
-                                <h5 class="mb-1">Nama Wakil Pemimpin Redaksi</h5>
-                                <p class="mb-0">Wakil Pemimpin Redaksi</p>
-                            </div>
+                                    <div>
+                                        <h5 class="mb-1">Nama Wakil Pemimpin Redaksi</h5>
+                                        <p class="mb-0">Wakil Pemimpin Redaksi</p>
+                                    </div>
+                                </div>
+                            </a>
                         </div>
                     </details>
 
@@ -149,16 +160,20 @@
                     <details class="mb-3">
                         <summary><strong>KaDiv Liputan Gathering</strong></summary>
 
-                        <div class="media mt-3">
-                            <img src="images/redaksi/kadiv.jpg"
-                                class="rounded-circle mr-3"
-                                width="80"
-                                height="80">
+                        <div class="mt-3">
+                            <a href="redaksi-detail.php" class="text-dark text-decoration-none">
+                                <div class="media">
+                                    <img src="images/redaksi/kadiv.jpg"
+                                        class="rounded-circle mr-3"
+                                        width="80"
+                                        height="80">
 
-                            <div>
-                                <h5 class="mb-1">Nama KaDiv</h5>
-                                <p class="mb-0">KaDiv Liputan Gathering</p>
-                            </div>
+                                    <div>
+                                        <h5 class="mb-1">Nama KaDiv</h5>
+                                        <p class="mb-0">KaDiv Liputan Gathering</p>
+                                    </div>
+                                </div>
+                            </a>
                         </div>
                     </details>
 
@@ -166,16 +181,20 @@
                     <details class="mb-3">
                         <summary><strong>Manager Liputan Gathering Digital</strong></summary>
 
-                        <div class="media mt-3">
-                            <img src="images/redaksi/manager.jpg"
-                                class="rounded-circle mr-3"
-                                width="80"
-                                height="80">
+                        <div class="mt-3">
+                            <a href="redaksi-detail.php" class="text-dark text-decoration-none">
+                                <div class="media">
+                                    <img src="images/redaksi/manager.jpg"
+                                        class="rounded-circle mr-3"
+                                        width="80"
+                                        height="80">
 
-                            <div>
-                                <h5 class="mb-1">Nama Manager</h5>
-                                <p class="mb-0">Manager Liputan Gathering Digital</p>
-                            </div>
+                                    <div>
+                                        <h5 class="mb-1">Nama Manager</h5>
+                                        <p class="mb-0">Manager Liputan Gathering Digital</p>
+                                    </div>
+                                </div>
+                            </a>
                         </div>
                     </details>
 
@@ -183,16 +202,21 @@
                     <details class="mb-3">
                         <summary><strong>Redaktur Pelaksana</strong></summary>
 
-                        <div class="media mt-3">
-                            <img src="images/redaksi/redpel.jpg"
-                                class="rounded-circle mr-3"
-                                width="80"
-                                height="80">
+                        <div class="mt-3">
+                            <a href="redaksi-detail.php" class="text-dark text-decoration-none">
+                                <div class="media">
 
-                            <div>
-                                <h5 class="mb-1">Nama Redpel</h5>
-                                <p class="mb-0">Redaktur Pelaksana</p>
-                            </div>
+                                    <img src="images/redaksi/redpel.jpg"
+                                        class="rounded-circle mr-3"
+                                        width="80"
+                                        height="80">
+
+                                    <div>
+                                        <h5 class="mb-1">Nama Redpel</h5>
+                                        <p class="mb-0">Redaktur Pelaksana</p>
+                                    </div>
+                                </div>
+                            </a>
                         </div>
                     </details>
 
@@ -200,16 +224,21 @@
                     <details class="mb-3">
                         <summary><strong>Redaktur</strong></summary>
 
-                        <div class="media mt-3">
-                            <img src="images/redaksi/redaktur.jpg"
-                                class="rounded-circle mr-3"
-                                width="80"
-                                height="80">
+                        <div class="mt-3">
+                            <a href="redaksi-detail.php" class="text-dark text-decoration-none">
+                                <div class="media">
 
-                            <div>
-                                <h5 class="mb-1">Nama Redaktur</h5>
-                                <p class="mb-0">Redaktur</p>
-                            </div>
+                                    <img src="images/redaksi/redaktur.jpg"
+                                        class="rounded-circle mr-3"
+                                        width="80"
+                                        height="80">
+
+                                    <div>
+                                        <h5 class="mb-1">Nama Redaktur</h5>
+                                        <p class="mb-0">Redaktur</p>
+                                    </div>
+                                </div>
+                            </a>
                         </div>
                     </details>
 
@@ -217,16 +246,22 @@
                     <details class="mb-3">
                         <summary><strong>Koordinator Liputan</strong></summary>
 
-                        <div class="media mt-3">
-                            <img src="images/redaksi/korlip.jpg"
-                                class="rounded-circle mr-3"
-                                width="80"
-                                height="80">
+                        <div class="mt-3">
+                            <a href="redaksi-detail.php" class="text-dark text-decoration-none">
+                                <div class="media">
 
-                            <div>
-                                <h5 class="mb-1">Nama Koordinator Liputan</h5>
-                                <p class="mb-0">Koordinator Liputan</p>
-                            </div>
+
+                                    <img src="images/redaksi/korlip.jpg"
+                                        class="rounded-circle mr-3"
+                                        width="80"
+                                        height="80">
+
+                                    <div>
+                                        <h5 class="mb-1">Nama Koordinator Liputan</h5>
+                                        <p class="mb-0">Koordinator Liputan</p>
+                                    </div>
+                                </div>
+                            </a>
                         </div>
                     </details>
 
@@ -234,16 +269,92 @@
                     <details class="mb-3">
                         <summary><strong>Reporter</strong></summary>
 
-                        <div class="media mt-3">
-                            <img src="images/redaksi/reporter.jpg"
-                                class="rounded-circle mr-3"
-                                width="80"
-                                height="80">
+                        <div class="row mt-3">
 
-                            <div>
-                                <h5 class="mb-1">Nama Reporter</h5>
-                                <p class="mb-0">Reporter</p>
+                            <div class="col-md-4 col-6 mb-3">
+                                <a href="redaksi-detail.php" class="text-decoration-none text-dark">
+                                    <div class="text-center">
+                                        <img src="images/redaksi/reporter1.jpg"
+                                            class="rounded-circle mb-2"
+                                            width="90"
+                                            height="90"
+                                            style="object-fit:cover;">
+                                        <h6 class="mb-1">Nama Reporter 1</h6>
+                                        <small class="text-muted">Reporter</small>
+                                    </div>
+                                </a>
                             </div>
+
+                            <div class="col-md-4 col-6 mb-3">
+                                <a href="redaksi-detail.php" class="text-decoration-none text-dark">
+                                    <div class="text-center">
+                                        <img src="images/redaksi/reporter2.jpg"
+                                            class="rounded-circle mb-2"
+                                            width="90"
+                                            height="90"
+                                            style="object-fit:cover;">
+                                        <h6 class="mb-1">Nama Reporter 2</h6>
+                                        <small class="text-muted">Reporter</small>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <div class="col-md-4 col-6 mb-3">
+                                <a href="redaksi-detail.php" class="text-decoration-none text-dark">
+                                    <div class="text-center">
+                                        <img src="images/redaksi/reporter3.jpg"
+                                            class="rounded-circle mb-2"
+                                            width="90"
+                                            height="90"
+                                            style="object-fit:cover;">
+                                        <h6 class="mb-1">Nama Reporter 3</h6>
+                                        <small class="text-muted">Reporter</small>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <div class="col-md-4 col-6 mb-3">
+                                <a href="redaksi-detail.php" class="text-decoration-none text-dark">
+                                    <div class="text-center">
+                                        <img src="images/redaksi/reporter4.jpg"
+                                            class="rounded-circle mb-2"
+                                            width="90"
+                                            height="90"
+                                            style="object-fit:cover;">
+                                        <h6 class="mb-1">Nama Reporter 4</h6>
+                                        <small class="text-muted">Reporter</small>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <div class="col-md-4 col-6 mb-3">
+                                <a href="redaksi-detail.php" class="text-decoration-none text-dark">
+                                    <div class="text-center">
+                                        <img src="images/redaksi/reporter5.jpg"
+                                            class="rounded-circle mb-2"
+                                            width="90"
+                                            height="90"
+                                            style="object-fit:cover;">
+                                        <h6 class="mb-1">Nama Reporter 5</h6>
+                                        <small class="text-muted">Reporter</small>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <div class="col-md-4 col-6 mb-3">
+                                <a href="redaksi-detail.php" class="text-decoration-none text-dark">
+                                    <div class="text-center">
+                                        <img src="images/redaksi/reporter6.jpg"
+                                            class="rounded-circle mb-2"
+                                            width="90"
+                                            height="90"
+                                            style="object-fit:cover;">
+                                        <h6 class="mb-1">Nama Reporter 6</h6>
+                                        <small class="text-muted">Reporter</small>
+                                    </div>
+                                </a>
+                            </div>
+
                         </div>
                     </details>
 
@@ -251,16 +362,21 @@
                     <details class="mb-3">
                         <summary><strong>Koordinator Fotografer</strong></summary>
 
-                        <div class="media mt-3">
-                            <img src="images/redaksi/fotografer.jpg"
-                                class="rounded-circle mr-3"
-                                width="80"
-                                height="80">
+                        <div class="mt-3">
+                            <a href="redaksi-detail.php" class="text-dark text-decoration-none">
+                                <div class="media">
 
-                            <div>
-                                <h5 class="mb-1">Nama Koordinator Fotografer</h5>
-                                <p class="mb-0">Koordinator Fotografer</p>
-                            </div>
+                                    <img src="images/redaksi/fotografer.jpg"
+                                        class="rounded-circle mr-3"
+                                        width="80"
+                                        height="80">
+
+                                    <div>
+                                        <h5 class="mb-1">Nama Koordinator Fotografer</h5>
+                                        <p class="mb-0">Koordinator Fotografer</p>
+                                    </div>
+                                </div>
+                            </a>
                         </div>
                     </details>
 
@@ -268,16 +384,20 @@
                     <details class="mb-3">
                         <summary><strong>Video Editor</strong></summary>
 
-                        <div class="media mt-3">
-                            <img src="images/redaksi/editor.jpg"
-                                class="rounded-circle mr-3"
-                                width="80"
-                                height="80">
+                        <div class="mt-3">
+                            <a href="redaksi-detail.php" class="text-dark text-decoration-none">
+                                <div class="media">
+                                    <img src="images/redaksi/editor.jpg"
+                                        class="rounded-circle mr-3"
+                                        width="80"
+                                        height="80">
 
-                            <div>
-                                <h5 class="mb-1">Nama Video Editor</h5>
-                                <p class="mb-0">Video Editor</p>
-                            </div>
+                                    <div>
+                                        <h5 class="mb-1">Nama Video Editor</h5>
+                                        <p class="mb-0">Video Editor</p>
+                                    </div>
+                                </div>
+                            </a>
                         </div>
                     </details>
 
@@ -285,16 +405,20 @@
                     <details class="mb-4">
                         <summary><strong>Desainer Grafis</strong></summary>
 
-                        <div class="media mt-3">
-                            <img src="images/redaksi/desainer.jpg"
-                                class="rounded-circle mr-3"
-                                width="80"
-                                height="80">
+                        <div class="mt-3">
+                            <a href="redaksi-detail.php" class="text-dark text-decoration-none">
+                                <div class="media">
+                                    <img src="images/redaksi/desainer.jpg"
+                                        class="rounded-circle mr-3"
+                                        width="80"
+                                        height="80">
 
-                            <div>
-                                <h5 class="mb-1">Nama Desainer</h5>
-                                <p class="mb-0">Desainer Grafis</p>
-                            </div>
+                                    <div>
+                                        <h5 class="mb-1">Nama Desainer</h5>
+                                        <p class="mb-0">Desainer Grafis</p>
+                                    </div>
+                                </div>
+                            </a>
                         </div>
                     </details>
 

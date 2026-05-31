@@ -7,7 +7,7 @@
     <meta name="description" content="Media informasi hukum yang berkomitmen menyajikan berita, regulasi, dan analisis hukum Indonesia secara objektif, terpercaya, dan berimbang.">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- favicon.ico in the root directory -->
-    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
     <!-- google fonts -->
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,500;0,700;1,300;1,500&family=Poppins:ital,wght@0,300;0,500;0,700;1,300;1,400&display=swap"
@@ -1947,7 +1947,7 @@
                                         </li>
                                         <li class="list-inline-item">
                                             <a href="#">
-                                                #framework
+                                                + 9 Lainnya...
                                             </a>
                                         </li>
 

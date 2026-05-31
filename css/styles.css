@@ -13178,7 +13178,7 @@ input[type="number"] {
   color: #c00;
 }
 .topbar {
-  background-color: #000;
+  background-color: #d09e44;
   padding: 0;
   min-height: 50px;
 }
@@ -13777,7 +13777,7 @@ body.offcanvas-active {
   }
 }
 .navbar-soft {
-  background-color: white;
+  background-color: #ffffff;
   box-shadow: 0 2px 3px rgba(100, 100, 100, 0.1);
   font-size: 14px;
 }
@@ -13801,14 +13801,14 @@ body.offcanvas-active {
   padding: 2rem 0.5rem;
   font-weight: 700;
   text-transform: uppercase;
-  color: #000;
+  color: #982023;
   border: 2px solid transparent;
   font-family: "Poppins", sans-serif;
 }
 .navbar-soft .navbar-nav .nav-item:hover .nav-link,
 .navbar-soft .navbar-nav .nav-item.show .nav-link {
   border-bottom: 2px solid #c00;
-  color: #111;
+  color: #d09e44;
 }
 .navbar-soft .dropdown-menu {
   border: 0;
@@ -14890,10 +14890,11 @@ body.offcanvas-active {
   margin-bottom: 5px;
 }
 .phone__number .email__link {
+  color: #d09e44;
   font-size: 14px;
 }
 .phone__number-light .phone__link {
-  color: #000000;
+  color: #d09e44;
 }
 .phone__number-light .phone__icon {
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.502);
@@ -14910,7 +14911,6 @@ body.offcanvas-active {
 .phone__number{
     display:flex;
     align-items:center;
-    gap:15px;
 }
 
 .phone__content{

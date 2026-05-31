@@ -1,77 +1,91 @@
 <footer>
-    <div class="wrapper__footer bg-white">
+    <div class="wrapper__footer py-5">
         <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-md-6">
-                    <div class="wrapper__footer-logo text-center">
-                        <a href="#">
-                            <figure class="mb-4">
-                                <img src="images/placeholder/logo.jpg" alt="" class="img-fluid logo-footer">
-                            </figure>
-                        </a>
 
-                        <p>
-                            Media informasi hukum yang berkomitmen menyajikan berita, regulasi, dan analisis hukum Indonesia secara objektif, terpercaya, dan berimbang.
-                        </p>
-                        <p class="mb-0">
-                            <button class="btn btn-social btn-social-o facebook mr-1">
-                                <i class="fa fa-facebook-f"></i>
-                            </button>
-                            <button class="btn btn-social btn-social-o twitter mr-1">
-                                <i class="fa fa-twitter"></i>
-                            </button>
+            <div class="text-center mb-4">
+                <a href="index.php">
+                    <img src="images/placeholder/logo.png"
+                        alt="Hukuminfo"
+                        class="img-fluid logo-footer mb-3">
+                </a>
 
-                            <button class="btn btn-social btn-social-o linkedin mr-1">
-                                <i class="fa fa-linkedin"></i>
-                            </button>
-                            <button class="btn btn-social btn-social-o instagram mr-1">
-                                <i class="fa fa-instagram"></i>
-                            </button>
-
-                            <button class="btn btn-social btn-social-o youtube mr-1">
-                                <i class="fa fa-youtube"></i>
-                            </button>
-                        </p>
-                    </div>
-                </div>
+                <p class="col-lg-8 mx-auto mb-0" style="font-size: 16px; color: #8b8b8b;">
+                    Hukuminfo.id adalah media informasi hukum Indonesia yang menyajikan
+                    berita, regulasi, putusan pengadilan, analisis hukum, dan berbagai
+                    perkembangan dunia hukum secara objektif, akurat, dan terpercaya.
+                </p>
             </div>
-        </div>
-    </div>
 
-    <!-- Footer bottom -->
-    <div class="bg__footer-bottom bg-light">
-        <div class="container">
-            <div class="row flex-column-reverse flex-md-row">
-                <div class="col-md-6">
-                    <span class="text-dark">
-                        Copyright © 2020 SawitNews. All rights Reserved
-                    </span>
-                </div>
-                <div class="col-md-6">
-                    <ul class="list-inline ">
-                        <li class="list-inline-item">
-                            <a href="privacy-policy.php" class="text-dark ">
-                                privacy
-                            </a>
+            <hr>
+
+            <div class="row text-center">
+
+                <div class="col-md-12">
+                    <ul class="list-inline mb-4">
+
+                        <li class="list-inline-item px-2">
+                            <a href="tentang-kami.php">Tentang Kami</a>
                         </li>
-                        <li class="list-inline-item">
-                            <a href="kontak-kami.php" class="text-dark ">
-                                contact
-                            </a>
+
+                        <li class="list-inline-item px-2">
+                            <a href="redaksi.php">Redaksi</a>
                         </li>
-                        <li class="list-inline-item">
-                            <a href="about-us.php" class="text-dark ">
-                                about
-                            </a>
+
+                        <li class="list-inline-item px-2">
+                            <a href="pedoman-media-siber.php">Pedoman Media Siber</a>
                         </li>
-                        <li class="list-inline-item">
-                            <a href="terms-of-service.php" class="text-dark ">
-                                Kebijakan Layanan
-                            </a>
+
+                        <li class="list-inline-item px-2">
+                            <a href="privacy-policy.php">Kebijakan Privasi</a>
                         </li>
+
+                        <li class="list-inline-item px-2">
+                            <a href="terms-of-service.php">Syarat & Ketentuan</a>
+                        </li>
+
+                        <li class="list-inline-item px-2">
+                            <a href="disclaimer.php">Disclaimer</a>
+                        </li>
+
+                        <li class="list-inline-item px-2">
+                            <a href="kontak-kami.php">Kontak Kami</a>
+                        </li>
+
                     </ul>
                 </div>
+
             </div>
+
+            <div class="text-center">
+
+                <p class="mb-3">
+                    <a href="#" class="mx-2">
+                        <i class="fa fa-facebook fa-lg"></i>
+                    </a>
+
+                    <a href="#" class="mx-2">
+                        <i class="fa fa-twitter fa-lg"></i>
+                    </a>
+
+                    <a href="#" class="mx-2">
+                        <i class="fa fa-instagram fa-lg"></i>
+                    </a>
+
+                    <a href="#" class="mx-2">
+                        <i class="fa fa-youtube fa-lg"></i>
+                    </a>
+
+                    <a href="#" class="mx-2">
+                        <i class="fa fa-linkedin fa-lg"></i>
+                    </a>
+                </p>
+
+                <small style="color: #acaaaa;">
+                    © 2026 Hukuminfo.id — Media Informasi Hukum Indonesia
+                </small>
+
+            </div>
+
         </div>
     </div>
 </footer>

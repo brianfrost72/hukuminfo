@@ -37,7 +37,7 @@
         <div class="col-sm-12 col-md-7">
             <div class="list-unstyled topbar-right">
                 <ul class="topbar-link">
-                    <li><a href="#" title="">Login / Register</a></li>
+                    <li><a href="login.php" title="">Login / Register</a></li>
                 </ul>
                 <ul class="topbar-sosmed">
                     <li>
