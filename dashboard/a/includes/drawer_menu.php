@@ -261,7 +261,7 @@
             <div class="sidebar-block p-0 mb-0">
                 <ul class="sidebar-menu">
 
-                    <!-- BERITA / ARTIKEL PERUSAHAAN MENU -->
+                    <!-- BERITA / ARTIKEL MENU -->
                     <li class="sidebar-menu-item">
                         <a
                             class="sidebar-menu-button"
@@ -294,10 +294,42 @@
                                     <span class="sidebar-menu-text">Manage Postingan</span>
                                 </a>
                             </li>
+                        </ul>
+                    </li>
+                    <!-- BERITA / ARTIKEL MENU END -->
+
+                    <!-- MANAGE BERITA / ARTIKEL MENU -->
+                    <li class="sidebar-menu-item">
+                        <a
+                            class="sidebar-menu-button"
+                            data-toggle="collapse"
+                            href="#manage_article_menu">
+                            <i
+                                class="sidebar-menu-icon sidebar-menu-icon--left material-icons">layers</i>
+                            <span class="sidebar-menu-text">Manage Berita / Artikel</span>
+                            <!-- <span class="badge badge-primary badge-pill ml-1">3</span> -->
+                            <span class="ml-auto sidebar-menu-toggle-icon"></span>
+                        </a>
+                        <ul class="sidebar-submenu collapse" id="manage_article_menu">
                             <li class="sidebar-menu-item">
                                 <a class="sidebar-menu-button" href="manage_comments">
                                     <span class="sidebar-menu-text">Manage Komentar</span>
                                     <!-- <span class="badge badge-primary badge-pill ml-1">3</span> -->
+                                </a>
+                            </li>
+                            <li class="sidebar-menu-item">
+                                <a class="sidebar-menu-button" href="list_likes">
+                                    <span class="sidebar-menu-text">List Likes</span>
+                                </a>
+                            </li>
+                             <li class="sidebar-menu-item">
+                                <a class="sidebar-menu-button" href="list_subscriber">
+                                    <span class="sidebar-menu-text">List Subscriber</span>
+                                </a>
+                            </li>
+                             <li class="sidebar-menu-item">
+                                <a class="sidebar-menu-button" href="list_bookmarks">
+                                    <span class="sidebar-menu-text">List Bookmark</span>
                                 </a>
                             </li>
                         </ul>

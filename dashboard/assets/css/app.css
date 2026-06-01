@@ -23065,274 +23065,272 @@ table tbody tr {
 }
 
 /* ========================================== MEMBER CARD ========================================== */
-.member-card{
-    position: relative;
-    width: 100%;
-    max-width: 560px; /* LEBIH KECIL */
-    margin: 20px auto;
-    background: #ffffff;
-    border-radius: 24px;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+.member-card {
+  position: relative;
+  width: 100%;
+  max-width: 560px; /* LEBIH KECIL */
+  margin: 20px auto;
+  background: #ffffff;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
 }
 
 /* =========================
         HEADER
 ========================== */
 
-.member-card-header{
-    position: relative;
-    height: 180px;
-    padding: 28px 34px;
-    background: linear-gradient(135deg,#082766,#0c2f78,#061a43);
-    overflow: hidden;
+.member-card-header {
+  position: relative;
+  height: 180px;
+  padding: 28px 34px;
+  background: linear-gradient(135deg, #082766, #0c2f78, #061a43);
+  overflow: hidden;
 }
 
 /* TITLE */
 
-.member-title{
-    position: relative;
-    z-index: 3;
+.member-title {
+  position: relative;
+  z-index: 3;
 }
 
-.member-subtitle{
-    display: block;
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    line-height: 1;
-    color: #f2c35f;
+.member-subtitle {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1;
+  color: #f2c35f;
 }
 
-.member-title h2{
-    margin: 0;
-    font-size: 56px;
-    font-weight: 700;
-    line-height: .9;
-    color: #ffffff;
+.member-title h2 {
+  margin: 0;
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 0.9;
+  color: #ffffff;
 }
 
 /* BADGE */
 
-.member-badge{
-    position: absolute;
-    top: 28px;
-    right: 34px;
-    width: 95px;
-    height: 95px;
-    border-radius: 50%;
-    border: 3px solid rgba(255,255,255,0.18);
+.member-badge {
+  position: absolute;
+  top: 28px;
+  right: 34px;
+  width: 95px;
+  height: 95px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.18);
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    font-size: 40px;
-    color: #f2c35f;
+  font-size: 40px;
+  color: #f2c35f;
 
-    z-index: 3;
+  z-index: 3;
 }
 
 /* GOLD LINE */
 
-.member-gold-line{
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 42px;
-    height: 8px;
-    background: #f2c35f;
-    z-index: 2;
+.member-gold-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 42px;
+  height: 8px;
+  background: #f2c35f;
+  z-index: 2;
 }
 
 /* WAVE */
 
-.member-wave{
-    position: absolute;
-    left: -10%;
-    width: 120%;
-    height: 120px;
-    bottom: -72px;
-    background: #ffffff;
-    border-radius: 50%;
-    z-index: 1;
+.member-wave {
+  position: absolute;
+  left: -10%;
+  width: 120%;
+  height: 120px;
+  bottom: -72px;
+  background: #ffffff;
+  border-radius: 50%;
+  z-index: 1;
 }
 
 /* =========================
         BODY
 ========================== */
 
-.member-card-body{
-    padding: 28px 34px 18px;
+.member-card-body {
+  padding: 28px 34px 18px;
 }
 
-.member-info-item{
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 16px 0;
-    border-bottom: 1px solid #e8edf5;
+.member-info-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid #e8edf5;
 }
 
-.member-info-item:last-child{
-    border-bottom: none;
+.member-info-item:last-child {
+  border-bottom: none;
 }
 
 /* ICON */
 
-.member-icon{
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    border-radius: 14px;
-    background: #f3f4f8;
+.member-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 14px;
+  background: #f3f4f8;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.member-icon .material-icons{
-    font-size: 24px;
-    color: #082766;
+.member-icon .material-icons {
+  font-size: 24px;
+  color: #082766;
 }
 
 /* TEXT */
 
-.member-label{
-    width: 165px;
-    font-size: 16px;
-    font-weight: 500;
-    color: #172b4d;
+.member-label {
+  width: 165px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #172b4d;
 }
 
-.member-separator{
-    font-size: 20px;
-    font-weight: 700;
-    color: #082766;
+.member-separator {
+  font-size: 20px;
+  font-weight: 700;
+  color: #082766;
 }
 
-.member-value{
-    flex: 1;
-    font-size: 18px;
-    font-weight: 700;
-    color: #082766;
+.member-value {
+  flex: 1;
+  font-size: 18px;
+  font-weight: 700;
+  color: #082766;
 }
 
 /* =========================
         FOOTER
 ========================== */
 
-.member-card-footer{
-    padding: 18px 34px 24px;
-    border-top: 2px solid #f2c35f;
+.member-card-footer {
+  padding: 18px 34px 24px;
+  border-top: 2px solid #f2c35f;
 }
 
 /* LOGO */
 
-.company-logo{
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
+.company-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
 }
 
-.logo-image{
-    width: 58px;
-    height: 58px;
-    min-width: 58px;
+.logo-image {
+  width: 58px;
+  height: 58px;
+  min-width: 58px;
 
-    border-radius: 14px;
-    overflow: hidden;
+  border-radius: 14px;
+  overflow: hidden;
 
-    background: #ffffff;
+  background: #ffffff;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.logo-image img{
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
+.logo-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
-.logo-text h4{
-    margin: 0;
-    font-size: 28px;
-    font-weight: 700;
-    line-height: 1;
-    color: #082766;
+.logo-text h4 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  color: #082766;
 }
 
-.logo-text span{
-    display: block;
-    margin-top: 4px;
+.logo-text span {
+  display: block;
+  margin-top: 4px;
 
-    font-size: 11px;
-    letter-spacing: 3px;
-    color: #5d6b82;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: #5d6b82;
 }
 
 /* =========================
         RESPONSIVE
 ========================== */
 
-@media(max-width:768px){
+@media (max-width: 768px) {
+  .member-card {
+    max-width: 100%;
+    border-radius: 20px;
+  }
 
-    .member-card{
-        max-width: 100%;
-        border-radius: 20px;
-    }
+  .member-card-header {
+    height: 155px;
+    padding: 24px;
+  }
 
-    .member-card-header{
-        height: 155px;
-        padding: 24px;
-    }
+  .member-title h2 {
+    font-size: 44px;
+  }
 
-    .member-title h2{
-        font-size: 44px;
-    }
+  .member-subtitle {
+    font-size: 20px;
+  }
 
-    .member-subtitle{
-        font-size: 20px;
-    }
+  .member-badge {
+    width: 75px;
+    height: 75px;
+    font-size: 30px;
+    top: 24px;
+    right: 24px;
+  }
 
-    .member-badge{
-        width: 75px;
-        height: 75px;
-        font-size: 30px;
-        top: 24px;
-        right: 24px;
-    }
+  .member-card-body {
+    padding: 24px;
+  }
 
-    .member-card-body{
-        padding: 24px;
-    }
+  .member-info-item {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
 
-    .member-info-item{
-        flex-wrap: wrap;
-        gap: 10px;
-    }
+  .member-label {
+    width: calc(100% - 62px);
+  }
 
-    .member-label{
-        width: calc(100% - 62px);
-    }
+  .member-separator {
+    display: none;
+  }
 
-    .member-separator{
-        display: none;
-    }
-
-    .member-value{
-        width: 100%;
-        margin-left: 62px;
-        font-size: 16px;
-    }
-
+  .member-value {
+    width: 100%;
+    margin-left: 62px;
+    font-size: 16px;
+  }
 }
 /**************************************** FOOTER *************************************************/
 .dashboard-footer {
@@ -23346,6 +23344,16 @@ table tbody tr {
   color: #ceab6f;
 }
 
+.follow-text {
+  color: #ceab6f;
+  font-size: 14px;
+  font-weight: 600;
+  margin-right: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  vertical-align: middle;
+}
+
 .footer-link {
   margin-left: 15px;
   color: #4a90e2;
@@ -23355,4 +23363,46 @@ table tbody tr {
 
 .footer-link:hover {
   text-decoration: underline;
+}
+
+.footer-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin-left: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  text-decoration: none !important;
+  transition: all 0.3s ease;
+}
+
+.footer-social:hover {
+  background: #ceab6f;
+  color: #982023;
+  transform: translateY(-3px);
+}
+
+#toast-container {
+    position: fixed !important;
+
+    top: 50% !important;
+    left: 50% !important;
+
+    transform: translate(-50%, -50%) !important;
+
+    right: unset !important;
+    bottom: unset !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    z-index: 999999999 !important;
+}
+
+#toast-container .toast {
+    width: 450px !important;
+    margin: 0 !important;
 }

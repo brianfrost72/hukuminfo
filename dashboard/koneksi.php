@@ -2,7 +2,7 @@
 $host = "localhost";
 $user = "root";
 $pass = "";
-$db   = "konig_guard";
+$db   = "hukuminfo";
 
 $conn = mysqli_connect($host, $user, $pass, $db);
 

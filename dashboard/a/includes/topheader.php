@@ -16,8 +16,7 @@
         <!-- Navbar Brand -->
         <a href="/" class="my-navbar-brand">
           <img
-            src="/my-dashboard/fixed-v2/dashboard/assets/images/logos/logo.png"
-            alt="Logo"
+            src="/hukuminfo/dashboard/assets/images/logos/logo.png" alt="Logo"
             class="my-navbar-logo">
         </a>
 
