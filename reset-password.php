@@ -1,3 +1,9 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 
@@ -76,10 +82,28 @@
                     <div class="card mx-auto" style="max-width: 380px;">
                         <div class="card-body">
                             <h4 class="card-title text-center mb-4">Reset Password</h4>
-                            <form action="#">
+                            <?php if (isset($_SESSION['reset_error'])): ?>
+                                <div class="error-msg">
+                                    <?= $_SESSION['reset_error'];
+                                    unset($_SESSION['reset_error']); ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <?php if (isset($_SESSION['reset_success'])): ?>
+
+                                <div class="alert alert-success">
+                                    Kode reset password telah dikirim ke email Anda.
+                                    Silakan cek inbox atau folder spam.
+                                </div>
+
+                            <?php
+                                unset($_SESSION['reset_success']);
+                            endif;
+                            ?>
+                            <form method="POST" action="PHPMailer/reset_token.php">
                                 <div class="form-group">
-                                        <label>Email Anda Yang Terdaftar</label>
-                                    <input class="form-control" placeholder="Masukkan Email Anda" type="email">
+                                    <label>Email Anda Yang Terdaftar</label>
+                                    <input class="form-control" placeholder="Masukkan Email yang Terdaftar" type="email" name="email" required>
                                 </div> <!-- form-group// -->
                                 <div class="form-group">
                                     <button type="submit" class="btn btn-primary btn-block"> Reset Password </button>

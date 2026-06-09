@@ -23386,23 +23386,32 @@ table tbody tr {
 }
 
 #toast-container {
-    position: fixed !important;
+  position: fixed !important;
 
-    top: 50% !important;
-    left: 50% !important;
+  top: 50% !important;
+  left: 50% !important;
 
-    transform: translate(-50%, -50%) !important;
+  transform: translate(-50%, -50%) !important;
 
-    right: unset !important;
-    bottom: unset !important;
+  right: unset !important;
+  bottom: unset !important;
 
-    margin: 0 !important;
-    padding: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 
-    z-index: 999999999 !important;
+  z-index: 999999999 !important;
 }
 
 #toast-container .toast {
-    width: 450px !important;
-    margin: 0 !important;
+  width: 450px !important;
+  margin: 0 !important;
+}
+
+.select2-container {
+  width: 100% !important;
+}
+
+.select2-container--default .select2-selection--single {
+  border: 1px solid #dfe2e6 !important;
+  border-radius: 4px !important;
 }

@@ -1,3 +1,230 @@
+<?php
+session_start();
+require_once __DIR__ . "/../koneksi.php";
+
+$user_id = $_SESSION['user_id'] ?? 0;
+
+$userLogin = mysqli_query($conn, "
+    SELECT
+        u.id,
+        u.role_id,
+        up.full_name
+    FROM users u
+    LEFT JOIN user_profile up
+        ON up.user_id = u.id
+    WHERE u.id = '$user_id'
+    LIMIT 1
+");
+
+if (!$userLogin) {
+    die(mysqli_error($conn));
+}
+
+$userData = mysqli_fetch_assoc($userLogin);
+
+$user_id   = $userData['id'];
+$role_id   = $userData['role_id'];
+$full_name = $userData['full_name'] ?? '-';
+/*
+|--------------------------------------------------------------------------
+| AMBIL KATEGORI
+|--------------------------------------------------------------------------
+*/
+$kategori = mysqli_query($conn, "
+    SELECT id, name_category
+    FROM post_category
+    ORDER BY name_category ASC
+");
+
+/*
+|--------------------------------------------------------------------------
+| AMBIL SUB KATEGORI
+|--------------------------------------------------------------------------
+*/
+$subkategori = mysqli_query($conn, "
+    SELECT
+        id,
+        post_category_id,
+        name_subcategory
+    FROM post_subcategory
+    ORDER BY name_subcategory ASC
+");
+
+/*
+|--------------------------------------------------------------------------
+| SIMPAN POST
+|--------------------------------------------------------------------------
+*/
+if (isset($_POST['simpan_postingan'])) {
+    $post_title          = trim($_POST['post_title']);
+    $post_sub_title      = trim($_POST['post_sub_title']);
+    $post_category_id    = (int) $_POST['post_category_id'];
+    $post_subcategory_id = (int) $_POST['post_subcategory_id'];
+    $post_desc           = $_POST['post_desc'];
+
+    /*
+    |----------------------------------------------------------
+    | SLUG
+    |----------------------------------------------------------
+    */
+    $slug = strtolower($post_title);
+
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
+    $slug = trim($slug, '-');
+
+    /*
+    |----------------------------------------------------------
+    | UPLOAD GAMBAR
+    |----------------------------------------------------------
+    */
+    $gambar = '';
+
+    if (!empty($_FILES['post_image']['name'])) {
+        $ext = pathinfo(
+            $_FILES['post_image']['name'],
+            PATHINFO_EXTENSION
+        );
+
+        $gambar = time() . '_' . uniqid() . '.' . $ext;
+
+        $uploadDir = '../assets/images/uploads/posts/';
+
+        move_uploaded_file(
+            $_FILES['post_image']['tmp_name'],
+            $uploadDir . $gambar
+        );
+    }
+
+    /*
+    |----------------------------------------------------------
+    | INSERT POST
+    |----------------------------------------------------------
+    */
+    $insert = mysqli_query($conn, "
+        INSERT INTO post
+        (
+            post_title,
+            post_sub_title,
+            post_category_id,
+            post_subcategory_id,
+            role_id,
+            user_id,
+            post_desc,
+            post_image,
+            slug,
+            status,
+            created_at
+        )
+        VALUES
+        (
+            '" . mysqli_real_escape_string($conn, $post_title) . "',
+            '" . mysqli_real_escape_string($conn, $post_sub_title) . "',
+            '$post_category_id',
+            '$post_subcategory_id',
+            '$role_id',
+            '$user_id',
+            '" . mysqli_real_escape_string($conn, $post_desc) . "',
+            '$gambar',
+            '$slug',
+            'publish',
+            NOW()
+        )
+    ");
+
+    if ($insert) {
+        $post_id = mysqli_insert_id($conn);
+
+        $tags = [];
+        if (!empty($_POST['tags'])) {
+            $rawTags = $_POST['tags'];
+            $decoded = json_decode($rawTags, true);
+
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $tags = $decoded;
+            } else {
+                $parts = array_filter(array_map('trim', explode(',', $rawTags)));
+                foreach ($parts as $part) {
+                    $tags[] = ['value' => $part];
+                }
+            }
+        }
+
+        if (!empty($post_id) && !empty($tags)) {
+            foreach ($tags as $tag) {
+                $tagName = trim($tag['value']);
+
+                $cekTag = mysqli_query($conn, "
+                    SELECT id
+                    FROM tags
+                    WHERE tag_name='" . mysqli_real_escape_string($conn, $tagName) . "'
+                    LIMIT 1
+                ");
+
+                if (mysqli_num_rows($cekTag)) {
+                    $tagId = mysqli_fetch_assoc($cekTag)['id'];
+                } else {
+                    $slugTag = strtolower($tagName);
+                    $slugTag = preg_replace('/[^a-z0-9]+/', '-', $slugTag);
+
+                    mysqli_query($conn, "
+    INSERT INTO tags
+    (
+        tag_name,
+        tag_slug,
+        created_at
+    )
+    VALUES
+    (
+        '" . mysqli_real_escape_string($conn, $tagName) . "',
+        '$slugTag',
+        NOW()
+    )
+");
+
+                    $tagId = mysqli_insert_id($conn);
+                }
+
+                mysqli_query($conn, "
+                    INSERT INTO post_tags
+                    (
+                        post_id,
+                        tag_id
+                    )
+                    VALUES
+                    (
+                        '$post_id',
+                        '$tagId'
+                    )
+                ");
+            }
+        }
+
+        $_SESSION['post_success'] = true;
+        
+        header("Location: add_post.php");
+        exit;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| TAGS
+|--------------------------------------------------------------------------
+*/
+$tags_master = [];
+
+$qTags = mysqli_query($conn, "
+    SELECT id, tag_name
+    FROM tags
+    ORDER BY tag_name ASC
+");
+
+while ($row = mysqli_fetch_assoc($qTags)) {
+    $tags_master[] = $row['tag_name'];
+}
+
+?>
+
 <!doctype html>
 <html lang="id">
 
@@ -8,6 +235,13 @@
         name="viewport"
         content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Tambah Postingan - Dashboard | Hukuminfo.id</title>
+
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+
+    <!-- Tagify -->
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css">
 
     <!-- Perfect Scrollbar -->
     <link
@@ -97,208 +331,260 @@
 
                     <!-- CARD FORM -->
                     <div class="card p-4" style="border-radius:14px; border:none;">
+                        <form method="POST"
+                            enctype="multipart/form-data">
+                            <!-- JUDUL -->
+                            <div class="form-group mb-4">
+                                <label class="font-weight-bold">
+                                    Judul Postingan
+                                </label>
 
-                        <!-- JUDUL -->
-                        <div class="form-group mb-4">
-                            <label class="font-weight-bold">
-                                Judul Postingan
-                            </label>
-
-                            <div class="input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text bg-white">
-                                        <span class="material-icons" style="font-size:20px;">
-                                            title
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text bg-white">
+                                            <span class="material-icons" style="font-size:20px;">
+                                                title
+                                            </span>
                                         </span>
-                                    </span>
+                                    </div>
+
+                                    <input
+                                        type="text"
+                                        name="post_title"
+                                        class="form-control"
+                                        placeholder="Masukkan judul artikel atau berita">
                                 </div>
-
-                                <input
-                                    id="judulPostingan"
-                                    type="text"
-                                    class="form-control"
-                                    placeholder="Masukkan judul artikel atau berita">
                             </div>
-                        </div>
 
-                        <!-- KATEGORI -->
-                        <div class="row">
+                            <!-- SUB JUDUL -->
+                            <div class="form-group mb-4">
+                                <label class="font-weight-bold">
+                                    Sub Judul Postingan
+                                </label>
+
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text bg-white">
+                                            <span class="material-icons" style="font-size:20px;">
+                                                title
+                                            </span>
+                                        </span>
+                                    </div>
+
+                                    <input
+                                        type="text"
+                                        name="post_sub_title"
+                                        class="form-control"
+                                        placeholder="Masukkan sub judul artikel atau berita">
+                                </div>
+                            </div>
 
                             <!-- KATEGORI -->
-                            <div class="col-md-6">
-                                <div class="form-group mb-4">
-                                    <label class="font-weight-bold">
-                                        Kategori
-                                    </label>
+                            <div class="row">
 
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text bg-white">
-                                                <span class="material-icons" style="font-size:20px;">
-                                                    add_circle
+                                <!-- KATEGORI -->
+                                <div class="col-md-6">
+                                    <div class="form-group mb-4">
+                                        <label class="font-weight-bold">
+                                            Kategori
+                                        </label>
+
+                                        <div class="d-flex">
+                                            <div class="mr-2">
+                                                <span class="input-group-text bg-white">
+                                                    <span class="material-icons" style="font-size:20px;">
+                                                        add_circle
+                                                    </span>
                                                 </span>
-                                            </span>
-                                        </div>
+                                            </div>
 
-                                        <select class="form-control">
-                                            <option selected disabled>
-                                                Pilih kategori
-                                            </option>
-                                            <option>Teknologi</option>
-                                            <option>Bisnis</option>
-                                            <option>Olahraga</option>
-                                        </select>
+                                            <div class="flex-fill">
+                                                <select
+                                                    name="post_category_id" id="post_category_id"
+                                                    class="form-control select2"
+                                                    required>
+
+                                                    <option value="">
+                                                        ---Pilih Kategori---
+                                                    </option>
+
+                                                    <?php while ($k = mysqli_fetch_assoc($kategori)) : ?>
+                                                        <option value="<?= $k['id']; ?>">
+                                                            <?= htmlspecialchars($k['name_category']); ?>
+                                                        </option>
+                                                    <?php endwhile; ?>
+
+                                                </select>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- SUB KATEGORI -->
-                            <div class="col-md-6">
-                                <div class="form-group mb-4">
-                                    <label class="font-weight-bold">
-                                        Sub Kategori
-                                    </label>
+                                <!-- SUB KATEGORI -->
+                                <div class="col-md-6">
+                                    <div class="form-group mb-4">
+                                        <label class="font-weight-bold">
+                                            Sub Kategori
+                                        </label>
 
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text bg-white">
-                                                <span class="material-icons" style="font-size:20px;">
-                                                    add_circle
+                                        <div class="d-flex">
+                                            <div class="mr-2">
+                                                <span class="input-group-text bg-white">
+                                                    <span class="material-icons" style="font-size:20px;">
+                                                        add_circle
+                                                    </span>
                                                 </span>
-                                            </span>
-                                        </div>
+                                            </div>
 
-                                        <select class="form-control">
-                                            <option selected disabled>
-                                                Pilih sub kategori
-                                            </option>
-                                            <option>AI</option>
-                                            <option>Startup</option>
-                                            <option>Programming</option>
-                                        </select>
+                                            <div class="flex-fill">
+                                                <select
+                                                    name="post_subcategory_id" id="post_subcategory_id"
+                                                    class="form-control select2"
+                                                    disabled
+                                                    required>
+
+                                                    <option value="">
+                                                        ---Pilih Sub Kategori---
+                                                    </option>
+
+                                                    <?php while ($s = mysqli_fetch_assoc($subkategori)) : ?>
+                                                        <option value="<?= $s['id']; ?>">
+                                                            <?= htmlspecialchars($s['name_subcategory']); ?>
+                                                        </option>
+                                                    <?php endwhile; ?>
+
+                                                </select>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
+
                             </div>
 
-                        </div>
+                            <!-- SUMMERNOTE -->
+                            <div class="form-group mb-4">
+                                <label class="font-weight-bold">
+                                    Isi Konten
+                                </label>
 
-                        <!-- SUMMERNOTE -->
-                        <div class="form-group mb-4">
-                            <label class="font-weight-bold">
-                                Isi Konten
-                            </label>
+                                <textarea name="post_desc" id="summernote"></textarea>
+                            </div>
 
-                            <textarea id="summernote"></textarea>
-                        </div>
+                            <!-- Tags -->
+                            <div class="form-group mb-4">
 
-                        <!-- Tags -->
-                        <div class="form-group mb-4">
-                            <label class="font-weight-bold">
-                                Tags
-                            </label>
+                                <label class="font-weight-bold">
+                                    Tags
+                                </label>
 
-                            <div class="input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text bg-white">
-                                        <span class="fa fa-hashtag" style="font-size:20px;"></span>
+                                <div class="d-flex">
+
+                                    <span id="tagsIcon"
+                                        class="input-group-text bg-white"
+                                        style="border-right:0;">
+
+                                        <span class="fa fa-hashtag"></span>
+
                                     </span>
+
+                                    <input
+                                        type="text"
+                                        id="tagsInput"
+                                        name="tags"
+                                        placeholder="Masukkan tags">
+
                                 </div>
 
-                                <input
-                                    id="judulPostingan"
-                                    type="text"
-                                    class="form-control"
-                                    placeholder="Masukkan tags">
                             </div>
-                        </div>
 
-                        <!-- UPLOAD IMAGE -->
-                        <div class="form-group mb-4">
+                            <!-- UPLOAD IMAGE -->
+                            <div class="form-group mb-4">
 
-                            <label class="font-weight-bold">
-                                Fitur Gambar / Thumbnail
-                            </label>
+                                <label class="font-weight-bold">
+                                    Fitur Gambar / Thumbnail
+                                </label>
 
-                            <div
-                                class="border p-4"
-                                style="
+                                <div
+                                    class="border p-4"
+                                    style="
             border-radius:12px;
             border-style:dashed !important;
             background:#fafbfe;
         ">
 
-                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center justify-content-between">
 
-                                    <div class="d-flex align-items-center">
+                                        <div class="d-flex align-items-center">
 
-                                        <div
-                                            class="d-flex align-items-center justify-content-center mr-3"
-                                            style="
+                                            <div
+                                                class="d-flex align-items-center justify-content-center mr-3"
+                                                style="
                         width:70px;
                         height:70px;
                         border-radius:12px;
                         background:rgba(103,116,223,.1);
                     ">
 
-                                            <span
-                                                class="material-icons"
-                                                style="
+                                                <span
+                                                    class="material-icons"
+                                                    style="
                             font-size:36px;
                             color:var(--primary);
                         ">
-                                                cloud_upload
-                                            </span>
+                                                    cloud_upload
+                                                </span>
+                                            </div>
+
+                                            <div>
+                                                <h6 class="mb-1">
+                                                    Upload Thumbnail Postingan
+                                                </h6>
+
+                                                <small class="text-muted">
+                                                    Format JPG, PNG, JPEG maksimal 2MB
+                                                </small>
+                                            </div>
+
                                         </div>
 
                                         <div>
-                                            <h6 class="mb-1">
-                                                Upload Thumbnail Postingan
-                                            </h6>
 
-                                            <small class="text-muted">
-                                                Format JPG, PNG, JPEG maksimal 2MB
-                                            </small>
+                                            <input
+                                                type="file"
+                                                name="post_image"
+                                                id="uploadThumbnail"
+                                                accept="image/*"
+                                                hidden>
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-outline-primary d-flex align-items-center"
+                                                onclick="document.getElementById('uploadThumbnail').click()">
+
+                                                <span class="material-icons mr-2" style="font-size:20px;">
+                                                    image
+                                                </span>
+
+                                                Pilih Gambar
+                                            </button>
+
                                         </div>
 
                                     </div>
 
-                                    <div>
+                                    <!-- PREVIEW IMAGE -->
+                                    <div
+                                        id="previewContainer"
+                                        class="mt-4"
+                                        style="display:none;">
 
-                                        <input
-                                            type="file"
-                                            id="uploadThumbnail"
-                                            accept="image/*"
-                                            hidden>
+                                        <div class="d-flex align-items-center">
 
-                                        <button
-                                            type="button"
-                                            class="btn btn-outline-primary d-flex align-items-center"
-                                            onclick="document.getElementById('uploadThumbnail').click()">
-
-                                            <span class="material-icons mr-2" style="font-size:20px;">
-                                                image
-                                            </span>
-
-                                            Pilih Gambar
-                                        </button>
-
-                                    </div>
-
-                                </div>
-
-                                <!-- PREVIEW IMAGE -->
-                                <div
-                                    id="previewContainer"
-                                    class="mt-4"
-                                    style="display:none;">
-
-                                    <div class="d-flex align-items-center">
-
-                                        <img
-                                            id="previewImage"
-                                            src=""
-                                            alt="Preview"
-                                            style="
+                                            <img
+                                                id="previewImage"
+                                                src=""
+                                                alt="Preview"
+                                                style="
                         width:180px;
                         height:120px;
                         object-fit:cover;
@@ -306,29 +592,31 @@
                         border:1px solid #dbe5ee;
                     ">
 
-                                        <div class="ml-3">
+                                            <div class="ml-3">
 
-                                            <h6 class="mb-1">
-                                                Preview Thumbnail
-                                            </h6>
+                                                <h6 class="mb-1">
+                                                    Preview Thumbnail
+                                                </h6>
 
-                                            <small
-                                                id="fileName"
-                                                class="text-muted">
-                                            </small>
+                                                <small
+                                                    id="fileName"
+                                                    class="text-muted">
+                                                </small>
 
-                                            <div class="mt-2">
-                                                <button
-                                                    type="button"
-                                                    id="removeImage"
-                                                    class="btn btn-sm btn-danger d-flex align-items-center">
+                                                <div class="mt-2">
+                                                    <button
+                                                        type="button"
+                                                        id="removeImage"
+                                                        class="btn btn-sm btn-danger d-flex align-items-center">
 
-                                                    <span class="material-icons mr-1" style="font-size:16px;">
-                                                        delete
-                                                    </span>
+                                                        <span class="material-icons mr-1" style="font-size:16px;">
+                                                            delete
+                                                        </span>
 
-                                                    Hapus
-                                                </button>
+                                                        Hapus
+                                                    </button>
+                                                </div>
+
                                             </div>
 
                                         </div>
@@ -339,22 +627,46 @@
 
                             </div>
 
-                        </div>
+                            <div class="row my-4">
 
-                        <!-- ACTION BUTTON -->
-                        <div class="d-flex align-items-center">
+                                <div class="col-md-6">
 
-                            <button type="button"
-                                id="btnSimpanPostingan"
-                                class="btn btn-primary d-flex align-items-center mr-2">
-                                <span class="material-icons mr-2" style="font-size:20px;">
-                                    save
-                                </span>
-                                Simpan Artikel
-                            </button>
+                                    <div class="form-group my-3">
 
-                        </div>
+                                        <label class="font-weight-bold">
+                                            Penulis
+                                        </label>
 
+                                        <select
+                                            class="form-control"
+                                            name="author_view" disabled>
+
+                                            <option value="<?= $user_id; ?>" selected>
+                                                <?= htmlspecialchars($full_name); ?>
+                                            </option>
+
+                                        </select>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <!-- ACTION BUTTON -->
+                            <div class="d-flex align-items-center">
+
+                                <button type="submit"
+                                    name="simpan_postingan"
+                                    class="btn btn-primary d-flex align-items-center mr-2">
+                                    <span class="material-icons mr-2" style="font-size:20px;">
+                                        save
+                                    </span>
+                                    Simpan Post
+                                </button>
+
+                            </div>
+                        </form>
                     </div>
 
                 </div>
@@ -465,6 +777,12 @@
     <script src="../assets/vendor/popper.min.js"></script>
     <script src="../assets/vendor/bootstrap.min.js"></script>
 
+    <!-- Select2 -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <!-- Tagify -->
+    <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+
     <!-- Perfect Scrollbar -->
     <script src="../assets/vendor/perfect-scrollbar.min.js"></script>
 
@@ -500,6 +818,7 @@
             placeholder: 'Tulis isi artikel atau berita...',
             tabsize: 2,
             height: 350,
+            spellCheck: true,
 
             fontNames: [
                 'Arial',
@@ -533,6 +852,7 @@
                 ['view', ['fullscreen', 'codeview']]
             ]
         });
+        $('.note-editable').attr('spellcheck', 'true');
     </script>
 
     <script>
@@ -575,35 +895,146 @@
     </script>
 
     <script>
-        // SIMPAN POSTINGAN
-        document.getElementById("btnSimpanPostingan")
-            .addEventListener("click", function() {
+        const allSubCategory = [
+            <?php
+            mysqli_data_seek($subkategori, 0);
 
-                let judul = document.getElementById("judulPostingan").value.trim();
+            while ($s = mysqli_fetch_assoc($subkategori)) {
+            ?> {
+                    id: '<?= $s['id']; ?>',
+                    category_id: '<?= $s['post_category_id']; ?>',
+                    name: '<?= htmlspecialchars($s['name_subcategory'], ENT_QUOTES); ?>'
+                },
+            <?php
+            }
+            ?>
+        ];
+    </script>
 
-                // VALIDASI JUDUL
-                if (judul === "") {
-                    alert("Judul postingan wajib diisi!");
-                    return;
+    <script>
+        $('#post_category_id').on('change', function() {
+
+            let categoryId = $(this).val();
+
+            $('#post_subcategory_id')
+                .empty()
+                .append('<option value="">--- Pilih Sub Kategori ---</option>');
+
+            if (categoryId === '') {
+                $('#post_subcategory_id')
+                    .prop('disabled', true);
+
+                return;
+            }
+
+            allSubCategory.forEach(function(item) {
+
+                if (item.category_id == categoryId) {
+                    $('#post_subcategory_id').append(
+                        new Option(item.name, item.id)
+                    );
                 }
 
-                // SET TEXT MODAL
-                document.getElementById("successPostingText").innerHTML =
-                    `<b>${judul}</b> berhasil diposting`;
+            });
 
-                // SHOW MODAL
+            $('#post_subcategory_id')
+                .prop('disabled', false);
+
+        });
+    </script>
+
+    <script>
+        $(function() {
+
+            $('#post_category_id').select2({
+                width: '100%'
+            });
+
+            $('#post_subcategory_id').select2({
+                width: '100%'
+            });
+
+            $('#post_subcategory_id').prop('disabled', true);
+
+        });
+    </script>
+
+    <script>
+        const tagsWhitelist =
+            <?= json_encode($tags_master); ?>;
+    </script>
+
+    <script>
+        const input = document.querySelector('#tagsInput');
+
+        const tagify = new Tagify(input, {
+            whitelist: tagsWhitelist,
+            enforceWhitelist: false,
+            dropdown: {
+                enabled: 1,
+                maxItems: 20,
+                closeOnSelect: true
+            }
+        });
+
+        tagify.on('add', syncTagHeight);
+        tagify.on('remove', syncTagHeight);
+
+        function syncTagHeight() {
+            const tagifyEl = tagify.DOM.scope;
+
+            $('#tagsIcon').css(
+                'height',
+                tagifyEl.offsetHeight + 'px'
+            );
+        }
+    </script>
+
+    <?php if (isset($_SESSION['post_success'])) : ?>
+        <script>
+            $(window).on('load', function() {
+
+                $('#modalSuccessPosting').modal({
+                    backdrop: 'static',
+                    keyboard: false
+                });
+
                 $('#modalSuccessPosting').modal('show');
 
+                let countdown = 3;
+
+                $('#btnOkayPosting').text(
+                    'Okay (' + countdown + ')'
+                );
+
+                let timer = setInterval(function() {
+
+                    countdown--;
+
+                    $('#btnOkayPosting').text(
+                        'Okay (' + countdown + ')'
+                    );
+
+                    if (countdown <= 0) {
+                        clearInterval(timer);
+
+                        window.location.href =
+                            'manage_post.php';
+                    }
+
+                }, 1000);
+
+                $('#btnOkayPosting').on('click', function() {
+
+                    window.location.href =
+                        'manage_post.php';
+
+                });
+
             });
-
-        // BUTTON OKAY
-        document.getElementById("btnOkayPosting")
-            .addEventListener("click", function() {
-
-                window.location.href = "manage_post.php";
-
-            });
-    </script>
+        </script>
+        <?php unset($_SESSION['post_success']); ?>
+    <?php endif; ?>
 
 </body>
 

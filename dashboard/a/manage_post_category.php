@@ -1,3 +1,134 @@
+<?php
+session_start();
+require_once __DIR__ . "/../koneksi.php";
+
+/*
+|--------------------------------------------------------------------------
+| TAMBAH DATA
+|--------------------------------------------------------------------------
+*/
+if (isset($_POST['action']) && $_POST['action'] == 'add') {
+
+    $name_category = mysqli_real_escape_string(
+        $conn,
+        trim($_POST['name_category'])
+    );
+
+    $desc_category = mysqli_real_escape_string(
+        $conn,
+        trim($_POST['desc_category'])
+    );
+
+    if ($name_category != '' && $desc_category != '') {
+
+        $cek = mysqli_query($conn, "
+    SELECT id
+    FROM post_category
+    WHERE LOWER(TRIM(name_category))
+          = LOWER(TRIM('$name_category'))
+    LIMIT 1
+");
+
+        if (mysqli_num_rows($cek) > 0) {
+
+            header("Location: manage_post_category.php?error=duplicate");
+            exit;
+        }
+
+        mysqli_query($conn, "
+        INSERT INTO post_category
+        (
+            name_category,
+            desc_category
+        )
+        VALUES
+        (
+            '$name_category',
+            '$desc_category'
+        )
+    ");
+
+        header("Location: manage_post_category.php?success=add");
+        exit;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| HAPUS DATA
+|--------------------------------------------------------------------------
+*/
+if (isset($_GET['delete'])) {
+
+    $id = (int)$_GET['delete'];
+
+    mysqli_query($conn, "
+        DELETE FROM post_category
+        WHERE id='$id'
+    ");
+
+    header("Location: manage_post_category.php?success=delete");
+    exit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| UPDATE DATA
+|--------------------------------------------------------------------------
+*/
+if (isset($_POST['action']) && $_POST['action'] == 'edit') {
+
+    $id = (int)$_POST['id'];
+
+    $name_category = mysqli_real_escape_string(
+        $conn,
+        trim($_POST['name_category'])
+    );
+
+    $desc_category = mysqli_real_escape_string(
+        $conn,
+        trim($_POST['desc_category'])
+    );
+
+    $cek = mysqli_query($conn, "
+        SELECT id
+        FROM post_category
+        WHERE LOWER(TRIM(name_category))
+              = LOWER(TRIM('$name_category'))
+        AND id != '$id'
+        LIMIT 1
+    ");
+
+    if (mysqli_num_rows($cek) > 0) {
+
+        header("Location: manage_post_category.php?error=duplicate");
+        exit;
+    }
+
+    mysqli_query($conn, "
+        UPDATE post_category
+        SET
+            name_category='$name_category',
+            desc_category='$desc_category'
+        WHERE id='$id'
+    ");
+
+    header("Location: manage_post_category.php?success=edit");
+    exit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| GET DATA ASC
+|--------------------------------------------------------------------------
+*/
+$qCategory = mysqli_query($conn, "
+    SELECT *
+    FROM post_category
+    ORDER BY name_category ASC
+");
+?>
+
 <!doctype html>
 <html lang="id">
 
@@ -114,14 +245,75 @@
                                             <th>Aksi</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="tableBody"></tbody>
+                                    <tbody>
+                                        <?php
+                                        $no = 1;
+
+                                        while ($row = mysqli_fetch_assoc($qCategory)) :
+                                        ?>
+                                            <tr class="data-row">
+                                                <td>
+                                                    <input type="checkbox"
+                                                        class="rowCheck"
+                                                        value="<?= $row['id']; ?>">
+                                                </td>
+
+                                                <td><?= $no++; ?></td>
+
+                                                <td><?= htmlspecialchars($row['name_category']); ?></td>
+
+                                                <td><?= htmlspecialchars($row['desc_category']); ?></td>
+
+                                                <td>
+                                                    <button
+                                                        class="btn btn-warning btn-sm btn-edit"
+                                                        data-id="<?= $row['id']; ?>"
+                                                        data-name="<?= htmlspecialchars($row['name_category']); ?>"
+                                                        data-desc="<?= htmlspecialchars($row['desc_category']); ?>">
+                                                        Edit
+                                                    </button>
+
+                                                    <a href="?delete=<?= $row['id']; ?>"
+                                                        class="btn btn-danger btn-sm"
+                                                        onclick="return confirm('Yakin hapus data ini?')">
+                                                        Hapus
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        <?php endwhile; ?>
+                                    </tbody>
                                 </table>
                             </div>
 
                             <!-- PAGINATION -->
-                            <div class="d-flex justify-content-between mt-3">
-                                <button class="btn btn-danger" id="deleteSelected">Hapus Terpilih</button>
-                                <ul class="pagination" id="pagination"></ul>
+                            <div class="row mt-3 align-items-center">
+
+                                <div class="col-md-6">
+
+                                    <button
+                                        class="btn btn-danger d-none"
+                                        id="deleteSelected">
+                                        Hapus Terpilih
+                                    </button>
+
+                                    <div
+                                        id="showingInfo"
+                                        class="mt-2 text-muted">
+                                    </div>
+
+                                </div>
+
+                                <div class="col-md-6">
+
+                                    <nav>
+                                        <ul
+                                            class="pagination justify-content-end mb-0"
+                                            id="pagination">
+                                        </ul>
+                                    </nav>
+
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -136,14 +328,7 @@
 
     <!-- App Settings FAB -->
     <div id="app-settings" style="display: none">
-        <app-settings
-            layout-active="fluid"
-            :layout-location="{
-      'default': 'index.html',
-      'fixed': 'fixed-dashboard.html',
-      'fluid': 'fluid-dashboard.html',
-      'mini': 'mini-dashboard.html'
-    }"></app-settings>
+        <app-settings layout-active="fluid"></app-settings>
     </div>
 
     <!-- ********************************** // MENU-Drawer ********************************** -->
@@ -154,20 +339,45 @@
     <div class="modal fade" id="modalTambah">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5>Tambah Data</h5>
-                </div>
-                <div class="modal-body">
-                    <label>Tambah Kategori</label>
-                    <input type="text" id="kategoriTambah" class="form-control" placeholder="Nama Kategori Artikel">
-                </div>
-                <div class="modal-body">
-                    <label>Tambah Deskripsi</label>
-                    <textarea type="text" id="deskripsiTambah" class="form-control" placeholder="Deskripsi Kategori Artikel"></textarea>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-primary" onclick="tambahData()">Simpan</button>
-                </div>
+
+                <form method="POST">
+
+                    <input type="hidden" name="action" value="add">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">Tambah Kategori</h5>
+                        <button type="button"
+                            class="close"
+                            data-dismiss="modal">
+                            &times;
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <label>Nama Kategori</label>
+                        <input type="text"
+                            name="name_category"
+                            class="form-control"
+                            required>
+
+                        <label class="mt-3">Deskripsi</label>
+                        <textarea
+                            name="desc_category"
+                            class="form-control"
+                            required></textarea>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit"
+                            class="btn btn-primary">
+                            Simpan
+                        </button>
+                    </div>
+
+                </form>
+
             </div>
         </div>
     </div>
@@ -175,91 +385,42 @@
     <div class="modal fade" id="modalEdit">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5>Edit Data</h5>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" id="editIndex">
 
-                    <label>Edit Kategori</label>
-                    <input type="text"
-                        id="kategoriEdit"
-                        class="form-control mb-3"
-                        placeholder="Nama Kategori Artikel">
+                <form method="POST">
 
-                    <label>Edit Deskripsi</label>
-                    <textarea
-                        id="deskripsiEdit"
-                        class="form-control"
-                        placeholder="Deskripsi Kategori Artikel"></textarea>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-success" onclick="updateData()">Update</button>
-                </div>
-            </div>
-        </div>
-    </div>
+                    <input type="hidden" name="action" value="edit">
+                    <input type="hidden" name="id" id="editId">
 
-    <!-- =========================
-    MODAL VALIDASI SUKSES
-========================= -->
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Kategori</h5>
+                    </div>
 
-    <div class="modal fade" id="modalSuccess" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-body">
 
-            <div class="modal-content border-0"
-                style="
-                border-radius:18px;
-                overflow:hidden;
-            ">
+                        <label>Nama Kategori</label>
+                        <input type="text"
+                            name="name_category"
+                            id="kategoriEdit"
+                            class="form-control">
 
-                <div class="modal-body text-center p-5">
-
-                    <!-- ICON -->
-                    <div class="mx-auto mb-4 d-flex align-items-center justify-content-center"
-                        style="
-                        width:90px;
-                        height:90px;
-                        border-radius:50%;
-                        background:#ecfdf3;
-                    ">
-
-                        <span class="material-icons"
-                            style="
-                            font-size:50px;
-                            color:#16a34a;
-                        ">
-                            check_circle
-                        </span>
+                        <label class="mt-3">Deskripsi</label>
+                        <textarea
+                            name="desc_category"
+                            id="deskripsiEdit"
+                            class="form-control"></textarea>
 
                     </div>
 
-                    <!-- TITLE -->
-                    <h4 class="font-weight-bold mb-2" id="successTitle">
-                        Berhasil
-                    </h4>
+                    <div class="modal-footer">
+                        <button type="submit"
+                            class="btn btn-success">
+                            Update
+                        </button>
+                    </div>
 
-                    <!-- TEXT -->
-                    <p class="text-muted mb-4" id="successText">
-                        Data berhasil disimpan
-                    </p>
-
-                    <!-- BUTTON -->
-                    <button type="button"
-                        class="btn btn-success px-4"
-                        data-dismiss="modal"
-                        style="
-                        border-radius:10px;
-                        min-width:120px;
-                        height:45px;
-                    ">
-                        Okay
-                    </button>
-
-                </div>
+                </form>
 
             </div>
-
         </div>
     </div>
     <!-- ********************************** // MODAL END ********************************** -->
@@ -308,273 +469,284 @@
     <script src="../assets/js/flatpickr.js"></script>
 
     <!-- Toastr -->
-    <script src="assets/vendor/toastr.min.js"></script>
-    <script src="assets/js/toastr.js"></script>
+    <script src="../assets/vendor/toastr.min.js"></script>
+    <script src="../assets/js/toastr.js"></script>
 
     <script>
-        let data = [{
-                nama: "Artikel",
-                deskripsi: "ini hanya text"
-            },
-            {
-                nama: "Berita",
-                deskripsi: "ini hanya text"
-            }
-        ];
+        toastr.options = {
+            closeButton: true,
+            progressBar: false,
+            newestOnTop: true,
+            timeOut: 0,
+            extendedTimeOut: 0,
+            tapToDismiss: false,
+            preventDuplicates: true
+        };
+
+        <?php if (isset($_GET['success']) && $_GET['success'] == 'add'): ?>
+
+            toastr.success(
+                'Kategori berhasil ditambahkan',
+                'Berhasil'
+            );
+
+        <?php endif; ?>
+
+        <?php if (isset($_GET['success']) && $_GET['success'] == 'edit'): ?>
+
+            toastr.success(
+                'Kategori berhasil diperbarui',
+                'Berhasil'
+            );
+
+        <?php endif; ?>
+
+        <?php if (isset($_GET['success']) && $_GET['success'] == 'delete'): ?>
+
+            toastr.success(
+                'Kategori berhasil dihapus',
+                'Berhasil'
+            );
+
+        <?php endif; ?>
+
+        <?php if (isset($_GET['error']) && $_GET['error'] == 'duplicate'): ?>
+
+            toastr.error(
+                'Nama kategori sudah digunakan',
+                'Duplikat Data'
+            );
+
+        <?php endif; ?>
+    </script>
+
+    <script>
+        $(document).on("click", ".btn-edit", function() {
+
+            $("#editId").val($(this).data("id"));
+
+            $("#kategoriEdit").val($(this).data("name"));
+
+            $("#deskripsiEdit").val($(this).data("desc"));
+
+            $("#modalEdit").modal("show");
+        });
 
         let currentPage = 1;
         let rowsPerPage = 5;
 
+        const searchInput = document.getElementById('searchInput');
+        const showEntries = document.getElementById('showEntries');
+
         function renderTable() {
-            let tbody = document.getElementById("tableBody");
-            tbody.innerHTML = "";
 
-            let search = document.getElementById("searchInput").value.toLowerCase();
+            const rows =
+                Array.from(document.querySelectorAll('.data-row'));
 
-            let filtered = data.filter(d =>
-                d.nama.toLowerCase().includes(search)
-            );
+            const keyword =
+                searchInput.value.toLowerCase();
 
-            let start = (currentPage - 1) * rowsPerPage;
-            let paginated = filtered.slice(start, start + rowsPerPage);
+            let filteredRows = rows.filter(row => {
 
-            paginated.forEach((item, index) => {
-                tbody.innerHTML += `
-            <tr>
-                <td><input type="checkbox" class="rowCheck" data-index="${start + index}"></td>
-                <td>${start + index + 1}</td>
-                <td>${item.nama}</td>
-                <td>${item.deskripsi}</td>
-                <td>
-                    <button class="btn btn-warning btn-sm" onclick="editData(${start + index})">Edit</button>
-                    <button class="btn btn-danger btn-sm" onclick="hapusData(${start + index})">Hapus</button>
-                </td>
-            </tr>
-        `;
+                return row.innerText
+                    .toLowerCase()
+                    .includes(keyword);
+
             });
 
-            renderPagination(filtered.length);
+            rows.forEach(row => row.style.display = 'none');
+
+            const totalRows = filteredRows.length;
+
+            const start =
+                (currentPage - 1) * rowsPerPage;
+
+            const end =
+                start + rowsPerPage;
+
+            filteredRows
+                .slice(start, end)
+                .forEach(row => {
+
+                    row.style.display = '';
+
+                });
+
+            document.getElementById("showingInfo")
+                .innerHTML =
+                `Showing ${totalRows == 0 ? 0 : start + 1}
+         to ${Math.min(end,totalRows)}
+         of ${totalRows} entries`;
+
+            renderPagination(totalRows);
         }
 
-        function renderPagination(total) {
-            let pageCount = Math.ceil(total / rowsPerPage);
-            let pagination = document.getElementById("pagination");
-            pagination.innerHTML = "";
+        function renderPagination(totalRows) {
 
-            if (pageCount <= 1) return;
+            const pageCount =
+                Math.ceil(totalRows / rowsPerPage);
 
-            // PREV BUTTON
-            pagination.innerHTML += `
-        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-            <a class="page-link" onclick="changePage(${currentPage - 1})">Prev</a>
+            let html = '';
+
+            html += `
+        <li class="page-item ${currentPage==1?'disabled':''}">
+            <a class="page-link"
+               href="#"
+               onclick="changePage(${currentPage-1})">
+               Prev
+            </a>
         </li>
     `;
 
-            let maxVisible = 5;
-            let start = Math.max(1, currentPage - 2);
-            let end = Math.min(pageCount, currentPage + 2);
+            let start =
+                Math.max(1, currentPage - 2);
 
-            // FIX kalau di awal
-            if (currentPage <= 3) {
-                start = 1;
-                end = Math.min(pageCount, maxVisible);
-            }
+            let end =
+                Math.min(pageCount, currentPage + 2);
 
-            // FIX kalau di akhir
-            if (currentPage >= pageCount - 2) {
-                start = Math.max(1, pageCount - (maxVisible - 1));
-                end = pageCount;
-            }
-
-            // FIRST PAGE + DOTS
             if (start > 1) {
-                pagination.innerHTML += `
-            <li class="page-item"><a class="page-link" onclick="changePage(1)">1</a></li>
+
+                html += `
+            <li class="page-item">
+                <a class="page-link"
+                   href="#"
+                   onclick="changePage(1)">
+                   1
+                </a>
+            </li>
         `;
+
                 if (start > 2) {
-                    pagination.innerHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+
+                    html += `
+            <li class="page-item disabled">
+                <span class="page-link">...</span>
+            </li>
+            `;
+
                 }
             }
 
-            // PAGE NUMBERS
             for (let i = start; i <= end; i++) {
-                pagination.innerHTML += `
-            <li class="page-item ${i === currentPage ? 'active' : ''}">
-                <a class="page-link" onclick="changePage(${i})">${i}</a>
+
+                html += `
+            <li class="page-item ${i==currentPage?'active':''}">
+                <a class="page-link"
+                   href="#"
+                   onclick="changePage(${i})">
+                    ${i}
+                </a>
+            </li>
+        `;
+
+            }
+
+            if (end < pageCount) {
+
+                if (end < pageCount - 1) {
+
+                    html += `
+            <li class="page-item disabled">
+                <span class="page-link">...</span>
+            </li>
+            `;
+
+                }
+
+                html += `
+            <li class="page-item">
+                <a class="page-link"
+                   href="#"
+                   onclick="changePage(${pageCount})">
+                   ${pageCount}
+                </a>
             </li>
         `;
             }
 
-            // LAST PAGE + DOTS
-            if (end < pageCount) {
-                if (end < pageCount - 1) {
-                    pagination.innerHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-                }
-                pagination.innerHTML += `
-            <li class="page-item"><a class="page-link" onclick="changePage(${pageCount})">${pageCount}</a></li>
-        `;
-            }
-
-            // NEXT BUTTON
-            pagination.innerHTML += `
-        <li class="page-item ${currentPage === pageCount ? 'disabled' : ''}">
-            <a class="page-link" onclick="changePage(${currentPage + 1})">Next</a>
+            html += `
+        <li class="page-item ${currentPage==pageCount?'disabled':''}">
+            <a class="page-link"
+               href="#"
+               onclick="changePage(${currentPage+1})">
+               Next
+            </a>
         </li>
     `;
+
+            document.getElementById("pagination").innerHTML = html;
         }
 
         function changePage(page) {
+
+            const totalRows =
+                document.querySelectorAll('.data-row').length;
+
+            const pageCount =
+                Math.ceil(totalRows / rowsPerPage);
+
+            if (page < 1 || page > pageCount)
+                return;
+
             currentPage = page;
+
             renderTable();
         }
 
-        function tambahData() {
+        searchInput.addEventListener("keyup", function() {
 
-            let kategoriInput = document.getElementById("kategoriTambah");
-            let deskripsiInput = document.getElementById("deskripsiTambah");
-
-            let nama = kategoriInput.value.trim();
-            let deskripsi = deskripsiInput.value.trim();
-
-            // VALIDASI
-            if (nama === "") {
-                alert("Nama kategori wajib diisi!");
-                kategoriInput.focus();
-                return;
-            }
-
-            if (deskripsi === "") {
-                alert("Deskripsi wajib diisi!");
-                deskripsiInput.focus();
-                return;
-            }
-
-            // TAMBAH DATA
-            data.push({
-                nama: nama,
-                deskripsi: deskripsi
-            });
-
-            // RESET FORM
-            kategoriInput.value = "";
-            deskripsiInput.value = "";
-
-            // REFRESH TABLE
-            renderTable();
-
-            // CLOSE MODAL
-            $('#modalTambah').modal('hide');
-
-            // RESET CHECKBOX
-            document.getElementById("checkAll").checked = false;
-
-            // MODAL SUCCESS TAMBAH
-            document.getElementById("successTitle").innerText = "Tambah Berhasil";
-
-            document.getElementById("successText").innerHTML =
-                `<b>${nama}</b> berhasil ditambahkan`;
-
-            $('#modalSuccess').modal('show');
-        }
-
-        function editData(index) {
-            document.getElementById("editIndex").value = index;
-
-            document.getElementById("kategoriEdit").value = data[index].nama;
-
-            document.getElementById("deskripsiEdit").value = data[index].deskripsi;
-
-            $('#modalEdit').modal('show');
-        }
-
-        function updateData() {
-
-            let index = document.getElementById("editIndex").value;
-
-            let kategoriInput = document.getElementById("kategoriEdit");
-            let deskripsiInput = document.getElementById("deskripsiEdit");
-
-            let nama = kategoriInput.value.trim();
-            let deskripsi = deskripsiInput.value.trim();
-
-            // VALIDASI
-            if (nama === "") {
-                alert("Nama kategori wajib diisi!");
-                kategoriInput.focus();
-                return;
-            }
-
-            if (deskripsi === "") {
-                alert("Deskripsi wajib diisi!");
-                deskripsiInput.focus();
-                return;
-            }
-
-            // UPDATE
-            data[index].nama = nama;
-            data[index].deskripsi = deskripsi;
-
-            // REFRESH
-            renderTable();
-
-            // CLOSE MODAL
-            $('#modalEdit').modal('hide');
-
-            // RESET CHECKBOX
-            document.getElementById("checkAll").checked = false;
-
-            // MODAL SUCCESS EDIT
-            document.getElementById("successTitle").innerText = "Edit Berhasil";
-
-            document.getElementById("successText").innerHTML =
-                `<b>${nama}</b> berhasil di edit`;
-
-            $('#modalSuccess').modal('show');
-        }
-
-        $('#modalTambah').on('hidden.bs.modal', function() {
-            document.getElementById("kategoriTambah").value = "";
-            document.getElementById("deskripsiTambah").value = "";
-        });
-
-        $('#modalEdit').on('hidden.bs.modal', function() {
-            document.getElementById("kategoriEdit").value = "";
-            document.getElementById("deskripsiEdit").value = "";
-        });
-
-        function hapusData(index) {
-            if (confirm("Yakin hapus data ini?")) {
-                data.splice(index, 1);
-                renderTable();
-            }
-        }
-
-        document.getElementById("deleteSelected").onclick = function() {
-            let checks = document.querySelectorAll(".rowCheck:checked");
-
-            if (checks.length === 0) {
-                alert("Pilih data dulu!");
-                return;
-            }
-
-            if (confirm("Hapus data terpilih?")) {
-                let indexes = [...checks].map(c => c.dataset.index).sort((a, b) => b - a);
-                indexes.forEach(i => data.splice(i, 1));
-                renderTable();
-            }
-        };
-
-        document.getElementById("checkAll").onclick = function() {
-            document.querySelectorAll(".rowCheck").forEach(c => c.checked = this.checked);
-        };
-
-        document.getElementById("searchInput").onkeyup = renderTable;
-
-        document.getElementById("showEntries").onchange = function() {
-            rowsPerPage = parseInt(this.value);
             currentPage = 1;
+
             renderTable();
-        };
+
+        });
+
+        showEntries.addEventListener("change", function() {
+
+            rowsPerPage =
+                parseInt(this.value);
+
+            currentPage = 1;
+
+            renderTable();
+
+        });
+
+        document.addEventListener("change", function() {
+
+            const checked =
+                document.querySelectorAll('.rowCheck:checked');
+
+            const btn =
+                document.getElementById('deleteSelected');
+
+            if (checked.length > 0) {
+
+                btn.classList.remove('d-none');
+
+            } else {
+
+                btn.classList.add('d-none');
+
+            }
+
+        });
+
+        document.getElementById('checkAll')
+            .addEventListener('change', function() {
+
+                document.querySelectorAll('.rowCheck')
+                    .forEach(cb => {
+
+                        cb.checked = this.checked;
+
+                    });
+
+                document.dispatchEvent(
+                    new Event('change')
+                );
+
+            });
 
         renderTable();
     </script>

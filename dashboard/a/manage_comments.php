@@ -1,3 +1,10 @@
+<?php
+session_start();
+require_once __DIR__ . "/../koneksi.php";
+
+
+?>
+
 <!doctype html>
 <html lang="id">
 
@@ -95,16 +102,6 @@
                         <div class="row mb-4">
 
                             <div class="col-md-3">
-                                <label>Filter Postingan</label>
-                                <select class="form-control" id="filterPostingan">
-                                    <option value="Semua">Semua Postingan</option>
-                                    <option value="Tips Produktivitas">Tips Produktivitas</option>
-                                    <option value="Belajar Efektif">Belajar Efektif</option>
-                                    <option value="Manajemen Waktu">Manajemen Waktu</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-3">
                                 <label>Waktu</label>
                                 <select class="form-control" id="filterWaktu">
                                     <option value="baru">Terbaru ke Terlama</option>
@@ -172,16 +169,6 @@
 
                         <!-- FILTER -->
                         <div class="row mb-4">
-
-                            <div class="col-md-3">
-                                <label>Filter Postingan</label>
-                                <select class="form-control" id="hiddenFilterPostingan">
-                                    <option value="Semua">Semua Postingan</option>
-                                    <option value="Tips Produktivitas">Tips Produktivitas</option>
-                                    <option value="Belajar Efektif">Belajar Efektif</option>
-                                    <option value="Manajemen Waktu">Manajemen Waktu</option>
-                                </select>
-                            </div>
 
                             <div class="col-md-3">
                                 <label>Waktu</label>
@@ -310,7 +297,6 @@
                 avatar: "https://i.pravatar.cc/50?img=1",
                 email: "budi@example.com",
                 komentar: "Artikelnya sangat membantu.",
-                status: "Aktif",
                 postingan: "Tips Produktivitas",
                 tanggal: "2026-05-24 14:35"
             },
@@ -320,7 +306,6 @@
                 avatar: "https://i.pravatar.cc/50?img=5",
                 email: "siti@example.com",
                 komentar: "Kontennya bagus sekali.",
-                status: "Aktif",
                 postingan: "Belajar Efektif",
                 tanggal: "2026-05-23 11:20"
             }

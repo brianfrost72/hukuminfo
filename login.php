@@ -76,14 +76,27 @@
                     <div class="card mx-auto" style="max-width: 380px;">
                         <div class="card-body">
                             <h4 class="card-title text-center mb-4">Sign in Hukuminfo.id</h4>
-                            <form action="#">
+                            <!-- ERROR LOGIN -->
+                            <?php if (isset($_GET['error'])): ?>
+                                <div class="error-msg">
+                                    Email Atau Kata Sandi Salah.
+                                </div>
+                            <?php endif; ?>
+                            <!-- NONAKTIF DARI SUPERADMIN -->
+                            <?php if (isset($_GET['client_admin_block'])): ?>
+                                <div class="error-msg">
+                                    Mohon Maaf Akun Anda Di Nonaktifkan.<br>
+                                    Untuk Pertanyaan Silahkan Hubungi Admin.
+                                </div>
+                            <?php endif; ?>
+                            <form action="logic/proses-login.php" method="POST">
                                 <div class="form-group">
-                                        <label>Email Anda</label>
-                                    <input class="form-control" placeholder="Username" type="text">
+                                    <label>Email Anda</label>
+                                    <input class="form-control" type="email" name="email" id="login-email" placeholder="Masukkan Email Anda" required>
                                 </div> <!-- form-group// -->
                                 <div class="form-group position-relative">
-                                        <label>Password Anda</label>
-                                    <input class="form-control" id="password" placeholder="Password" type="password">
+                                    <label>Password Anda</label>
+                                    <input class="form-control" type="password" name="password" id="login-password" placeholder="Masukkan Password Anda" required>
 
                                     <span id="togglePassword"
                                         style="
@@ -133,7 +146,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const password = document.getElementById('password');
+            const password = document.getElementById('login-password');
             const togglePassword = document.getElementById('togglePassword');
             const icon = togglePassword.querySelector('i');
 

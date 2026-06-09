@@ -1,3 +1,27 @@
+<?php
+session_start();
+require_once __DIR__ . "/../koneksi.php";
+
+$query = mysqli_query($conn, "
+    SELECT
+        u.id,
+        u.email,
+        u.created_at,
+
+        p.full_name,
+        p.phone_number,
+        p.photo_profile,
+        p.status
+
+    FROM users u
+    LEFT JOIN public_profile p
+        ON p.user_id = u.id
+
+    WHERE u.user_type = 'public'
+    ORDER BY u.id DESC
+");
+?>
+
 <!doctype html>
 <html lang="id">
 
@@ -117,41 +141,88 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td><input type="checkbox" class="rowCheck" data-index=""></td>
-                                            <td>1</td>
+                                        <?php
+                                        $no = 1;
 
-                                            <td>HI#0001</td>
+                                        while ($row = mysqli_fetch_assoc($query)) :
 
-                                            <td class="d-flex align-items-center">
-                                                <img src="assets/images/avatars/foto-sushi-128246.jpg" alt="Photo"
-                                                    class="rounded-circle mr-2" width="40" height="40"
-                                                    style="object-fit:cover;">
-                                                Budi Santoso
-                                            </td>
+                                            $statusBadge = ($row['status'] == 1)
+                                                ? '<span class="badge bg-success">Aktif</span>'
+                                                : '<span class="badge bg-danger">Nonaktif</span>';
 
-                                            <td>budisantoso@gmail.com</td>
-                                            <td>083197503720</td>
-                                            <td>
-                                                <span class="badge bg-success">
-                                                    Aktif
-                                                </span>
-                                            </td>
+                                            $foto = !empty($row['photo_profile'])
+                                                ? "../uploads/profile/" . $row['photo_profile']
+                                                : "../assets/images/avatar.png";
+                                        ?>
+                                            <tr>
 
-                                            <td>12/05/2026</td>
+                                                <td>
+                                                    <input type="checkbox"
+                                                        class="rowCheck"
+                                                        data-index="<?= $row['id']; ?>">
+                                                </td>
 
-                                            <td>
-                                                <a href="view_user.php" class="btn btn-info btn-sm" onclick="">
-                                                    <i class="material-icons">remove_red_eye</i>
-                                                </a>
+                                                <td><?= $no++; ?></td>
 
-                                                <select class="form-control form-control-sm d-inline w-auto"
-                                                    onchange="">
-                                                    <option value="Aktif">Aktif</option>
-                                                    <option value="Nonaktif">Nonaktif</option>
-                                                </select>
-                                            </td>
-                                        </tr>
+                                                <td>
+                                                    HI#<?= str_pad($row['id'], 4, '0', STR_PAD_LEFT); ?>
+                                                </td>
+
+                                                <td class="d-flex align-items-center">
+
+                                                    <img src="<?= $foto; ?>"
+                                                        class="rounded-circle mr-2"
+                                                        width="40"
+                                                        height="40"
+                                                        style="object-fit:cover;">
+
+                                                    <?= htmlspecialchars($row['full_name']); ?>
+
+                                                </td>
+
+                                                <td>
+                                                    <?= htmlspecialchars($row['email']); ?>
+                                                </td>
+
+                                                <td>
+                                                    <?= htmlspecialchars($row['phone_number']); ?>
+                                                </td>
+
+                                                <td>
+                                                    <?= $statusBadge; ?>
+                                                </td>
+
+                                                <td>
+                                                    <?= date('d/m/Y', strtotime($row['created_at'])); ?>
+                                                </td>
+
+                                                <td>
+
+                                                    <a href="view_user.php?id=<?= $row['id']; ?>"
+                                                        class="btn btn-info btn-sm">
+                                                        <i class="material-icons">remove_red_eye</i>
+                                                    </a>
+
+                                                    <select
+                                                        class="form-control form-control-sm d-inline w-auto changeStatus"
+                                                        data-id="<?= $row['id']; ?>">
+
+                                                        <option value="1"
+                                                            <?= ($row['status'] == 1) ? 'selected' : ''; ?>>
+                                                            Aktif
+                                                        </option>
+
+                                                        <option value="0"
+                                                            <?= ($row['status'] == 0) ? 'selected' : ''; ?>>
+                                                            Nonaktif
+                                                        </option>
+
+                                                    </select>
+
+                                                </td>
+
+                                            </tr>
+                                        <?php endwhile; ?>
                                     </tbody>
                                 </table>
                             </div>

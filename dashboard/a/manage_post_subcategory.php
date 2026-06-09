@@ -1,3 +1,185 @@
+<?php
+session_start();
+require_once __DIR__ . "/../koneksi.php";
+
+/*
+|--------------------------------------------------------------------------
+| TAMBAH DATA
+|--------------------------------------------------------------------------
+*/
+if (isset($_POST['action']) && $_POST['action'] == 'add') {
+
+    $post_category_id = (int)$_POST['post_category_id'];
+
+    $name_subcategory = mysqli_real_escape_string(
+        $conn,
+        trim($_POST['name_subcategory'])
+    );
+
+    $desc_subcategory = mysqli_real_escape_string(
+        $conn,
+        trim($_POST['desc_subcategory'])
+    );
+
+    $cek = mysqli_query($conn, "
+        SELECT id
+        FROM post_subcategory
+        WHERE post_category_id='$post_category_id'
+        AND LOWER(TRIM(name_subcategory))
+            = LOWER(TRIM('$name_subcategory'))
+        LIMIT 1
+    ");
+
+    if (mysqli_num_rows($cek) > 0) {
+        header("Location: manage_post_subcategory.php?error=duplicate");
+        exit;
+    }
+
+    mysqli_query($conn, "
+        INSERT INTO post_subcategory
+        (
+            post_category_id,
+            name_subcategory,
+            desc_subcategory
+        )
+        VALUES
+        (
+            '$post_category_id',
+            '$name_subcategory',
+            '$desc_subcategory'
+        )
+    ");
+
+    header("Location: manage_post_subcategory.php?success=add");
+    exit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| EDIT DATA
+|--------------------------------------------------------------------------
+*/
+if (isset($_POST['action']) && $_POST['action'] == 'edit') {
+
+    $id = (int)$_POST['id'];
+
+    $post_category_id = (int)$_POST['post_category_id'];
+
+    $name_subcategory = mysqli_real_escape_string(
+        $conn,
+        trim($_POST['name_subcategory'])
+    );
+
+    $desc_subcategory = mysqli_real_escape_string(
+        $conn,
+        trim($_POST['desc_subcategory'])
+    );
+
+    $cek = mysqli_query($conn, "
+        SELECT id
+        FROM post_subcategory
+        WHERE post_category_id='$post_category_id'
+        AND LOWER(TRIM(name_subcategory))
+            = LOWER(TRIM('$name_subcategory'))
+        AND id != '$id'
+        LIMIT 1
+    ");
+
+    if (mysqli_num_rows($cek) > 0) {
+        header("Location: manage_post_subcategory.php?error=duplicate");
+        exit;
+    }
+
+    mysqli_query($conn, "
+        UPDATE post_subcategory
+        SET
+            post_category_id='$post_category_id',
+            name_subcategory='$name_subcategory',
+            desc_subcategory='$desc_subcategory'
+        WHERE id='$id'
+    ");
+
+    header("Location: manage_post_subcategory.php?success=edit");
+    exit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| TAMPILKAN DATA
+|--------------------------------------------------------------------------
+*/
+
+$qSubCategory = mysqli_query($conn, "
+    SELECT
+        ps.*,
+        pc.name_category
+    FROM post_subcategory ps
+    INNER JOIN post_category pc
+        ON pc.id = ps.post_category_id
+    ORDER BY
+        pc.name_category ASC,
+        ps.name_subcategory ASC
+");
+
+/*
+|--------------------------------------------------------------------------
+| HAPUS
+|--------------------------------------------------------------------------
+*/
+if (
+    isset($_POST['action'])
+    &&
+    $_POST['action'] == 'delete_selected'
+) {
+
+    $ids =
+        explode(
+            ',',
+            $_POST['selected_ids']
+        );
+
+    $ids =
+        array_map(
+            'intval',
+            $ids
+        );
+
+    if (count($ids) > 0) {
+
+        mysqli_query(
+            $conn,
+            "DELETE FROM post_subcategory
+             WHERE id IN (" . implode(',', $ids) . ")"
+        );
+    }
+
+    header(
+        "Location: manage_post_subcategory.php?success=delete"
+    );
+    exit;
+}
+
+if (
+    isset($_POST['action'])
+    &&
+    $_POST['action'] == 'delete_single'
+) {
+
+    $id = (int)$_POST['id'];
+
+    mysqli_query(
+        $conn,
+        "DELETE FROM post_subcategory
+         WHERE id='$id'"
+    );
+
+    header(
+        "Location: manage_post_subcategory.php?success=delete"
+    );
+    exit;
+}
+?>
+
 <!doctype html>
 <html lang="id">
 
@@ -9,6 +191,8 @@
         content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Manage Sub-Kategori Artikel - Dashboard | Hukuminfo.id</title>
 
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
 
     <!-- Perfect Scrollbar -->
     <link
@@ -115,14 +299,103 @@
                                             <th>Aksi</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="tableBody"></tbody>
+                                    <tbody>
+                                        <?php
+                                        $no = 1;
+
+                                        while ($row = mysqli_fetch_assoc($qSubCategory)) :
+                                        ?>
+                                            <tr class="data-row">
+                                                <td>
+                                                    <input type="checkbox"
+                                                        class="rowCheck"
+                                                        value="<?= $row['id']; ?>">
+                                                </td>
+
+                                                <td><?= $no++; ?></td>
+
+                                                <td><?= htmlspecialchars($row['name_category']); ?></td>
+
+                                                <td><?= htmlspecialchars($row['name_subcategory']); ?></td>
+
+                                                <td><?= htmlspecialchars($row['desc_subcategory']); ?></td>
+
+                                                <td>
+                                                    <button
+                                                        class="btn btn-warning btn-sm btn-edit"
+
+                                                        data-id="<?= $row['id']; ?>"
+
+                                                        data-category="<?= $row['post_category_id']; ?>"
+
+                                                        data-name="<?= htmlspecialchars($row['name_subcategory']); ?>"
+
+                                                        data-desc="<?= htmlspecialchars($row['desc_subcategory']); ?>">
+
+                                                        Edit
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        class="btn btn-danger btn-sm btn-delete"
+
+                                                        data-id="<?= $row['id']; ?>"
+
+                                                        data-name="<?= htmlspecialchars($row['name_subcategory']); ?>">
+                                                        Hapus
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        <?php endwhile; ?>
+                                    </tbody>
                                 </table>
                             </div>
 
                             <!-- PAGINATION -->
-                            <div class="d-flex justify-content-between mt-3">
-                                <button class="btn btn-danger" id="deleteSelected">Hapus Terpilih</button>
-                                <ul class="pagination" id="pagination"></ul>
+                            <div class="row mt-3 align-items-center">
+
+                                <div class="col-md-6">
+
+                                    <form id="deleteSelectedForm"
+                                        method="POST">
+
+                                        <input
+                                            type="hidden"
+                                            name="action"
+                                            value="delete_selected">
+
+                                        <input
+                                            type="hidden"
+                                            name="selected_ids"
+                                            id="selectedIds">
+
+                                    </form>
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-danger d-none mb-2"
+                                        id="deleteSelected">
+                                        Hapus Terpilih
+                                    </button>
+
+                                    <div
+                                        id="showingInfo"
+                                        class="mt-2 text-muted">
+                                    </div>
+
+                                </div>
+
+                                <div class="col-md-6">
+
+                                    <nav>
+                                        <ul
+                                            class="pagination justify-content-end mb-0"
+                                            id="pagination">
+                                        </ul>
+                                    </nav>
+
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -137,14 +410,7 @@
 
     <!-- App Settings FAB -->
     <div id="app-settings" style="display: none">
-        <app-settings
-            layout-active="fluid"
-            :layout-location="{
-      'default': 'index.html',
-      'fixed': 'fixed-dashboard.html',
-      'fluid': 'fluid-dashboard.html',
-      'mini': 'mini-dashboard.html'
-    }"></app-settings>
+        <app-settings layout-active="fluid"></app-settings>
     </div>
 
     <!-- ********************************** // MENU-Drawer ********************************** -->
@@ -159,24 +425,69 @@
                     <h5>Tambah Data</h5>
                 </div>
 
-                <div class="modal-body">
-                    <label>Pilih Kategori</label>
-                    <select id="kategoriTambah" class="form-control mb-3">
-                        <option value="">-- Pilih Kategori --</option>
-                        <option>Berita</option>
-                        <option>Artikel</option>
-                    </select>
+                <form method="POST">
 
-                    <label>Tambah Sub-Kategori</label>
-                    <input type="text" id="subkategoriTambah" class="form-control mb-3" placeholder="Nama Kategori Artikel">
+                    <input type="hidden"
+                        name="action"
+                        value="add">
 
-                    <label>Tambah Deskripsi</label>
-                    <textarea type="text" id="deskripsiTambah" class="form-control" placeholder="Deskripsi Kategori Artikel"></textarea>
-                </div>
+                    <div class="modal-body">
 
-                <div class="modal-footer">
-                    <button class="btn btn-primary" onclick="tambahData()">Simpan</button>
-                </div>
+                        <label>Pilih Kategori</label>
+
+                        <select
+                            name="post_category_id" id="kategoriTambah"
+                            class="mb-5"
+                            required>
+
+                            <option value="">
+                                -- Pilih Kategori --
+                            </option>
+
+                            <?php
+                            $qKategori = mysqli_query($conn, "
+                SELECT *
+                FROM post_category
+                ORDER BY name_category ASC
+            ");
+
+                            while ($kat = mysqli_fetch_assoc($qKategori)):
+                            ?>
+
+                                <option value="<?= $kat['id']; ?>">
+                                    <?= htmlspecialchars($kat['name_category']); ?>
+                                </option>
+
+                            <?php endwhile; ?>
+
+                        </select>
+
+                        <label>Tambah Sub-Kategori</label>
+
+                        <input
+                            type="text"
+                            name="name_subcategory"
+                            class="form-control mb-3"
+                            required>
+
+                        <label>Tambah Deskripsi</label>
+
+                        <textarea
+                            name="desc_subcategory"
+                            class="form-control"
+                            required></textarea>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button
+                            type="submit"
+                            class="btn btn-primary">
+                            Simpan
+                        </button>
+                    </div>
+
+                </form>
             </div>
         </div>
     </div>
@@ -187,94 +498,147 @@
                 <div class="modal-header">
                     <h5>Edit Data</h5>
                 </div>
-                <div class="modal-body">
-                    <input type="hidden" id="editIndex">
+                <form method="POST">
+                    <div class="modal-body">
+                        <input
+                            type="hidden"
+                            name="action"
+                            value="edit">
 
-                    <label>Pilih Kategori</label>
-                    <select id="kategoriEdit" class="form-control mb-3">
-                        <option>Berita</option>
-                        <option>Artikel</option>
-                    </select>
+                        <input
+                            type="hidden"
+                            name="id"
+                            id="editId">
 
-                    <label>Edit Kategori</label>
-                    <input type="text"
-                        id="subkategoriEdit"
-                        class="form-control mb-3"
-                        placeholder="Nama Kategori Artikel">
+                        <label>Pilih Kategori</label>
+                        <select
+                            id="kategoriEdit"
+                            name="post_category_id"
+                            class="mb-3">
 
-                    <label>Edit Deskripsi</label>
-                    <textarea
-                        id="deskripsiEdit"
-                        class="form-control"
-                        placeholder="Deskripsi Kategori Artikel"></textarea>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-success" onclick="updateData()">Update</button>
-                </div>
+                            <?php
+                            $qKategoriEdit = mysqli_query($conn, "
+        SELECT *
+        FROM post_category
+        ORDER BY name_category ASC
+    ");
+
+                            while ($kat = mysqli_fetch_assoc($qKategoriEdit)):
+                            ?>
+
+                                <option value="<?= $kat['id']; ?>">
+                                    <?= htmlspecialchars($kat['name_category']); ?>
+                                </option>
+
+                            <?php endwhile; ?>
+
+                        </select>
+
+                        <label>Edit Kategori</label>
+                        <input
+                            type="text"
+                            name="name_subcategory"
+                            id="subkategoriEdit"
+                            class="form-control">
+
+                        <label>Edit Deskripsi</label>
+                        <textarea
+                            name="desc_subcategory"
+                            id="deskripsiEdit"
+                            class="form-control">
+                        </textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button
+                            type="submit"
+                            class="btn btn-success">
+                            Update
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- =========================
-    MODAL VALIDASI SUKSES
-========================= -->
+    <div class="modal fade"
+        id="deleteModal">
 
-    <div class="modal fade" id="modalSuccess" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-dialog-centered">
 
-            <div class="modal-content border-0"
-                style="
-                border-radius:18px;
-                overflow:hidden;
-            ">
+            <div class="modal-content">
 
-                <div class="modal-body text-center p-5">
+                <form method="POST">
 
-                    <!-- ICON -->
-                    <div class="mx-auto mb-4 d-flex align-items-center justify-content-center"
-                        style="
-                        width:90px;
-                        height:90px;
-                        border-radius:50%;
-                        background:#ecfdf3;
-                    ">
+                    <input
+                        type="hidden"
+                        name="action"
+                        value="delete_single">
 
-                        <span class="material-icons"
-                            style="
-                            font-size:50px;
-                            color:#16a34a;
-                        ">
-                            check_circle
-                        </span>
+                    <input
+                        type="hidden"
+                        name="id"
+                        id="deleteId">
+
+                    <div class="modal-body text-center">
+
+                        <h5 id="deleteText"></h5>
 
                     </div>
 
-                    <!-- TITLE -->
-                    <h4 class="font-weight-bold mb-2" id="successTitle">
-                        Berhasil
-                    </h4>
+                    <div class="modal-footer">
 
-                    <!-- TEXT -->
-                    <p class="text-muted mb-4" id="successText">
-                        Data berhasil disimpan
-                    </p>
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-dismiss="modal">
+                            Batal
+                        </button>
 
-                    <!-- BUTTON -->
-                    <button type="button"
-                        class="btn btn-success px-4"
-                        data-dismiss="modal"
-                        style="
-                        border-radius:10px;
-                        min-width:120px;
-                        height:45px;
-                    ">
-                        Okay
+                        <button
+                            type="submit"
+                            class="btn btn-danger">
+                            Hapus
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="modal fade" id="deleteSelectedModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-body text-center">
+
+                    <h5 id="deleteSelectedText"></h5>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-dismiss="modal">
+                        Batal
+                    </button>
+
+                    <button
+                        type="button"
+                        id="confirmDeleteSelected"
+                        class="btn btn-danger">
+                        Hapus
                     </button>
 
                 </div>
 
             </div>
-
         </div>
     </div>
     <!-- ********************************** // MODAL END ********************************** -->
@@ -298,6 +662,9 @@
     <!-- Bootstrap -->
     <script src="../assets/vendor/popper.min.js"></script>
     <script src="../assets/vendor/bootstrap.min.js"></script>
+
+    <!-- Select2 -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <!-- Perfect Scrollbar -->
     <script src="../assets/vendor/perfect-scrollbar.min.js"></script>
@@ -323,304 +690,363 @@
     <script src="../assets/js/flatpickr.js"></script>
 
     <!-- Toastr -->
-    <script src="assets/vendor/toastr.min.js"></script>
-    <script src="assets/js/toastr.js"></script>
+    <script src="../assets/vendor/toastr.min.js"></script>
+    <script src="../assets/js/toastr.js"></script>
+
+    <?php if (isset($_GET['success']) && $_GET['success'] == 'add'): ?>
+        <script>
+            toastr.success('Sub-Kategori berhasil ditambahkan');
+        </script>
+    <?php endif; ?>
+
+    <?php if (isset($_GET['success']) && $_GET['success'] == 'edit'): ?>
+        <script>
+            toastr.success('Sub-Kategori berhasil diperbarui');
+        </script>
+    <?php endif; ?>
+
+    <?php if (isset($_GET['success']) && $_GET['success'] == 'delete'): ?>
+        <script>
+            toastr.success('Sub-Kategori berhasil dihapus');
+        </script>
+    <?php endif; ?>
+
+    <?php if (isset($_GET['error']) && $_GET['error'] == 'duplicate'): ?>
+        <script>
+            toastr.error('Sub-Kategori sudah tersedia');
+        </script>
+    <?php endif; ?>
 
     <script>
-        let data = [{
-                nama: "Artikel",
-                subkategori: "Keamanan",
-                deskripsi: "ini hanya text"
-            },
-            {
-                nama: "Berita",
-                subkategori: "Publikasi",
-                deskripsi: "ini hanya text"
-            }
-        ];
+        $(document).on("click", ".btn-edit", function() {
 
+            $("#editId").val($(this).data("id"));
+
+            $("#kategoriEdit")
+                .val($(this).data("category"))
+                .trigger("change");
+
+            $("#subkategoriEdit").val(
+                $(this).data("name")
+            );
+
+            $("#deskripsiEdit").val(
+                $(this).data("desc")
+            );
+
+            $("#modalEdit").modal("show");
+
+        });
+
+        // SELECT2
+        $(function() {
+
+            $('#kategoriTambah').select2({
+                dropdownParent: $('#modalTambah'),
+                width: '100%'
+            });
+
+            $('#kategoriEdit').select2({
+                dropdownParent: $('#modalEdit'),
+                width: '100%'
+            });
+
+        });
+
+        // MODAL HAPUS
+        $(document).on(
+            'click',
+            '.btn-delete',
+            function() {
+
+                $('#deleteId')
+                    .val(
+                        $(this).data('id')
+                    );
+
+                $('#deleteText')
+                    .html(
+                        'Subkategori "<b>' +
+                        $(this).data('name') +
+                        '</b>" dihapus ?'
+                    );
+
+                $('#deleteModal')
+                    .modal('show');
+
+            }
+        );
+    </script>
+
+    <script>
         let currentPage = 1;
         let rowsPerPage = 5;
 
         function renderTable() {
-            let tbody = document.getElementById("tableBody");
-            tbody.innerHTML = "";
 
-            let search = document.getElementById("searchInput").value.toLowerCase();
+            const rows =
+                Array.from(
+                    document.querySelectorAll('.data-row')
+                );
 
-            let filtered = data.filter(d =>
-                d.nama.toLowerCase().includes(search)
-            );
+            const keyword =
+                document.getElementById('searchInput')
+                .value
+                .toLowerCase();
 
-            let start = (currentPage - 1) * rowsPerPage;
-            let paginated = filtered.slice(start, start + rowsPerPage);
+            const filteredRows =
+                rows.filter(row =>
+                    row.innerText
+                    .toLowerCase()
+                    .includes(keyword)
+                );
 
-            paginated.forEach((item, index) => {
-                tbody.innerHTML += `
-            <tr>
-                <td><input type="checkbox" class="rowCheck" data-index="${start + index}"></td>
-                <td>${start + index + 1}</td>
-                <td>${item.nama}</td>
-                <td>${item.subkategori}</td>
-                <td>${item.deskripsi}</td>
-                <td>
-                    <button class="btn btn-warning btn-sm" onclick="editData(${start + index})">Edit</button>
-                    <button class="btn btn-danger btn-sm" onclick="hapusData(${start + index})">Hapus</button>
-                </td>
-            </tr>
-        `;
+            rows.forEach(row => {
+                row.style.display = 'none';
             });
 
-            renderPagination(filtered.length);
+            const total =
+                filteredRows.length;
+
+            const start =
+                (currentPage - 1) * rowsPerPage;
+
+            const end =
+                start + rowsPerPage;
+
+            filteredRows
+                .slice(start, end)
+                .forEach(row => {
+                    row.style.display = '';
+                });
+
+            document.getElementById('showingInfo')
+                .innerHTML =
+                `Showing ${
+            total === 0 ? 0 : start + 1
+        } to ${
+            Math.min(end,total)
+        } of ${total} entries`;
+
+            renderPagination(total);
         }
 
-        function renderPagination(total) {
-            let pageCount = Math.ceil(total / rowsPerPage);
-            let pagination = document.getElementById("pagination");
-            pagination.innerHTML = "";
+        // SHOW ENTRIES
+        document.getElementById('showEntries')
+            .addEventListener('change', function() {
 
-            if (pageCount <= 1) return;
+                rowsPerPage =
+                    parseInt(this.value);
 
-            // PREV BUTTON
-            pagination.innerHTML += `
-        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-            <a class="page-link" onclick="changePage(${currentPage - 1})">Prev</a>
+                currentPage = 1;
+
+                renderTable();
+
+            });
+
+        // HAPUS SELECTED
+        function toggleDeleteButton() {
+
+            const checked =
+                document.querySelectorAll(
+                    '.rowCheck:checked'
+                );
+
+            const btn =
+                document.getElementById(
+                    'deleteSelected'
+                );
+
+            if (checked.length > 0) {
+
+                btn.classList.remove('d-none');
+
+            } else {
+
+                btn.classList.add('d-none');
+
+            }
+        }
+
+        document.addEventListener(
+            'change',
+            function(e) {
+
+                if (
+                    e.target.classList.contains('rowCheck') ||
+                    e.target.id === 'checkAll'
+                ) {
+                    toggleDeleteButton();
+                }
+
+            }
+        );
+
+        $('#deleteSelected').on('click', function() {
+
+            let ids = [];
+            let names = [];
+
+            $('.rowCheck:checked').each(function() {
+
+                ids.push($(this).val());
+
+                names.push(
+                    $(this)
+                    .closest('tr')
+                    .find('td:eq(3)')
+                    .text()
+                    .trim()
+                );
+
+            });
+
+            $('#selectedIds').val(
+                ids.join(',')
+            );
+
+            $('#deleteSelectedText').html(
+                'Subkategori "<b>' +
+                names.join(', ') +
+                '</b>" dihapus ?'
+            );
+
+            $('#deleteSelectedModal').modal('show');
+
+        });
+
+        $('#confirmDeleteSelected').on('click', function() {
+
+            $('#deleteSelectedForm').submit();
+
+        });
+
+        // PAGINATION
+        function renderPagination(totalRows) {
+
+            const totalPages =
+                Math.ceil(
+                    totalRows / rowsPerPage
+                );
+
+            let html = '';
+
+            html += `
+        <li class="page-item ${
+            currentPage===1?'disabled':''
+        }">
+            <a class="page-link"
+               href="#"
+               onclick="changePage(${currentPage-1})">
+                Prev
+            </a>
         </li>
     `;
 
-            let maxVisible = 5;
-            let start = Math.max(1, currentPage - 2);
-            let end = Math.min(pageCount, currentPage + 2);
+            for (let i = 1; i <= totalPages; i++) {
 
-            // FIX kalau di awal
-            if (currentPage <= 3) {
-                start = 1;
-                end = Math.min(pageCount, maxVisible);
-            }
+                if (
+                    i === 1 ||
+                    i === totalPages ||
+                    (
+                        i >= currentPage - 2 &&
+                        i <= currentPage + 2
+                    )
+                ) {
 
-            // FIX kalau di akhir
-            if (currentPage >= pageCount - 2) {
-                start = Math.max(1, pageCount - (maxVisible - 1));
-                end = pageCount;
-            }
+                    html += `
+                <li class="page-item ${
+                    currentPage===i
+                    ? 'active'
+                    : ''
+                }">
 
-            // FIRST PAGE + DOTS
-            if (start > 1) {
-                pagination.innerHTML += `
-            <li class="page-item"><a class="page-link" onclick="changePage(1)">1</a></li>
-        `;
-                if (start > 2) {
-                    pagination.innerHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                <a class="page-link"
+                   href="#"
+                   onclick="changePage(${i})">
+                   ${i}
+                </a>
+
+                </li>
+            `;
+
+                } else if (
+                    i === 2 ||
+                    i === totalPages - 1
+                ) {
+
+                    html += `
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        ...
+                    </span>
+                </li>
+            `;
                 }
+
             }
 
-            // PAGE NUMBERS
-            for (let i = start; i <= end; i++) {
-                pagination.innerHTML += `
-            <li class="page-item ${i === currentPage ? 'active' : ''}">
-                <a class="page-link" onclick="changePage(${i})">${i}</a>
-            </li>
-        `;
-            }
+            html += `
+        <li class="page-item ${
+            currentPage===totalPages
+            ?'disabled':''
+        }">
 
-            // LAST PAGE + DOTS
-            if (end < pageCount) {
-                if (end < pageCount - 1) {
-                    pagination.innerHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-                }
-                pagination.innerHTML += `
-            <li class="page-item"><a class="page-link" onclick="changePage(${pageCount})">${pageCount}</a></li>
-        `;
-            }
+            <a class="page-link"
+               href="#"
+               onclick="changePage(${currentPage+1})">
+                Next
+            </a>
 
-            // NEXT BUTTON
-            pagination.innerHTML += `
-        <li class="page-item ${currentPage === pageCount ? 'disabled' : ''}">
-            <a class="page-link" onclick="changePage(${currentPage + 1})">Next</a>
         </li>
     `;
+
+            document.getElementById('pagination')
+                .innerHTML = html;
         }
 
         function changePage(page) {
+
+            const totalPages =
+                Math.ceil(
+                    document.querySelectorAll(
+                        '.data-row'
+                    ).length /
+                    rowsPerPage
+                );
+
+            if (page < 1) return;
+
+            if (page > totalPages) return;
+
             currentPage = page;
+
             renderTable();
         }
 
-        function tambahData() {
+        // SEARCH
+        document.getElementById('searchInput')
+            .addEventListener('keyup', function() {
 
-            let kategoriInput = document.getElementById("kategoriTambah");
-            let subkategoriInput = document.getElementById("subkategoriTambah");
-            let deskripsiInput = document.getElementById("deskripsiTambah");
+                currentPage = 1;
 
-            let kategori = kategoriInput.value.trim();
-            let subkategori = subkategoriInput.value.trim();
-            let deskripsi = deskripsiInput.value.trim();
+                renderTable();
 
-            // VALIDASI
-            if (kategori === "") {
-                alert("Kategori wajib dipilih!");
-                kategoriInput.focus();
-                return;
-            }
-
-            if (subkategori === "") {
-                alert("Sub-kategori wajib diisi!");
-                subkategoriInput.focus();
-                return;
-            }
-
-            if (deskripsi === "") {
-                alert("Deskripsi wajib diisi!");
-                deskripsiInput.focus();
-                return;
-            }
-
-            // TAMBAH DATA
-            data.push({
-                nama: kategori,
-                subkategori: subkategori,
-                deskripsi: deskripsi
             });
 
-            // RESET
-            kategoriInput.value = "";
-            subkategoriInput.value = "";
-            deskripsiInput.value = "";
-
-            // REFRESH
-            renderTable();
-
-            // CLOSE MODAL
-            $('#modalTambah').modal('hide');
-
-            // RESET CHECKBOX
-            document.getElementById("checkAll").checked = false;
-
-            // MODAL SUCCESS TAMBAH
-            document.getElementById("successTitle").innerText = "Tambah Berhasil";
-
-            document.getElementById("successText").innerHTML =
-                `<b>${subkategori}</b> berhasil ditambahkan`;
-
-            $('#modalSuccess').modal('show');
-        }
-
-        function editData(index) {
-
-            document.getElementById("editIndex").value = index;
-
-            document.getElementById("kategoriEdit").value = data[index].nama;
-
-            document.getElementById("subkategoriEdit").value = data[index].subkategori;
-
-            document.getElementById("deskripsiEdit").value = data[index].deskripsi;
-
-            $('#modalEdit').modal('show');
-        }
-
-        function updateData() {
-
-            let index = document.getElementById("editIndex").value;
-
-            let kategoriInput = document.getElementById("kategoriEdit");
-            let subkategoriInput = document.getElementById("subkategoriEdit");
-            let deskripsiInput = document.getElementById("deskripsiEdit");
-
-            let kategori = kategoriInput.value.trim();
-            let subkategori = subkategoriInput.value.trim();
-            let deskripsi = deskripsiInput.value.trim();
-
-            // VALIDASI
-            if (kategori === "") {
-                alert("Kategori wajib dipilih!");
-                kategoriInput.focus();
-                return;
-            }
-
-            if (subkategori === "") {
-                alert("Sub-kategori wajib diisi!");
-                subkategoriInput.focus();
-                return;
-            }
-
-            if (deskripsi === "") {
-                alert("Deskripsi wajib diisi!");
-                deskripsiInput.focus();
-                return;
-            }
-
-            // UPDATE DATA
-            data[index].nama = kategori;
-            data[index].subkategori = subkategori;
-            data[index].deskripsi = deskripsi;
-
-            // REFRESH
-            renderTable();
-
-            // CLOSE MODAL
-            $('#modalEdit').modal('hide');
-
-            // RESET CHECKBOX
-            document.getElementById("checkAll").checked = false;
-
-            // MODAL SUCCESS EDIT
-            document.getElementById("successTitle").innerText = "Edit Berhasil";
-
-            document.getElementById("successText").innerHTML =
-                `<b>${subkategori}</b> berhasil di edit`;
-
-            $('#modalSuccess').modal('show');
-        }
-
-        $('#modalTambah').on('hidden.bs.modal', function() {
-
-            document.getElementById("kategoriTambah").value = "";
-            document.getElementById("subkategoriTambah").value = "";
-            document.getElementById("deskripsiTambah").value = "";
-        });
-
-        $('#modalEdit').on('hidden.bs.modal', function() {
-
-            document.getElementById("kategoriEdit").value = "";
-            document.getElementById("subkategoriEdit").value = "";
-            document.getElementById("deskripsiEdit").value = "";
-        });
-
-        function hapusData(index) {
-            if (confirm("Yakin hapus data ini?")) {
-                data.splice(index, 1);
-                renderTable();
-            }
-        }
-
-        document.getElementById("deleteSelected").onclick = function() {
-            let checks = document.querySelectorAll(".rowCheck:checked");
-
-            if (checks.length === 0) {
-                alert("Pilih data dulu!");
-                return;
-            }
-
-            if (confirm("Hapus data terpilih?")) {
-                let indexes = [...checks].map(c => c.dataset.index).sort((a, b) => b - a);
-                indexes.forEach(i => data.splice(i, 1));
-                renderTable();
-            }
-        };
-
-        document.getElementById("checkAll").onclick = function() {
-            document.querySelectorAll(".rowCheck").forEach(c => c.checked = this.checked);
-        };
-
-        document.getElementById("searchInput").onkeyup = renderTable;
-
-        document.getElementById("showEntries").onchange = function() {
-            rowsPerPage = parseInt(this.value);
-            currentPage = 1;
-            renderTable();
-        };
-
         renderTable();
+
+        // CHECKLIST
+        $('#checkAll').on('change', function() {
+
+            $('.rowCheck').prop(
+                'checked',
+                $(this).prop('checked')
+            );
+
+            toggleDeleteButton();
+
+        });
     </script>
 </body>
 

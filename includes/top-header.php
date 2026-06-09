@@ -36,8 +36,49 @@
         </div>
         <div class="col-sm-12 col-md-7">
             <div class="list-unstyled topbar-right">
+                <?php
+                if (session_status() === PHP_SESSION_NONE) {
+                    session_start();
+                }
+                ?>
+
                 <ul class="topbar-link">
-                    <li><a href="login.php" title="">Login / Register</a></li>
+
+                    <?php if (!empty($_SESSION['logged_in'])): ?>
+
+                        <li class="user-menu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                Hai, <?= htmlspecialchars($_SESSION['email']); ?>
+                                <span class="caret"></span>
+                            </a>
+
+                            <ul class="user-dropdown">
+
+                                <li>
+                                    <a href="dashboard/">
+                                        Dashboard
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a href="logout.php">
+                                        Logout
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </li>
+
+                    <?php else: ?>
+
+                        <li>
+                            <a href="login.php">
+                                Login / Register
+                            </a>
+                        </li>
+
+                    <?php endif; ?>
+
                 </ul>
                 <ul class="topbar-sosmed">
                     <li>

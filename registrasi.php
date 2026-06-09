@@ -127,7 +127,7 @@
                                     <!-- form-group end.// -->
                                     <div class="form-group col-md-6">
                                         <label>Provinsi</label>
-                                        <select id="inputState" class="form-control">
+                                        <select id="provinsi" class="form-control">
                                             <option>Choose...</option>
                                             <option>Uzbekistan</option>
                                             <option>Russia</option>
@@ -138,7 +138,7 @@
                                     </div><!-- form-group end.// -->
                                     <div class="form-group col-md-6">
                                         <label>Kabupaten</label>
-                                        <select id="inputState" class="form-control">
+                                        <select id="kabupaten" class="form-control">
                                             <option>Choose...</option>
                                             <option>Uzbekistan</option>
                                             <option>Russia</option>
@@ -323,6 +323,14 @@
     <a href="javascript:" id="return-to-top"><i class="fa fa-chevron-up"></i></a>
 
     <script type="text/javascript" src="./js/index.bundle.js?537a1bbd0e5129401d28"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(function() {
+            $('#provinsi').select2();
+            $('#kabupaten').select2();
+        });
+    </script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {

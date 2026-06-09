@@ -1,3 +1,142 @@
+<?php
+session_start();
+require_once __DIR__ . "/../koneksi.php";
+
+/*
+|--------------------------------------------------------------------------
+| AMBIL POST
+|--------------------------------------------------------------------------
+*/
+$sql = "
+SELECT
+    p.id,
+    p.user_id,
+    p.post_title,
+    p.post_desc,
+    p.post_image,
+    p.slug,
+    p.status,
+    p.created_at,
+
+    pc.name_category,
+    ps.name_subcategory,
+
+    up.full_name,
+
+    COUNT(DISTINCT pv.id) AS total_views,
+    COUNT(DISTINCT pl.id) AS total_likes,
+    COUNT(DISTINCT pb.id) AS total_bookmarks,
+    COUNT(DISTINCT pco.id) AS total_comments,
+    COUNT(DISTINCT pt.id) AS total_tags
+
+FROM post p
+
+LEFT JOIN post_category pc
+    ON pc.id = p.post_category_id
+
+LEFT JOIN post_subcategory ps
+    ON ps.id = p.post_subcategory_id
+
+LEFT JOIN users u
+    ON u.id = p.user_id
+
+LEFT JOIN user_profile up
+    ON up.user_id = u.id
+
+LEFT JOIN post_views pv
+    ON pv.post_id = p.id
+
+LEFT JOIN post_likes pl
+    ON pl.post_id = p.id
+
+LEFT JOIN post_bookmarks pb
+    ON pb.post_id = p.id
+
+LEFT JOIN post_comments pco
+    ON pco.post_id = p.id
+    AND pco.status = 'approved'
+
+LEFT JOIN post_tags pt
+    ON pt.post_id = p.id
+
+GROUP BY p.id
+
+ORDER BY p.created_at DESC
+";
+
+$result = mysqli_query($conn, $sql);
+$current_user_id = $_SESSION['user_id'];
+$current_role_id = $_SESSION['role_id'];
+
+$isAdmin =
+    in_array($current_role_id, [1, 2]);
+
+// TOTAL POSTINGAN
+$total_post = mysqli_fetch_assoc(
+    mysqli_query($conn, "
+        SELECT COUNT(*) total
+        FROM post
+    ")
+)['total'];
+
+// TOTAL KATEGORI
+$total_category = mysqli_fetch_assoc(
+    mysqli_query($conn, "
+        SELECT COUNT(DISTINCT post_category_id) total
+        FROM post
+    ")
+)['total'];
+
+// TOTAL PENULIS
+$total_author = mysqli_fetch_assoc(
+    mysqli_query($conn, "
+        SELECT COUNT(DISTINCT user_id) total
+        FROM post
+    ")
+)['total'];
+
+// TOTAL TAGS
+$total_tags = mysqli_fetch_assoc(
+    mysqli_query($conn, "
+        SELECT COUNT(DISTINCT tag_id) total
+        FROM post_tags
+    ")
+)['total'];
+
+/*
+|--------------------------------------------------------------------------
+| AMBIL FILTER KATEGORI
+|--------------------------------------------------------------------------
+*/
+$categories = mysqli_query($conn, "
+    SELECT DISTINCT
+        pc.id,
+        pc.name_category
+    FROM post_category pc
+    INNER JOIN post p
+        ON p.post_category_id = pc.id
+    ORDER BY pc.name_category ASC
+");
+/*
+|--------------------------------------------------------------------------
+| AMBIL FILTER PENULIS
+|--------------------------------------------------------------------------
+*/
+$authors = mysqli_query($conn, "
+    SELECT DISTINCT
+        up.full_name
+    FROM user_profile up
+    INNER JOIN post p
+        ON p.user_id = up.user_id
+    ORDER BY up.full_name ASC
+");
+/*
+|--------------------------------------------------------------------------
+| AMBIL POST
+|--------------------------------------------------------------------------
+*/
+?>
+
 <!doctype html>
 <html lang="id">
 
@@ -9,6 +148,8 @@
         content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Daftar Postingan - Dashboard | Hukuminfo.id</title>
 
+    <!-- Select2 -->
+    <link rel="stylesheet" href="../assets/vendor/select2/select2.min.css">
 
     <!-- Perfect Scrollbar -->
     <link
@@ -45,6 +186,38 @@
     <link type="text/css"
         href="../assets/vendor/toastr.min.css"
         rel="stylesheet">
+
+    <style>
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .table {
+            min-width: 1600px;
+        }
+
+        .desc-col {
+            width: 350px;
+            min-width: 350px;
+            max-width: 350px;
+
+            line-height: 22px;
+        }
+
+        .desc-text {
+            display: block;
+
+            overflow: hidden;
+
+            height: 44px;
+
+            line-height: 22px;
+
+            word-break: break-word;
+
+            text-overflow: ellipsis;
+        }
+    </style>
 </head>
 
 <body class="layout-fluid layout-sticky-subnav">
@@ -120,7 +293,7 @@
                                 </div>
 
                                 <div>
-                                    <h3 class="mb-0">12</h3>
+                                    <h3 class="mb-0"><?= $total_post ?></h3>
                                     <small class="text-muted">Total Postingan</small>
                                 </div>
 
@@ -141,29 +314,8 @@
                                 </div>
 
                                 <div>
-                                    <h3 class="mb-0">8</h3>
+                                    <h3 class="mb-0"><?= $total_category ?></h3>
                                     <small class="text-muted">Kategori</small>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-3">
-                        <div class="card stats-card" style="border-radius:12px;">
-                            <div class="card-body d-flex align-items-center">
-
-                                <div style="width:60px;height:60px;border-radius:12px;
-                    background:#f3f4f6;display:flex;align-items:center;
-                    justify-content:center;margin-right:15px;">
-                                    <span class="material-icons" style="color:var(--primary);font-size:30px;">
-                                        layers
-                                    </span>
-                                </div>
-
-                                <div>
-                                    <h3 class="mb-0">4</h3>
-                                    <small class="text-muted">Sub Kategori</small>
                                 </div>
 
                             </div>
@@ -183,8 +335,29 @@
                                 </div>
 
                                 <div>
-                                    <h3 class="mb-0">4</h3>
+                                    <h3 class="mb-0"><?= $total_tags ?></h3>
                                     <small class="text-muted">Total Tags</small>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="card stats-card" style="border-radius:12px;">
+                            <div class="card-body d-flex align-items-center">
+
+                                <div style="width:60px;height:60px;border-radius:12px;
+                    background:#f3f4f6;display:flex;align-items:center;
+                    justify-content:center;margin-right:15px;">
+                                    <span class="fa fa-user" style="color:var(--primary);font-size:30px;">
+
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <h3 class="mb-0"><?= $total_author ?></h3>
+                                    <small class="text-muted">Total Penulis</small>
                                 </div>
 
                             </div>
@@ -213,10 +386,10 @@
 
                                     <select id="showEntries" class="form-control"
                                         style="width:80px;">
+                                        <option>5</option>
                                         <option>10</option>
-                                        <option>25</option>
-                                        <option>50</option>
-                                        <option>100</option>
+                                        <option>15</option>
+                                        <option>20</option>
                                     </select>
 
                                     <label class="mb-0 ml-2 text-muted" style="white-space:nowrap;">
@@ -245,28 +418,34 @@
                             </div>
 
                             <!-- RIGHT FILTER -->
-                            <div class="d-flex align-items-center flex-wrap"
+                            <div class="d-flex align-items-center"
                                 style="gap:15px;">
 
-                                <!-- TYPE -->
-                                <select id="categoryFilter" class="form-control"
-                                    style="width:190px;">
-                                    <option>--Pilih Kategori--</option>
-                                    <option>Semua Tipe</option>
-                                    <option>Berita</option>
-                                    <option>Artikel</option>
-                                    <option>Blog</option>
-                                </select>
+                                <div style="width:220px;">
+                                    <!-- TYPE -->
+                                    <select id="categoryFilter" class="form-control select2">
+                                        <option value="">Semua Kategori</option>
 
-                                <!-- LOKASI -->
-                                <select id="subCategoryFilter" class="form-control"
-                                    style="width:190px;">
-                                    <option>--Pilih Sub Kategori--</option>
-                                    <option>Semua Sub Kategori</option>
-                                    <option></option>
-                                    <option></option>
-                                    <option></option>
-                                </select>
+                                        <?php while ($cat = mysqli_fetch_assoc($categories)): ?>
+                                            <option value="<?= htmlspecialchars($cat['name_category']) ?>">
+                                                <?= htmlspecialchars($cat['name_category']) ?>
+                                            </option>
+                                        <?php endwhile; ?>
+                                    </select>
+                                </div>
+
+                                <div style="width:220px;">
+                                    <!-- PENULIS -->
+                                    <select id="authorFilter" class="form-control select2">
+                                        <option value="">Semua Penulis</option>
+
+                                        <?php while ($author = mysqli_fetch_assoc($authors)): ?>
+                                            <option value="<?= htmlspecialchars($author['full_name']) ?>">
+                                                <?= htmlspecialchars($author['full_name']) ?>
+                                            </option>
+                                        <?php endwhile; ?>
+                                    </select>
+                                </div>
 
                             </div>
 
@@ -279,190 +458,143 @@
 
                                 <thead style="background:#f8f9fc;">
                                     <tr>
-                                        <th>Judul Postingan</th>
-                                        <th>Kategori</th>
-                                        <th>Sub Kategori</th>
+                                        <th style="min-width:350px;">Judul Postingan</th>
+                                        <th style="min-width:300px;">Penulis</th>
+                                        <th style="min-width:150px;">Kategori</th>
                                         <th>Gambar</th>
-                                        <th>Deskripsi</th>
+                                        <th style="min-width:350px;">Deskripsi</th>
                                         <th>Komentar</th>
                                         <th>#Tags</th>
+                                        <th>Views</th>
+                                        <th>Like</th>
+                                        <th>Bookmark</th>
                                         <th style="text-align:center;">Aksi</th>
                                     </tr>
                                 </thead>
 
                                 <tbody id="jobTable">
 
-                                    <tr class="post-row">
-                                        <td>
-                                            <strong>Kisah Pengalaman Kerja</strong>
-                                        </td>
+                                    <?php while ($row = mysqli_fetch_assoc($result)) :
+                                        $canManage =
+                                            $isAdmin ||
+                                            ($current_user_id == $row['user_id']);
+                                    ?>
 
-                                        <td>Berita</td>
-                                        <td>Pembobolan</td>
-                                        <td>
-                                            <img src="assets/images/posts/luke-chesser-2347.jpg"
-                                                alt="Thumbnail"
-                                                style="
-            width:70px;
-            height:50px;
-            object-fit:cover;
-            border-radius:8px;
-            border:1px solid #e5e7eb;
-        ">
-                                        </td>
-                                        <td>
-                                            Kejadian ini terjadi pada tahun 2010. Setelah sekitar 5 tahun lalu, saya terlibat dalam pembobolan di sebuah perusahaan.
-                                        </td>
+                                        <tr class="post-row">
 
-                                        <td>
-                                            4
-                                        </td>
+                                            <td>
+                                                <strong>
+                                                    <?= htmlspecialchars($row['post_title']) ?>
+                                                </strong>
+                                            </td>
 
-                                        <td>
-                                            8
-                                        </td>
+                                            <td>
+                                                <?= htmlspecialchars($row['full_name']) ?>
+                                            </td>
 
-                                        <td>
-                                            <div class="d-flex justify-content-center">
+                                            <td>
+                                                <?= htmlspecialchars($row['name_category']) ?>
+                                            </td>
 
-                                                <a
-                                                    href="edit_post"
-                                                    class="mr-2">
-                                                    <button
-                                                        class="btn btn-outline-primary btn-sm"
-                                                        title="Edit">
-                                                        <span class="material-icons"
-                                                            style="font-size:16px;">
-                                                            edit
-                                                        </span>
-                                                    </button>
-                                                </a>
+                                            <td>
+                                                <img
+                                                    src="../assets/images/uploads/posts/<?= htmlspecialchars($row['post_image']) ?>"
+                                                    alt="<?= htmlspecialchars($row['post_title']) ?>"
+                                                    style="
+        width:90px;
+        height:60px;
+        object-fit:cover;
+        border-radius:8px;
+        border:1px solid #e5e7eb;
+    ">
+                                            </td>
 
-                                                <button class="btn btn-outline-danger btn-sm"
-                                                    onclick="deleteRow(this)" title="Hapus">
-                                                    <span class="material-icons"
-                                                        style="font-size:16px;vertical-align:middle;">
-                                                        delete
-                                                    </span>
-                                                </button>
+                                            <td class="desc-col">
+                                                <div class="desc-text">
+                                                    <?= mb_strimwidth(
+                                                        strip_tags($row['post_desc']),
+                                                        0,
+                                                        80,
+                                                        '...'
+                                                    ) ?>
+                                                </div>
+                                            </td>
 
-                                            </div>
-                                        </td>
-                                    </tr>
+                                            <td>
+                                                <?= $row['total_comments'] ?>
+                                            </td>
 
-                                    <tr class="post-row">
-                                        <td>
-                                            <strong>Telah terjadi kerusuhan</strong><br>
-                                        </td>
+                                            <td>
+                                                <?= $row['total_tags'] ?>
+                                            </td>
 
-                                        <td>Artikel</td>
-                                        <td>Kisah Nyata</td>
-                                        <td>
-                                            <img src="assets/images/posts/linkedin-sales-navigator-402873.jpg"
-                                                alt="Thumbnail"
-                                                style="
-            width:70px;
-            height:50px;
-            object-fit:cover;
-            border-radius:8px;
-            border:1px solid #e5e7eb;
-        ">
-                                        </td>
-                                        <td>
-                                            Kejadian ini terjadi pada tahun 2010. Setelah sekitar 5 tahun lalu, saya terlibat dalam pembobolan di sebuah perusahaan.
-                                        </td>
+                                            <td>
+                                                <?= $row['total_views'] ?>
+                                            </td>
 
-                                        <td>
-                                            2
-                                        </td>
+                                            <td>
+                                                <?= $row['total_likes'] ?>
+                                            </td>
 
-                                        <td>8</td>
+                                            <td>
+                                                <?= $row['total_bookmarks'] ?>
+                                            </td>
 
-                                        <td>
-                                            <div class="d-flex justify-content-center">
+                                            <td>
+                                                <div class="d-flex justify-content-center">
 
-                                                <a
-                                                    href="edit_post"
-                                                    class="mr-2">
-                                                    <button
-                                                        class="btn btn-outline-primary btn-sm"
-                                                        title="Edit">
-                                                        <span class="material-icons"
-                                                            style="font-size:16px;">
-                                                            edit
-                                                        </span>
-                                                    </button>
-                                                </a>
+                                                    <?php if ($canManage): ?>
 
-                                                <button class="btn btn-outline-danger btn-sm"
-                                                    onclick="deleteRow(this)" title="Hapus">
-                                                    <span class="material-icons"
-                                                        style="font-size:16px;vertical-align:middle;">
-                                                        delete
-                                                    </span>
-                                                </button>
+                                                        <a
+                                                            href="edit_post?id=<?= $row['id'] ?>"
+                                                            class="mr-2">
 
-                                            </div>
-                                        </td>
-                                    </tr>
+                                                            <button
+                                                                class="btn btn-outline-primary btn-sm">
 
-                                    <tr class="post-row">
-                                        <td>
-                                            <strong>Ini Blog saya</strong><br>
-                                        </td>
+                                                                <span class="material-icons"
+                                                                    style="font-size:16px;">
+                                                                    edit
+                                                                </span>
 
-                                        <td>Blog</td>
-                                        <td>Kisah Pengalaman Kerja</td>
-                                        <td>
-                                            <img src="assets/images/posts/fabian-irsara-92113.jpg"
-                                                alt="Thumbnail"
-                                                style="
-            width:70px;
-            height:50px;
-            object-fit:cover;
-            border-radius:8px;
-            border:1px solid #e5e7eb;
-        ">
-                                        </td>
-                                        <td>
-                                            Ini adalah kisah saya. Setelah sekitar 5 tahun lalu, saya terlibat dalam pembobolan di sebuah perusahaan.
-                                        </td>
+                                                            </button>
 
-                                        <td>
-                                            3
-                                        </td>
+                                                        </a>
 
-                                        <td>
-                                            9
-                                        </td>
+                                                        <button
+                                                            class="btn btn-outline-danger btn-sm"
+                                                            onclick="deleteRow(this)"
+                                                            data-id="<?= $row['id'] ?>"
+                                                            data-url="logic/delete_post.php?id=<?= $row['id'] ?>">
 
-                                        <td>
-                                            <div class="d-flex justify-content-center">
+                                                            <span class="material-icons"
+                                                                style="font-size:16px;">
+                                                                delete
+                                                            </span>
 
-                                                <a
-                                                    href="edit_post"
-                                                    class="mr-2">
-                                                    <button
-                                                        class="btn btn-outline-primary btn-sm"
-                                                        title="Edit">
-                                                        <span class="material-icons"
-                                                            style="font-size:16px;">
-                                                            edit
-                                                        </span>
-                                                    </button>
-                                                </a>
+                                                        </button>
 
-                                                <button class="btn btn-outline-danger btn-sm"
-                                                    onclick="deleteRow(this)" title="Hapus">
-                                                    <span class="material-icons"
-                                                        style="font-size:16px;vertical-align:middle;">
-                                                        delete
-                                                    </span>
-                                                </button>
+                                                    <?php else: ?>
 
-                                            </div>
-                                        </td>
-                                    </tr>
+                                                        <button
+                                                            class="btn btn-outline-secondary btn-sm"
+                                                            disabled>
+
+                                                            <span class="material-icons"
+                                                                style="font-size:16px;">
+                                                                lock
+                                                            </span>
+
+                                                        </button>
+
+                                                    <?php endif; ?>
+
+                                                </div>
+                                            </td>
+
+                                        </tr>
+
+                                    <?php endwhile; ?>
 
                                 </tbody>
 
@@ -597,6 +729,9 @@
     <!-- jQuery -->
     <script src="../assets/vendor/jquery.min.js"></script>
 
+    <!-- Select2 -->
+    <script src="../assets/vendor/select2/select2.min.js"></script>
+
     <!-- Bootstrap -->
     <script src="../assets/vendor/popper.min.js"></script>
     <script src="../assets/vendor/bootstrap.min.js"></script>
@@ -634,49 +769,55 @@
 
         const searchInput = document.getElementById("searchInput");
         const categoryFilter = document.getElementById("categoryFilter");
-        const subCategoryFilter = document.getElementById("subCategoryFilter");
-        const statusFilter = document.getElementById("statusFilter");
+        const authorFilter = document.getElementById("authorFilter");
         const showEntries = document.getElementById("showEntries");
 
         function getFilteredRows() {
 
-            const search = searchInput.value.toLowerCase();
-            const category = categoryFilter.value.toLowerCase();
-            const subCategory = subCategoryFilter.value.toLowerCase();
-            const status = statusFilter.value.toLowerCase();
+            const search =
+                searchInput.value.toLowerCase();
 
-            const rows = document.querySelectorAll(".post-row");
+            const category =
+                categoryFilter.value.toLowerCase();
 
-            return Array.from(rows).filter((row) => {
+            const author =
+                authorFilter.value.toLowerCase();
 
-                const title = row.children[0].innerText.toLowerCase();
-                const kategori = row.children[1].innerText.toLowerCase();
-                const subkategori = row.children[2].innerText.toLowerCase();
-                const statusText = row.children[5].innerText.trim().toLowerCase();
+            const rows =
+                document.querySelectorAll(".post-row");
+
+            return Array.from(rows).filter(row => {
+
+                const title =
+                    row.children[0].innerText.toLowerCase();
+
+                const penulis =
+                    row.children[1]
+                    .innerText
+                    .trim()
+                    .toLowerCase();
+
+                const kategori =
+                    row.children[2]
+                    .innerText
+                    .trim()
+                    .toLowerCase();
+
+                const matchCategory =
+                    category === "" ||
+                    kategori.includes(category);
 
                 const matchSearch =
                     title.includes(search);
 
-                const matchCategory =
-                    category.includes("--pilih") ||
-                    category.includes("semua") ||
-                    kategori.includes(category);
-
-                const matchSubCategory =
-                    subCategory.includes("--pilih") ||
-                    subCategory.includes("semua") ||
-                    subkategori.includes(subCategory);
-
-                const matchStatus =
-                    status.includes("--status") ||
-                    status.includes("semua") ||
-                    statusText.includes(status);
+                const matchAuthor =
+                    author === "" ||
+                    penulis.includes(author);
 
                 return (
                     matchSearch &&
                     matchCategory &&
-                    matchSubCategory &&
-                    matchStatus
+                    matchAuthor
                 );
             });
         }
@@ -685,117 +826,182 @@
 
             const rows = getFilteredRows();
 
-            perPage = parseInt(showEntries.value);
+            perPage =
+                parseInt(showEntries.value);
 
-            const totalData = rows.length;
-            const totalPages = Math.ceil(totalData / perPage);
+            const totalData =
+                rows.length;
 
-            if (currentPage > totalPages) {
-                currentPage = 1;
-            }
+            const totalPages =
+                Math.ceil(totalData / perPage);
 
-            document.querySelectorAll(".post-row")
-                .forEach((row) => {
+            document
+                .querySelectorAll(".post-row")
+                .forEach(row => {
                     row.style.display = "none";
                 });
 
-            const start = (currentPage - 1) * perPage;
-            const end = start + perPage;
+            const start =
+                (currentPage - 1) * perPage;
+
+            const end =
+                start + perPage;
 
             rows.slice(start, end)
-                .forEach((row) => {
+                .forEach(row => {
                     row.style.display = "";
                 });
 
-            renderPagination(totalPages, totalData);
+            renderPagination(
+                totalPages,
+                totalData
+            );
         }
 
-        function renderPagination(totalPages, totalData) {
+        function addPage(page, pagination) {
 
+            const btn =
+                document.createElement("button");
+
+            btn.className =
+                "page-btn";
+
+            if (page === currentPage) {
+                btn.classList.add("active");
+            }
+
+            btn.innerText = page;
+
+            btn.onclick = () => {
+                currentPage = page;
+                renderTable();
+            };
+
+            pagination.appendChild(btn);
+        }
+
+        function renderPagination(
+            totalPages,
+            totalData
+        ) {
             const pagination =
-                document.getElementById("pagination");
+                document.getElementById(
+                    "pagination"
+                );
 
             pagination.innerHTML = "";
 
-            /* PREV */
-            const prevBtn = document.createElement("button");
+            const prev =
+                document.createElement("button");
 
-            prevBtn.className = "page-btn";
-            prevBtn.innerHTML = "«";
+            prev.className = "page-btn";
+            prev.innerHTML = "Prev";
 
-            prevBtn.disabled = currentPage === 1;
+            prev.disabled =
+                currentPage === 1;
 
-            prevBtn.onclick = () => {
+            prev.onclick = () => {
                 currentPage--;
                 renderTable();
             };
 
-            pagination.appendChild(prevBtn);
+            pagination.appendChild(prev);
 
-            /* NUMBER */
-            for (let i = 1; i <= totalPages; i++) {
+            let start =
+                Math.max(
+                    1,
+                    currentPage - 2
+                );
 
-                const btn =
-                    document.createElement("button");
+            let end =
+                Math.min(
+                    totalPages,
+                    currentPage + 2
+                );
 
-                btn.className = "page-btn";
+            if (start > 1) {
 
-                if (i === currentPage) {
-                    btn.classList.add("active");
+                addPage(
+                    1,
+                    pagination
+                );
+
+                if (start > 2) {
+
+                    pagination.innerHTML +=
+                        "<span>...</span>";
                 }
-
-                btn.innerText = i;
-
-                btn.onclick = () => {
-                    currentPage = i;
-                    renderTable();
-                };
-
-                pagination.appendChild(btn);
             }
 
-            /* NEXT */
-            const nextBtn = document.createElement("button");
+            for (
+                let i = start; i <= end; i++
+            ) {
+                addPage(
+                    i,
+                    pagination
+                );
+            }
 
-            nextBtn.className = "page-btn";
-            nextBtn.innerHTML = "»";
+            if (end < totalPages) {
 
-            nextBtn.disabled =
-                currentPage === totalPages ||
-                totalPages === 0;
+                if (end < totalPages - 1) {
 
-            nextBtn.onclick = () => {
+                    pagination.innerHTML +=
+                        "<span>...</span>";
+                }
+
+                addPage(
+                    totalPages,
+                    pagination
+                );
+            }
+
+            const next =
+                document.createElement("button");
+
+            next.className =
+                "page-btn";
+
+            next.innerHTML =
+                "Next";
+
+            next.disabled =
+                currentPage === totalPages;
+
+            next.onclick = () => {
                 currentPage++;
                 renderTable();
             };
 
-            pagination.appendChild(nextBtn);
+            pagination.appendChild(next);
 
-            /* INFO */
             const startData =
                 totalData === 0 ?
                 0 :
                 ((currentPage - 1) * perPage) + 1;
 
-            let endData = currentPage * perPage;
+            let endData =
+                currentPage * perPage;
 
             if (endData > totalData) {
                 endData = totalData;
             }
 
-            document.getElementById("paginationInfo")
-                .innerText =
+            document
+                .getElementById(
+                    "paginationInfo"
+                ).innerText =
                 `Menampilkan ${startData} - ${endData} dari ${totalData} data`;
         }
 
-        let selectedButton = null;
-        let selectedRow = null;
+        // DELETE
+        let deleteUrl = '';
 
-        /* DELETE */
         function deleteRow(button) {
 
-            selectedRow =
-                button.closest("tr");
+            selectedRow = button.closest('tr');
+
+            deleteUrl = button.dataset.url;
 
             const title =
                 selectedRow.children[0].innerText.trim();
@@ -807,36 +1013,12 @@
             $("#confirmDeleteModal").modal("show");
         }
 
-        /* KONFIRMASI DELETE */
-        document.getElementById("btnConfirmDelete")
+        document
+            .getElementById("btnConfirmDelete")
             .addEventListener("click", function() {
 
-                const title =
-                    selectedRow.children[0].innerText.trim();
+                window.location.href = deleteUrl;
 
-                document.getElementById(
-                    "deletedPostTitle"
-                ).innerText = `"${title}"`;
-
-                $("#confirmDeleteModal").modal("hide");
-
-                selectedRow.style.transition =
-                    "all .3s ease";
-
-                selectedRow.style.opacity = "0";
-
-                selectedRow.style.transform =
-                    "translateX(30px)";
-
-                setTimeout(() => {
-
-                    selectedRow.remove();
-
-                    renderTable();
-
-                    $("#modalDeleteSuccess").modal("show");
-
-                }, 300);
             });
 
         /* EVENTS */
@@ -850,12 +1032,7 @@
             renderTable();
         });
 
-        subCategoryFilter.addEventListener("change", () => {
-            currentPage = 1;
-            renderTable();
-        });
-
-        statusFilter.addEventListener("change", () => {
+        authorFilter.addEventListener("change", () => {
             currentPage = 1;
             renderTable();
         });
@@ -863,6 +1040,22 @@
         showEntries.addEventListener("change", () => {
             currentPage = 1;
             renderTable();
+        });
+
+        $('.select2').select2();
+
+        $('#categoryFilter').on('change', function() {
+
+            currentPage = 1;
+            renderTable();
+
+        });
+
+        $('#authorFilter').on('change', function() {
+
+            currentPage = 1;
+            renderTable();
+
         });
 
         /* INIT */
