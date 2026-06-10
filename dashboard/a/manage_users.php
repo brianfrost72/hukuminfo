@@ -4,21 +4,47 @@ require_once __DIR__ . "/../koneksi.php";
 
 $query = mysqli_query($conn, "
     SELECT
-        u.id,
+        u.id AS user_id,
         u.email,
         u.created_at,
 
+        p.id AS profile_id,
         p.full_name,
         p.phone_number,
         p.photo_profile,
-        p.status
+        p.gender,
+        p.status,
+        p.provinces_id,
+        p.regencies_id,
+
+        prov.name AS province_name,
+        reg.name AS regency_name
 
     FROM users u
+
     LEFT JOIN public_profile p
         ON p.user_id = u.id
 
+    LEFT JOIN provinces prov
+        ON prov.id = p.provinces_id
+
+    LEFT JOIN regencies reg
+        ON reg.id = p.regencies_id
+
     WHERE u.user_type = 'public'
-    ORDER BY u.id DESC
+
+    ORDER BY p.id DESC
+");
+
+if (!$query) {
+    die(mysqli_error($conn));
+}
+
+// AMBIL DATA PROVINSI
+$provinces = mysqli_query($conn, "
+    SELECT id,name
+    FROM provinces
+    ORDER BY name ASC
 ");
 ?>
 
@@ -110,7 +136,8 @@ $query = mysqli_query($conn, "
 
                         <div class="card-body">
                             <!-- FILTER -->
-                            <div class="d-flex justify-content-between mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+
                                 <div>
                                     Show
                                     <select id="showEntries" class="form-control d-inline w-auto">
@@ -121,7 +148,38 @@ $query = mysqli_query($conn, "
                                     entries
                                 </div>
 
-                                <input type="text" id="searchInput" class="form-control w-25" placeholder="Search...">
+                                <div class="d-flex align-items-center" style="gap:10px;">
+
+                                    <select id="statusFilter" class="form-control">
+                                        <option value="">Semua Status</option>
+                                        <option value="1">Active</option>
+                                        <option value="0">Inactive</option>
+                                    </select>
+
+                                    <select id="provinceFilter" class="form-control">
+                                        <option value="">Semua Provinsi</option>
+
+                                        <?php while ($prov = mysqli_fetch_assoc($provinces)) : ?>
+                                            <option value="<?= $prov['id']; ?>">
+                                                <?= htmlspecialchars($prov['name']); ?>
+                                            </option>
+                                        <?php endwhile; ?>
+
+                                    </select>
+
+                                    <select id="regencyFilter" class="form-control">
+                                        <option value="">Semua Kabupaten/Kota</option>
+                                    </select>
+
+                                    <input
+                                        type="text"
+                                        id="searchInput"
+                                        class="form-control"
+                                        placeholder="Search..."
+                                        style="width:250px;">
+
+                                </div>
+
                             </div>
 
                             <!-- TABLE -->
@@ -131,13 +189,15 @@ $query = mysqli_query($conn, "
                                         <tr>
                                             <th><input type="checkbox" id="checkAll"></th>
                                             <th>No.</th>
-                                            <th>ID Klien</th>
-                                            <th>Nama</th>
-                                            <th>Email</th>
+                                            <th style="min-width: 200px;">ID Klien</th>
+                                            <th style="min-width: 200px;">Nama</th>
+                                            <th style="min-width: 200px;">Email</th>
                                             <th>No Tlp</th>
+                                            <th style="min-width: 200px;">Provinsi</th>
+                                            <th style="min-width: 200px;">Kabupaten / Kota</th>
                                             <th>Status</th>
-                                            <th>Dibuat Pada</th>
-                                            <th>Aksi</th>
+                                            <th style="min-width: 200px;">Dibuat Pada</th>
+                                            <th style="min-width: 200px;">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -147,25 +207,36 @@ $query = mysqli_query($conn, "
                                         while ($row = mysqli_fetch_assoc($query)) :
 
                                             $statusBadge = ($row['status'] == 1)
-                                                ? '<span class="badge bg-success">Aktif</span>'
-                                                : '<span class="badge bg-danger">Nonaktif</span>';
+                                                ? '<span class="badge bg-success">Active</span>'
+                                                : '<span class="badge bg-danger">Inactive</span>';
 
-                                            $foto = !empty($row['photo_profile'])
-                                                ? "../uploads/profile/" . $row['photo_profile']
-                                                : "../assets/images/avatar.png";
+                                            if (!empty($row['photo_profile'])) {
+
+                                                $foto = "../assets/images/uploads/public_photos/" . $row['photo_profile'];
+                                            } else {
+
+                                                if (strtolower($row['gender']) == 'perempuan') {
+                                                    $foto = "../assets/images/avatar/avatar-women.png";
+                                                } else {
+                                                    $foto = "../assets/images/avatar/avatar-men.png";
+                                                }
+                                            }
                                         ?>
-                                            <tr>
+                                            <tr
+                                                data-status="<?= $row['status']; ?>"
+                                                data-province="<?= $row['provinces_id']; ?>"
+                                                data-regency="<?= $row['regencies_id']; ?>">
 
                                                 <td>
                                                     <input type="checkbox"
                                                         class="rowCheck"
-                                                        data-index="<?= $row['id']; ?>">
+                                                        data-index="<?= $row['user_id']; ?>">
                                                 </td>
 
                                                 <td><?= $no++; ?></td>
 
-                                                <td>
-                                                    HI#<?= str_pad($row['id'], 4, '0', STR_PAD_LEFT); ?>
+                                                <td style="min-width: 200px;">
+                                                    HI#<?= str_pad($row['profile_id'], 4, '0', STR_PAD_LEFT); ?>
                                                 </td>
 
                                                 <td class="d-flex align-items-center">
@@ -189,32 +260,45 @@ $query = mysqli_query($conn, "
                                                 </td>
 
                                                 <td>
-                                                    <?= $statusBadge; ?>
+                                                    <?= htmlspecialchars($row['province_name'] ?? '-'); ?>
                                                 </td>
 
                                                 <td>
-                                                    <?= date('d/m/Y', strtotime($row['created_at'])); ?>
+                                                    <?= htmlspecialchars($row['regency_name'] ?? '-'); ?>
                                                 </td>
 
                                                 <td>
 
-                                                    <a href="view_user.php?id=<?= $row['id']; ?>"
+                                                    <span
+                                                        class="userStatusBadge badge <?= ($row['status'] == 1 ? 'bg-success' : 'bg-danger'); ?>">
+                                                        <?= ($row['status'] == 1 ? 'Active' : 'Inactive'); ?>
+                                                    </span>
+
+                                                </td>
+
+                                                <td>
+                                                    <?= date('d/m/Y H:i:s', strtotime($row['created_at'])); ?>
+                                                </td>
+
+                                                <td>
+
+                                                    <a href="view_user.php?id=<?= $row['profile_id']; ?>"
                                                         class="btn btn-info btn-sm">
                                                         <i class="material-icons">remove_red_eye</i>
                                                     </a>
 
                                                     <select
                                                         class="form-control form-control-sm d-inline w-auto changeStatus"
-                                                        data-id="<?= $row['id']; ?>">
+                                                        data-id="<?= $row['user_id']; ?>">
 
                                                         <option value="1"
                                                             <?= ($row['status'] == 1) ? 'selected' : ''; ?>>
-                                                            Aktif
+                                                            Active
                                                         </option>
 
                                                         <option value="0"
                                                             <?= ($row['status'] == 0) ? 'selected' : ''; ?>>
-                                                            Nonaktif
+                                                            inactive
                                                         </option>
 
                                                     </select>
@@ -228,9 +312,30 @@ $query = mysqli_query($conn, "
                             </div>
 
                             <!-- PAGINATION -->
-                            <div class="d-flex justify-content-between mt-3">
-                                <button class="btn btn-danger" id="inactiveSelected">Non Aktifkan Terpilih</button>
-                                <ul class="pagination" id="pagination"></ul>
+                            <div class="row mt-3 align-items-center">
+
+                                <div class="col-md-4">
+                                    <button
+                                        id="bulkActionBtn"
+                                        class="btn btn-danger"
+                                        style="display:none;">
+                                        Nonaktifkan Akun
+                                    </button>
+                                </div>
+
+                                <div class="col-md-4 text-center">
+                                    <span id="entriesInfo">
+                                        Showing 0 to 0 of 0 entries
+                                    </span>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <ul
+                                        class="pagination justify-content-end mb-0"
+                                        id="pagination">
+                                    </ul>
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -295,9 +400,446 @@ $query = mysqli_query($conn, "
     <script src="../assets/js/flatpickr.js"></script>
 
     <!-- Toastr -->
-    <script src="assets/vendor/toastr.min.js"></script>
-    <script src="assets/js/toastr.js"></script>
+    <script src="../assets/vendor/toastr.min.js"></script>
+    <script src="../assets/js/toastr.js"></script>
 
+    <script>
+        $('#provinceFilter').on('change', function() {
+
+            let province_id = $(this).val();
+
+            $('#regencyFilter').html(
+                '<option value="">Semua Kabupaten/Kota</option>'
+            );
+
+            if (province_id == '') {
+                filterTable();
+                return;
+            }
+
+            $.ajax({
+                url: 'ajax/get_regencies.php',
+                type: 'GET',
+                data: {
+                    province_id: province_id
+                },
+                dataType: 'json',
+
+                success: function(response) {
+                    $.each(response, function(i, row) {
+
+                        $('#regencyFilter').append(
+                            '<option value="' + row.id + '">' + row.name + '</option>'
+                        );
+
+                    });
+
+                    filterTable();
+                }
+            });
+
+        });
+
+        let currentPage = 1;
+
+        function filterTable() {
+            let status = $('#statusFilter').val();
+            let province = $('#provinceFilter').val();
+            let regency = $('#regencyFilter').val();
+            let keyword = $('#searchInput').val().toLowerCase();
+
+            let rows = [];
+
+            $('#dataTable tbody tr').each(function() {
+
+                let row = $(this);
+
+                let rowStatus = String(row.data('status'));
+                let rowProvince = String(row.data('province'));
+                let rowRegency = String(row.data('regency'));
+
+                let text = row.text().toLowerCase();
+
+                let show = true;
+
+                if (status && rowStatus !== status)
+                    show = false;
+
+                if (province && rowProvince !== province)
+                    show = false;
+
+                if (regency && rowRegency !== regency)
+                    show = false;
+
+                if (keyword && !text.includes(keyword))
+                    show = false;
+
+                row.toggle(false);
+
+                if (show)
+                    rows.push(row);
+
+            });
+
+            paginate(rows);
+        }
+
+        $('#regencyFilter').on('change', filterTable);
+        $('#searchInput').on('keyup', filterTable);
+
+
+        function paginate(rows) {
+            let perPage = parseInt($('#showEntries').val());
+
+            let totalRows = rows.length;
+
+            let totalPages = Math.ceil(totalRows / perPage);
+
+            if (totalPages < 1)
+                totalPages = 1;
+
+            if (currentPage > totalPages)
+                currentPage = totalPages;
+
+            let start = (currentPage - 1) * perPage;
+            let end = start + perPage;
+
+            rows.forEach(function(row, index) {
+
+                if (index >= start && index < end) {
+                    row.show();
+                } else {
+                    row.hide();
+                }
+
+            });
+
+            $('#entriesInfo').html(
+                'Showing ' +
+                (totalRows === 0 ? 0 : start + 1) +
+                ' to ' +
+                Math.min(end, totalRows) +
+                ' of ' +
+                totalRows +
+                ' entries'
+            );
+
+            buildPagination(totalPages);
+        }
+        // PAGINATION
+        function buildPagination(totalPages) {
+            let html = '';
+
+            html += `
+        <li class="page-item">
+            <a class="page-link pagePrev" href="#">
+                Prev
+            </a>
+        </li>
+    `;
+
+            for (let i = 1; i <= totalPages; i++) {
+                html += `
+            <li class="page-item ${i===currentPage?'active':''}">
+                <a
+                    class="page-link pageNumber"
+                    data-page="${i}"
+                    href="#">
+                    ${i}
+                </a>
+            </li>
+        `;
+            }
+
+            html += `
+        <li class="page-item">
+            <a class="page-link pageNext" href="#">
+                Next
+            </a>
+        </li>
+    `;
+
+            $('#pagination').html(html);
+        }
+
+        // EVENT FILTER
+        $('#statusFilter').on('change', function() {
+            currentPage = 1;
+            filterTable();
+        });
+
+        $('#provinceFilter').on('change', function() {
+            currentPage = 1;
+        });
+
+        $('#regencyFilter').on('change', function() {
+            currentPage = 1;
+            filterTable();
+        });
+
+        $('#searchInput').on('keyup', function() {
+            currentPage = 1;
+            filterTable();
+        });
+
+        $('#showEntries').on('change', function() {
+            currentPage = 1;
+            filterTable();
+        });
+
+        // EVENT PAGINATION
+        $(document).on('click', '.pageNumber', function(e) {
+
+            e.preventDefault();
+
+            currentPage = parseInt($(this).data('page'));
+
+            filterTable();
+
+        });
+
+        $(document).on('click', '.pagePrev', function(e) {
+
+            e.preventDefault();
+
+            if (currentPage > 1) {
+                currentPage--;
+                filterTable();
+            }
+
+        });
+
+        $(document).on('click', '.pageNext', function(e) {
+
+            e.preventDefault();
+
+            currentPage++;
+
+            filterTable();
+
+        });
+
+        // CHECKALL & BULK ACTION
+        $('#checkAll').on('change', function() {
+
+            let checked = $(this).prop('checked');
+
+            $('.rowCheck:visible').prop(
+                'checked',
+                checked
+            );
+
+            updateBulkButton();
+
+        });
+
+        $(document).on('change', '.rowCheck', function() {
+
+            let total =
+                $('.rowCheck:visible').length;
+
+            let checked =
+                $('.rowCheck:visible:checked').length;
+
+            $('#checkAll').prop(
+                'checked',
+                total > 0 && total === checked
+            );
+
+            updateBulkButton();
+
+        });
+
+        // TOMBOL AKTIF & INACTIVE
+        function updateBulkButton() {
+            let checkedRows =
+                $('.rowCheck:checked');
+
+            if (checkedRows.length === 0) {
+                $('#bulkActionBtn').hide();
+                return;
+            }
+
+            let hasActive = false;
+            let hasInactive = false;
+
+            checkedRows.each(function() {
+
+                let status =
+                    $(this)
+                    .closest('tr')
+                    .data('status');
+
+                if (status == 1)
+                    hasActive = true;
+
+                if (status == 0)
+                    hasInactive = true;
+
+            });
+
+            $('#bulkActionBtn').show();
+
+            if (hasActive) {
+                $('#bulkActionBtn')
+                    .removeClass('btn-success')
+                    .addClass('btn-danger')
+                    .text('Nonaktifkan Akun');
+            } else {
+                $('#bulkActionBtn')
+                    .removeClass('btn-danger')
+                    .addClass('btn-success')
+                    .text('Aktifkan Akun');
+            }
+        }
+
+        $(document).on('change', '.rowCheck,#checkAll', updateBulkButton);
+
+        filterTable();
+        updateBulkButton();
+    </script>
+
+    <script>
+        $('.changeStatus').on('change', function() {
+
+            let select = $(this);
+
+            let user_id = select.data('id');
+            let status = select.val();
+
+            $.ajax({
+
+                url: 'ajax/update_user_status.php',
+                type: 'POST',
+
+                data: {
+                    user_id: user_id,
+                    status: status
+                },
+
+                dataType: 'json',
+
+                success: function(res) {
+
+                    if (!res.success) {
+
+                        toastr.error(
+                            res.message || 'Gagal mengubah status akun'
+                        );
+
+                        return;
+                    }
+
+                    let badge = select
+                        .closest('tr')
+                        .find('.userStatusBadge');
+
+                    if (status == 1) {
+
+                        badge
+                            .removeClass('bg-danger')
+                            .addClass('bg-success')
+                            .text('Active');
+
+                        toastr.success(
+                            'Akun berhasil diaktifkan'
+                        );
+
+                    } else {
+
+                        badge
+                            .removeClass('bg-success')
+                            .addClass('bg-danger')
+                            .text('Inactive');
+
+                        toastr.warning(
+                            'Akun berhasil dinonaktifkan'
+                        );
+
+                    }
+
+                },
+
+                error: function() {
+
+                    toastr.error(
+                        'Terjadi kesalahan server'
+                    );
+
+                }
+
+            });
+
+        });
+    </script>
+
+    <script>
+        $('#bulkActionBtn').on('click', function() {
+
+            let ids = [];
+
+            $('.rowCheck:checked').each(function() {
+
+                ids.push(
+                    $(this).data('index')
+                );
+
+            });
+
+            if (ids.length === 0)
+                return;
+
+            let action =
+                $(this).text().includes('Aktifkan') ?
+                1 :
+                0;
+
+            $.ajax({
+
+                url: 'ajax/bulk_user_status.php',
+
+                type: 'POST',
+
+                dataType: 'json',
+
+                data: {
+                    ids: ids,
+                    status: action
+                },
+
+                success: function(res) {
+
+                    if (!res.success) {
+
+                        toastr.error(
+                            'Gagal update akun'
+                        );
+
+                        return;
+                    }
+
+                    if (action == 1) {
+                        toastr.success(
+                            ids.length + ' akun berhasil diaktifkan'
+                        );
+                    } else {
+                        toastr.warning(
+                            ids.length + ' akun berhasil dinonaktifkan'
+                        );
+                    }
+
+                    setTimeout(function() {
+
+                        location.reload();
+
+                    }, 1200);
+
+                }
+
+            });
+
+        });
+    </script>
 </body>
 
 </html>

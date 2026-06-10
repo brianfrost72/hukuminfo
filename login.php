@@ -96,17 +96,18 @@ if (isset($_SESSION['user_id'])) {
                             <h4 class="card-title text-center mb-4">Masuk Hufo</h4>
                             <!-- ERROR LOGIN -->
                             <?php if (isset($_GET['error'])): ?>
-                                <div class="error-msg">
+                                <div class="error-msg mb-4">
                                     Email Atau Kata Sandi Salah.
                                 </div>
                             <?php endif; ?>
                             <!-- NONAKTIF DARI SUPERADMIN -->
                             <?php if (isset($_GET['client_admin_block'])): ?>
-                                <div class="error-msg">
+                                <div class="error-msg mb-4">
                                     Mohon Maaf Akun Anda Di Nonaktifkan.<br>
                                     Untuk Pertanyaan Silahkan Hubungi Admin.
                                 </div>
                             <?php endif; ?>
+                            
                             <form action="logic/proses-login.php" method="POST">
                                 <div class="form-group">
                                     <label>Email Anda</label>
