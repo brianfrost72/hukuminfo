@@ -3,24 +3,25 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require "PHPMailer/src/Exception.php";
-require "PHPMailer/src/PHPMailer.php";
-require "PHPMailer/src/SMTP.php";
+require_once __DIR__ . '/src/Exception.php';
+require_once __DIR__ . '/src/PHPMailer.php';
+require_once __DIR__ . '/src/SMTP.php';
 
 function kirimOTP($email, $otp)
 {
+    // MAIL SEND
     $mail = new PHPMailer(true);
 
     try {
         $mail->isSMTP();
-        $mail->Host       = "mail.konig.co.id";
+        $mail->Host       = "mail.hukuminfo.id";
         $mail->SMTPAuth   = true;
-        $mail->Username   = "no-reply@konig.co.id";
-        $mail->Password   = "Konig*2025@";
+        $mail->Username   = "no-reply@hukuminfo.id";
+        $mail->Password   = "Hufo*2026@";
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         $mail->Port       = 465;
 
-        $mail->setFrom("no-reply@konig.co.id", "Konig Guard Bureau");
+        $mail->setFrom("no-reply@hukuminfo.id", "HukumInfo");
         $mail->addAddress($email);
 
         $mail->isHTML(true);
@@ -30,9 +31,9 @@ function kirimOTP($email, $otp)
 
             <!-- HEADER -->
             <div style="display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid #e5e5e5;background:#f9fafb">
-                <img src="https://konig.co.id/assets/images/logo/logo.png" alt="Logo-email" style="height:50px;margin-right:15px">
+                <img src="https://hukuminfo.id/images/placeholder/logo.jpg" alt="Logo-email" style="height:50px;margin-right:15px">
                 <div style="font-size:13px;color:#555">
-                    <strong style="font-size:15px;color:#111">Konig Guard Bureau</strong><br>
+                    <strong style="font-size:15px;color:#111">Hukuminfo</strong><br>
                     Puri Botanical Blok H9 No.11, Jakarta - Indonesia.<br>
                     Telp:
                         <a href="tel:08111902759" style="color:#2563eb;text-decoration:none">

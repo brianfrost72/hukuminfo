@@ -1,3 +1,83 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . '/../koneksi.php';
+
+$userName  = '';
+$userEmail = '';
+
+if (!empty($_SESSION['logged_in']) && !empty($_SESSION['user_id'])) {
+
+    $user_id = (int) $_SESSION['user_id'];
+
+    $qUser = mysqli_query($conn, "
+        SELECT
+            id,
+            email,
+            user_type
+        FROM users
+        WHERE id = '$user_id'
+        LIMIT 1
+    ");
+
+    if ($qUser && mysqli_num_rows($qUser) > 0) {
+
+        $user = mysqli_fetch_assoc($qUser);
+
+        $userEmail = $user['email'];
+
+        // ==========================
+        // INTERNAL USER
+        // ==========================
+        if ($user['user_type'] === 'internal') {
+
+            $qProfile = mysqli_query($conn, "
+                SELECT full_name
+                FROM user_profile
+                WHERE user_id = '$user_id'
+                LIMIT 1
+            ");
+
+            if ($qProfile && mysqli_num_rows($qProfile) > 0) {
+
+                $profile = mysqli_fetch_assoc($qProfile);
+
+                $userName =
+                    $profile['full_name'];
+            }
+        }
+
+        // ==========================
+        // PUBLIC USER
+        // ==========================
+        else {
+
+            $qProfile = mysqli_query($conn, "
+                SELECT full_name
+                FROM public_profile
+                WHERE user_id = '$user_id'
+                LIMIT 1
+            ");
+
+            if ($qProfile && mysqli_num_rows($qProfile) > 0) {
+
+                $profile = mysqli_fetch_assoc($qProfile);
+
+                $userName =
+                    $profile['full_name'];
+            }
+        }
+
+        // fallback
+        if (empty($userName)) {
+            $userName = $userEmail;
+        }
+    }
+}
+?>
+
 <div class="container ">
     <div class="row">
         <div class="col-sm-12 col-md-5">
@@ -48,7 +128,7 @@
 
                         <li class="user-menu">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                Hai, <?= htmlspecialchars($_SESSION['email']); ?>
+                                Hai, <?= htmlspecialchars($userName); ?>
                                 <span class="caret"></span>
                             </a>
 
@@ -56,12 +136,14 @@
 
                                 <li>
                                     <a href="dashboard/">
+                                        <i class="fa fa-address-card"></i>
                                         Dashboard
                                     </a>
                                 </li>
 
                                 <li>
                                     <a href="logout.php">
+                                        <i class="fa fa-sign-out-alt"></i>
                                         Logout
                                     </a>
                                 </li>

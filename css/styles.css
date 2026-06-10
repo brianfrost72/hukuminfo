@@ -13249,7 +13249,7 @@ input[type="number"] {
     position:absolute;
     top:100%;
     right:0;
-    min-width:150px;
+    min-width:250px;
     margin:0;
     padding:0;
     list-style:none;
@@ -13258,7 +13258,7 @@ input[type="number"] {
 }
 
 .topbar-link .user-dropdown li{
-    display:block;
+    flex: 1;
 }
 
 .topbar-link .user-dropdown li a{
@@ -13266,6 +13266,7 @@ input[type="number"] {
     padding:10px 15px;
     color:#fff;
     text-decoration:none;
+    text-align:center;
     white-space:nowrap;
 }
 
@@ -13274,7 +13275,7 @@ input[type="number"] {
 }
 
 .topbar-link .user-menu:hover .user-dropdown{
-    display:block;
+    display:flex;
 }
 .topbar .topbar-right .topbar-sosmed {
   display: inline-table;

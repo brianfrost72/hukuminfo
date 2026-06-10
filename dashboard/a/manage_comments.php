@@ -3,6 +3,153 @@ session_start();
 require_once __DIR__ . "/../koneksi.php";
 
 
+/*
+|--------------------------------------------------------------------------
+| AMBIL KOMENTAR MASUK
+|--------------------------------------------------------------------------
+*/
+$sqlKomentarMasuk = "
+SELECT
+    pc.id,
+    pc.comment,
+    pc.status,
+    pc.created_at,
+
+    p.post_title,
+
+    u.email,
+
+    pp.full_name,
+    pp.photo_profile,
+
+    (
+        SELECT COUNT(*)
+        FROM post_comment_reply pr
+        WHERE pr.comment_id = pc.id
+    ) AS total_reply
+
+FROM post_comments pc
+
+INNER JOIN post p
+    ON p.id = pc.post_id
+
+INNER JOIN users u
+    ON u.id = pc.user_id
+
+LEFT JOIN public_profile pp
+    ON pp.user_id = u.id
+
+WHERE pc.status = 'approved'
+
+ORDER BY pc.created_at DESC
+";
+
+$resultKomentarMasuk = mysqli_query($conn, $sqlKomentarMasuk);
+
+/*
+|--------------------------------------------------------------------------
+| AMBIL KOMENTAR DISEMBUNYIKAN
+|--------------------------------------------------------------------------
+*/
+$sqlKomentarHidden = "
+SELECT
+    pc.id,
+    pc.comment,
+    pc.status,
+    pc.reason_status,
+    pc.created_at,
+
+    p.post_title,
+
+    u.email,
+
+    pp.full_name,
+    pp.photo_profile,
+
+    (
+        SELECT COUNT(*)
+        FROM post_comment_reply pr
+        WHERE pr.comment_id = pc.id
+    ) AS total_reply
+
+FROM post_comments pc
+
+INNER JOIN post p
+    ON p.id = pc.post_id
+
+INNER JOIN users u
+    ON u.id = pc.user_id
+
+LEFT JOIN public_profile pp
+    ON pp.user_id = u.id
+
+WHERE pc.status = 'rejected'
+
+ORDER BY pc.created_at DESC
+";
+
+$resultKomentarHidden = mysqli_query($conn, $sqlKomentarHidden);
+
+/*
+|--------------------------------------------------------------------------
+| AMBIL KOMENTAR REPLY
+|--------------------------------------------------------------------------
+*/
+$sqlKomentarMasuk = "
+SELECT
+    pc.id,
+    pc.comment,
+    pc.status,
+    pc.created_at,
+
+    p.post_title,
+
+    u.email,
+
+    pp.full_name,
+    pp.photo_profile,
+
+    COUNT(pr.id) AS total_reply
+
+FROM post_comments pc
+
+INNER JOIN post p
+    ON p.id = pc.post_id
+
+INNER JOIN users u
+    ON u.id = pc.user_id
+
+LEFT JOIN public_profile pp
+    ON pp.user_id = u.id
+
+LEFT JOIN post_comment_reply pr
+    ON pr.comment_id = pc.id
+
+WHERE pc.status='approved'
+
+GROUP BY pc.id
+
+ORDER BY pc.created_at DESC
+";
+
+/*
+|--------------------------------------------------------------------------
+| FILTER TOTAL DATA
+|--------------------------------------------------------------------------
+*/
+$countMasuk = mysqli_fetch_assoc(
+    mysqli_query(
+        $conn,
+        "
+        SELECT COUNT(*) total
+        FROM post_comments
+        WHERE status='approved'
+        "
+    )
+);
+
+$totalMasuk = $countMasuk['total'];
+
 ?>
 
 <!doctype html>
@@ -103,18 +250,32 @@ require_once __DIR__ . "/../koneksi.php";
 
                             <div class="col-md-3">
                                 <label>Waktu</label>
-                                <select class="form-control" id="filterWaktu">
-                                    <option value="baru">Terbaru ke Terlama</option>
-                                    <option value="lama">Terlama ke Terbaru</option>
+                                <select
+                                    class="form-control"
+                                    id="filterWaktu">
+
+                                    <option value="baru">
+                                        Terbaru ke Terlama
+                                    </option>
+
+                                    <option value="lama">
+                                        Terlama ke Terbaru
+                                    </option>
+
                                 </select>
                             </div>
 
                             <div class="col-md-2 ml-auto">
                                 <label>Show Entries</label>
-                                <select class="form-control" id="showEntries">
+                                <select
+                                    class="form-control"
+                                    id="showEntries">
+
                                     <option value="5">5</option>
                                     <option value="10" selected>10</option>
-                                    <option value="25">25</option>
+                                    <option value="15">15</option>
+                                    <option value="20">20</option>
+
                                 </select>
                             </div>
 
@@ -136,18 +297,107 @@ require_once __DIR__ . "/../koneksi.php";
                                     </tr>
                                 </thead>
 
-                                <tbody id="komentarMasukBody"></tbody>
+                                <tbody id="approvedCommentTable">
+
+                                    <?php while ($row = mysqli_fetch_assoc($resultKomentarMasuk)) : ?>
+
+                                        <tr data-date="<?= strtotime($row['created_at']) ?>">
+
+                                            <td>
+                                                <?= htmlspecialchars($row['full_name'] ?? '-') ?>
+                                            </td>
+
+                                            <td>
+                                                <?php
+
+                                                if (!empty($row['photo_profile'])) {
+                                                    $avatar =
+                                                        "../assets/images/uploads/public_photos/" .
+                                                        $row['photo_profile'];
+                                                } else {
+                                                    $avatar =
+                                                        $row['gender'] == 'Perempuan'
+
+                                                        ? "../assets/images/avatar/avatar_women.png"
+
+                                                        : "../assets/images/avatar/avatar_men.png";
+                                                }
+
+                                                ?>
+                                                <img
+                                                    src="<?= $avatar ?>"
+                                                    width="45"
+                                                    height="45"
+                                                    style="border-radius:50%;object-fit:cover;">
+                                            </td>
+
+                                            <td>
+                                                <?= htmlspecialchars($row['email']) ?>
+                                            </td>
+
+                                            <td>
+                                                <?= nl2br(htmlspecialchars($row['comment'])) ?>
+
+                                                <?php if ($row['total_reply'] > 0): ?>
+                                                    <br>
+                                                    <small class="text-primary">
+                                                        <?= $row['total_reply'] ?> Reply
+                                                    </small>
+                                                <?php endif; ?>
+                                            </td>
+
+                                            <td>
+                                                <span class="badge badge-success">
+                                                    Approved
+                                                </span>
+                                            </td>
+
+                                            <td>
+                                                <?= htmlspecialchars($row['post_title']) ?>
+                                            </td>
+
+                                            <td>
+                                                <?= date('d F Y H:i', strtotime($row['created_at'])) ?>
+                                            </td>
+
+                                            <td>
+
+                                                <a
+                                                    href="comment_hide.php?id=<?= $row['id'] ?>"
+                                                    class="btn btn-sm btn-danger">
+
+                                                    Sembunyikan
+
+                                                </a>
+
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-info btn-detail"
+                                                    data-id="<?= $row['id'] ?>">
+
+                                                    Detail
+
+                                                </button>
+
+                                            </td>
+
+                                        </tr>
+
+                                    <?php endwhile; ?>
+
+                                </tbody>
                             </table>
                         </div>
 
                         <!-- PAGINATION -->
                         <div class="d-flex justify-content-between align-items-center mt-3">
 
-                            <div id="paginationInfo">
-                                Showing 0 to 0 of 0 entries
-                            </div>
+                            <div id="paginationInfo"></div>
 
-                            <ul class="pagination mb-0" id="paginationKomentar"></ul>
+                            <ul
+                                class="pagination mb-0"
+                                id="paginationKomentar">
+                            </ul>
 
                         </div>
 
@@ -172,18 +422,32 @@ require_once __DIR__ . "/../koneksi.php";
 
                             <div class="col-md-3">
                                 <label>Waktu</label>
-                                <select class="form-control" id="hiddenFilterWaktu">
-                                    <option value="baru">Terbaru ke Terlama</option>
-                                    <option value="lama">Terlama ke Terbaru</option>
+                                <select
+                                    class="form-control"
+                                    id="filterWaktu">
+
+                                    <option value="baru">
+                                        Terbaru ke Terlama
+                                    </option>
+
+                                    <option value="lama">
+                                        Terlama ke Terbaru
+                                    </option>
+
                                 </select>
                             </div>
 
                             <div class="col-md-2 ml-auto">
                                 <label>Show Entries</label>
-                                <select class="form-control" id="hiddenShowEntries">
+                                <select
+                                    class="form-control"
+                                    id="showEntries">
+
                                     <option value="5">5</option>
                                     <option value="10" selected>10</option>
-                                    <option value="25">25</option>
+                                    <option value="15">15</option>
+                                    <option value="20">20</option>
+
                                 </select>
                             </div>
 
@@ -205,18 +469,112 @@ require_once __DIR__ . "/../koneksi.php";
                                     </tr>
                                 </thead>
 
-                                <tbody id="hiddenKomentarBody"></tbody>
+                                <tbody id="hiddenCommentTable">
+
+                                    <?php while ($row = mysqli_fetch_assoc($resultKomentarHidden)) : ?>
+
+                                        <tr data-date="<?= strtotime($row['created_at']) ?>">
+
+                                            <td>
+                                                <?= htmlspecialchars($row['full_name'] ?? '-') ?>
+                                            </td>
+
+                                            <td>
+                                                <?php
+
+                                                if (!empty($row['photo_profile'])) {
+                                                    $avatar =
+                                                        "../assets/images/uploads/public_photos/" .
+                                                        $row['photo_profile'];
+                                                } else {
+                                                    $avatar =
+                                                        $row['gender'] == 'Perempuan'
+
+                                                        ? "../assets/images/avatar/avatar_women.png"
+
+                                                        : "../assets/images/avatar/avatar_men.png";
+                                                }
+
+                                                ?>
+                                                <img
+                                                    src="<?= $avatar ?>"
+                                                    width="45"
+                                                    height="45"
+                                                    style="border-radius:50%;object-fit:cover;">
+                                            </td>
+
+                                            <td>
+                                                <?= htmlspecialchars($row['email']) ?>
+                                            </td>
+
+                                            <td>
+
+                                                <?= nl2br(htmlspecialchars($row['comment'])) ?>
+
+                                                <?php if (!empty($row['reason_status'])) : ?>
+
+                                                    <hr class="my-1">
+
+                                                    <small class="text-danger">
+                                                        Alasan: <?= htmlspecialchars($row['reason_status']) ?>
+                                                    </small>
+
+                                                <?php endif; ?>
+
+                                            </td>
+
+                                            <td>
+                                                <span class="badge badge-danger">
+                                                    Rejected
+                                                </span>
+                                            </td>
+
+                                            <td>
+                                                <?= htmlspecialchars($row['post_title']) ?>
+                                            </td>
+
+                                            <td>
+                                                <?= date('d F Y H:i', strtotime($row['created_at'])) ?>
+                                            </td>
+
+                                            <td>
+
+                                                <a
+                                                    href="comment_show.php?id=<?= $row['id'] ?>"
+                                                    class="btn btn-sm btn-success">
+
+                                                    Tampilkan
+
+                                                </a>
+
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-info btn-detail"
+                                                    data-id="<?= $row['id'] ?>">
+
+                                                    Detail
+
+                                                </button>
+
+                                            </td>
+
+                                        </tr>
+
+                                    <?php endwhile; ?>
+
+                                </tbody>
                             </table>
                         </div>
 
                         <!-- PAGINATION -->
                         <div class="d-flex justify-content-between align-items-center mt-3">
 
-                            <div id="hiddenPaginationInfo">
-                                Showing 0 to 0 of 0 entries
-                            </div>
+                            <div id="paginationInfo"></div>
 
-                            <ul class="pagination mb-0" id="hiddenPagination"></ul>
+                            <ul
+                                class="pagination mb-0"
+                                id="paginationKomentar">
+                            </ul>
 
                         </div>
 
@@ -238,6 +596,170 @@ require_once __DIR__ . "/../koneksi.php";
     <!-- ********************************** // MENU-Drawer ********************************** -->
     <?php include 'includes/drawer_menu.php'; ?>
     <!-- ********************************** //END MENU-drawer ********************************** -->
+
+    <div
+        class="modal fade"
+        id="detailKomentarModal"
+        tabindex="-1">
+
+        <div class="modal-dialog modal-lg">
+
+            <div class="modal-content">
+
+                <div class="modal-header">
+
+                    <h5 class="modal-title">
+                        Detail Komentar
+                    </h5>
+
+                    <button
+                        type="button"
+                        class="close"
+                        data-dismiss="modal">
+
+                        &times;
+
+                    </button>
+
+                </div>
+
+                <div
+                    class="modal-body"
+                    id="detailKomentarContent">
+
+                    Loading...
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div
+        class="modal fade"
+        id="detailKomentar<?= $row['id']; ?>"
+        tabindex="-1">
+
+        <div class="modal-dialog modal-lg">
+
+            <div class="modal-content">
+
+                <div class="modal-header">
+
+                    <h5 class="modal-title">
+                        Detail Komentar
+                    </h5>
+
+                    <button
+                        type="button"
+                        class="close"
+                        data-dismiss="modal">
+
+                        &times;
+
+                    </button>
+
+                </div>
+
+                <div class="modal-body">
+
+                    <h6>Komentar</h6>
+
+                    <div class="border p-3 mb-3">
+
+                        <?= nl2br(htmlspecialchars($row['comment'])) ?>
+
+                    </div>
+
+                    <h6>Reply</h6>
+
+                    <?php
+
+                    $commentId = $row['id'];
+
+                    $replyQuery = mysqli_query(
+                        $conn,
+                        "
+                    SELECT
+                        r.*,
+                        u.email,
+                        pp.full_name,
+                        pp.gender,
+                        pp.photo_profile
+
+                    FROM post_comment_reply r
+
+                    INNER JOIN users u
+                        ON u.id = r.user_id
+
+                    LEFT JOIN public_profile pp
+                        ON pp.user_id = u.id
+
+                    WHERE r.comment_id='$commentId'
+
+                    ORDER BY r.created_at ASC
+                    "
+                    );
+
+                    ?>
+
+                    <?php if (mysqli_num_rows($replyQuery) > 0): ?>
+
+                        <?php while ($reply = mysqli_fetch_assoc($replyQuery)): ?>
+
+                            <div class="border rounded p-3 mb-2">
+
+                                <div class="d-flex">
+
+                                    <img
+                                        src="../assets/images/profile/<?= $reply['photo_profile'] ?: 'default.png'; ?>"
+                                        width="40"
+                                        height="40"
+                                        style="border-radius:50%;object-fit:cover;">
+
+                                    <div class="ml-3">
+
+                                        <strong>
+                                            <?= htmlspecialchars($reply['full_name']) ?>
+                                        </strong>
+
+                                        <br>
+
+                                        <small>
+                                            <?= htmlspecialchars($reply['email']) ?>
+                                        </small>
+
+                                        <hr>
+
+                                        <?= nl2br(htmlspecialchars($reply['reply'])) ?>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        <?php endwhile; ?>
+
+                    <?php else: ?>
+
+                        <div class="alert alert-warning mb-0">
+
+                            Belum ada reply.
+
+                        </div>
+
+                    <?php endif; ?>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
 
     <footer class="dashboard-footer mt-4">
         <div class="container-fluid">
@@ -287,723 +809,199 @@ require_once __DIR__ . "/../koneksi.php";
     <script src="assets/js/toastr.js"></script>
 
     <script>
-        // =========================================
-        // DATA
-        // =========================================
+        const tbody =
+            document.getElementById(
+                "approvedCommentTable"
+            );
 
-        let komentarMasuk = [{
-                id: 1,
-                nama: "Budi Santoso",
-                avatar: "https://i.pravatar.cc/50?img=1",
-                email: "budi@example.com",
-                komentar: "Artikelnya sangat membantu.",
-                postingan: "Tips Produktivitas",
-                tanggal: "2026-05-24 14:35"
-            },
-            {
-                id: 2,
-                nama: "Siti Nurhaliza",
-                avatar: "https://i.pravatar.cc/50?img=5",
-                email: "siti@example.com",
-                komentar: "Kontennya bagus sekali.",
-                postingan: "Belajar Efektif",
-                tanggal: "2026-05-23 11:20"
-            }
-        ];
+        const rows =
+            Array.from(
+                tbody.querySelectorAll("tr")
+            );
 
+        let currentPage = 1;
+        let rowsPerPage = 10;
 
-        let komentarHidden = [];
+        function renderTable() {
+            let data = [...rows];
 
+            const sort =
+                document.getElementById(
+                    "filterWaktu"
+                ).value;
 
-
-        // =========================================
-        // PAGINATION STATE
-        // =========================================
-
-        let currentMasukPage = 1;
-        let currentHiddenPage = 1;
-
-
-
-        // =========================================
-        // ELEMENT MASUK
-        // =========================================
-
-        const masukBody = document.getElementById("komentarMasukBody");
-
-        const masukPagination = document.getElementById("paginationKomentar");
-
-        const masukPaginationInfo = document.getElementById("paginationInfo");
-
-        const filterPostingan = document.getElementById("filterPostingan");
-
-        const filterWaktu = document.getElementById("filterWaktu");
-
-        const showEntries = document.getElementById("showEntries");
-
-
-
-        // =========================================
-        // ELEMENT HIDDEN
-        // =========================================
-
-        const hiddenBody = document.getElementById("hiddenKomentarBody");
-
-        const hiddenPagination =
-            document.getElementById("hiddenPagination");
-
-        const hiddenPaginationInfo =
-            document.getElementById("hiddenPaginationInfo");
-
-        const hiddenFilterPostingan =
-            document.getElementById("hiddenFilterPostingan");
-
-        const hiddenFilterWaktu =
-            document.getElementById("hiddenFilterWaktu");
-
-        const hiddenShowEntries =
-            document.getElementById("hiddenShowEntries");
-
-
-
-        // =========================================
-        // FORMAT TANGGAL
-        // =========================================
-
-        function formatTanggal(dateString) {
-
-            const date = new Date(dateString);
-
-            return date.toLocaleString("id-ID", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit"
-            });
-        }
-
-
-
-        // =========================================
-        // RENDER KOMENTAR MASUK
-        // =========================================
-
-        function renderKomentarMasuk() {
-
-            let data = [...komentarMasuk];
-
-
-            // FILTER
-            if (filterPostingan.value !== "Semua") {
-
-                data = data.filter(item =>
-                    item.postingan === filterPostingan.value
-                );
-            }
-
-
-            // SORT
             data.sort((a, b) => {
 
-                const dateA = new Date(a.tanggal);
-                const dateB = new Date(b.tanggal);
+                let dateA =
+                    parseInt(
+                        a.dataset.date
+                    );
 
-                return filterWaktu.value === "baru" ?
+                let dateB =
+                    parseInt(
+                        b.dataset.date
+                    );
+
+                return sort === 'baru' ?
                     dateB - dateA :
                     dateA - dateB;
             });
 
-
-            // PAGINATION
-            const limit = parseInt(showEntries.value);
-
-            const start = (currentMasukPage - 1) * limit;
-
-            const end = start + limit;
-
-            const paginatedData = data.slice(start, end);
-
-
-            masukBody.innerHTML = "";
-
-
-            paginatedData.forEach(item => {
-
-                masukBody.innerHTML += `
-                <tr class="${item.new ? 'new-comment-highlight' : ''}">
-
-                    <td>${item.nama}</td>
-
-                    <td>
-                        <img src="${item.avatar}"
-                             width="45"
-                             height="45"
-                             style="border-radius:50%; object-fit:cover;">
-                    </td>
-
-                    <td>${item.email}</td>
-
-                    <td>${item.komentar}</td>
-
-                    <td>
-                        <span class="badge badge-success px-3 py-2">
-                            Aktif
-                        </span>
-                    </td>
-
-                    <td>${item.postingan}</td>
-
-                    <td>${formatTanggal(item.tanggal)}</td>
-
-                    <td>
-                        <button
-                            class="btn btn-sm btn-primary d-flex align-items-center"
-                            onclick="arsipkanKomentar(${item.id})">
-
-                            <span class="material-icons mr-1"
-                                  style="font-size:18px;">
-                                archive
-                            </span>
-
-                            Arsipkan
-                        </button>
-                    </td>
-
-                </tr>
-            `;
-
-                item.new = false;
-
-            });
-
-
-            renderMasukPagination(data.length, limit);
-
-
-            masukPaginationInfo.innerHTML =
-                `Showing ${data.length === 0 ? 0 : start + 1}
-            to ${Math.min(end, data.length)}
-            of ${data.length} entries`;
-        }
-
-
-
-        // =========================================
-        // PAGINATION MASUK
-        // =========================================
-
-        function renderMasukPagination(totalData, limit) {
-
-            const totalPages = Math.ceil(totalData / limit);
-
-            masukPagination.innerHTML = "";
-
-            // PREV
-            masukPagination.innerHTML += `
-        <li class="page-item ${currentMasukPage === 1 ? 'disabled' : ''}">
-            <a class="page-link"
-               href="#"
-               onclick="changeMasukPage(${currentMasukPage - 1})">
-
-                &laquo;
-
-            </a>
-        </li>
-    `;
-
-
-            const visiblePages = [];
-
-            // PAGE AWAL
-            visiblePages.push(1);
-
-            // PAGE TENGAH
-            for (
-                let i = currentMasukPage - 1; i <= currentMasukPage + 1; i++
-            ) {
-
-                if (i > 1 && i < totalPages) {
-                    visiblePages.push(i);
-                }
-            }
-
-            // PAGE AKHIR
-            if (totalPages > 1) {
-                visiblePages.push(totalPages);
-            }
-
-
-            // HAPUS DUPLIKAT
-            const uniquePages = [...new Set(visiblePages)];
-
-
-            let lastPage = 0;
-
-            uniquePages.forEach(page => {
-
-                // TITIK TITIK
-                if (page - lastPage > 1) {
-
-                    masukPagination.innerHTML += `
-                <li class="page-item disabled">
-
-                    <span class="page-link">
-                        ...
-                    </span>
-
-                </li>
-            `;
-                }
-
-                // PAGE
-                masukPagination.innerHTML += `
-            <li class="page-item ${currentMasukPage === page ? 'active' : ''}">
-
-                <a class="page-link"
-                   href="#"
-                   onclick="changeMasukPage(${page})">
-
-                    ${page}
-
-                </a>
-
-            </li>
-        `;
-
-                lastPage = page;
-            });
-
-
-            // NEXT
-            masukPagination.innerHTML += `
-        <li class="page-item ${currentMasukPage === totalPages ? 'disabled' : ''}">
-
-            <a class="page-link"
-               href="#"
-               onclick="changeMasukPage(${currentMasukPage + 1})">
-
-                &raquo;
-
-            </a>
-
-        </li>
-    `;
-        }
-
-
-
-        function changeMasukPage(page) {
-
-            currentMasukPage = page;
-
-            renderKomentarMasuk();
-        }
-
-
-
-        // =========================================
-        // RENDER KOMENTAR HIDDEN
-        // =========================================
-
-        function renderKomentarHidden() {
-
-            let data = [...komentarHidden];
-
-
-            // FILTER
-            if (hiddenFilterPostingan.value !== "Semua") {
-
-                data = data.filter(item =>
-                    item.postingan === hiddenFilterPostingan.value
+            rows.forEach(
+                row => row.style.display = 'none'
+            );
+
+            const total =
+                data.length;
+
+            const start =
+                (currentPage - 1) *
+                rowsPerPage;
+
+            const end =
+                start + rowsPerPage;
+
+            data
+                .slice(start, end)
+                .forEach(
+                    row => row.style.display = ''
                 );
-            }
 
+            document
+                .getElementById(
+                    'paginationInfo'
+                )
+                .innerHTML =
+                `Showing ${total===0?0:start+1}
+    to ${Math.min(end,total)}
+    of ${total} entries`;
 
-            // SORT
-            data.sort((a, b) => {
-
-                const dateA = new Date(a.tanggal);
-                const dateB = new Date(b.tanggal);
-
-                return hiddenFilterWaktu.value === "baru" ?
-                    dateB - dateA :
-                    dateA - dateB;
-            });
-
-
-            // PAGINATION
-            const limit = parseInt(hiddenShowEntries.value);
-
-            const start = (currentHiddenPage - 1) * limit;
-
-            const end = start + limit;
-
-            const paginatedData = data.slice(start, end);
-
-
-            hiddenBody.innerHTML = "";
-
-
-            paginatedData.forEach(item => {
-
-                hiddenBody.innerHTML += `
-                <tr>
-
-                    <td>${item.nama}</td>
-
-                    <td>
-                        <img src="${item.avatar}"
-                             width="45"
-                             height="45"
-                             style="border-radius:50%; object-fit:cover;">
-                    </td>
-
-                    <td>${item.email}</td>
-
-                    <td>${item.komentar}</td>
-
-                    <td>
-                        <span class="badge badge-danger px-3 py-2">
-                            Disembunyikan
-                        </span>
-                    </td>
-
-                    <td>${item.postingan}</td>
-
-                    <td>${formatTanggal(item.tanggal)}</td>
-
-                    <td>
-
-                        <button
-                            class="btn btn-sm btn-success d-flex align-items-center"
-                            onclick="upKomentar(${item.id})">
-
-                            <span class="material-icons mr-1"
-                                  style="font-size:18px;">
-                                arrow_upward
-                            </span>
-
-                            Up Komentar
-
-                        </button>
-
-                    </td>
-
-                </tr>
-            `;
-            });
-
-
-            renderHiddenPagination(data.length, limit);
-
-
-            hiddenPaginationInfo.innerHTML =
-                `Showing ${data.length === 0 ? 0 : start + 1}
-            to ${Math.min(end, data.length)}
-            of ${data.length} entries`;
+            renderPagination(total);
         }
+    </script>
 
+    <script>
+        function renderPagination(total) {
+            const totalPages =
+                Math.ceil(
+                    total / rowsPerPage
+                );
 
+            let html = '';
 
-        // =========================================
-        // PAGINATION HIDDEN
-        // =========================================
-
-        function renderHiddenPagination(totalData, limit) {
-
-            const totalPages = Math.ceil(totalData / limit);
-
-            hiddenPagination.innerHTML = "";
-
-
-            // PREV
-            hiddenPagination.innerHTML += `
-        <li class="page-item ${currentHiddenPage === 1 ? 'disabled' : ''}">
-
+            if (currentPage > 1) {
+                html +=
+                    `<li class="page-item">
             <a class="page-link"
                href="#"
-               onclick="changeHiddenPage(${currentHiddenPage - 1})">
-
-                &laquo;
-
+               onclick="goPage(${currentPage-1})">
+               Prev
             </a>
-
-        </li>
-    `;
-
-
-            const visiblePages = [];
-
-            // PAGE AWAL
-            visiblePages.push(1);
-
-            // PAGE TENGAH
-            for (
-                let i = currentHiddenPage - 1; i <= currentHiddenPage + 1; i++
-            ) {
-
-                if (i > 1 && i < totalPages) {
-                    visiblePages.push(i);
-                }
+        </li>`;
             }
 
-            // PAGE AKHIR
-            if (totalPages > 1) {
-                visiblePages.push(totalPages);
-            }
-
-
-            const uniquePages = [...new Set(visiblePages)];
-
-            let lastPage = 0;
-
-
-            uniquePages.forEach(page => {
-
-                // TITIK TITIK
-                if (page - lastPage > 1) {
-
-                    hiddenPagination.innerHTML += `
-                <li class="page-item disabled">
-
-                    <span class="page-link">
-                        ...
-                    </span>
-
-                </li>
-            `;
-                }
-
-
-                // PAGE
-                hiddenPagination.innerHTML += `
-            <li class="page-item ${currentHiddenPage === page ? 'active' : ''}">
-
-                <a class="page-link"
-                   href="#"
-                   onclick="changeHiddenPage(${page})">
-
-                    ${page}
-
+            for (let i = 1; i <= totalPages; i++) {
+                if (
+                    i === 1 ||
+                    i === totalPages ||
+                    (i >= currentPage - 2 &&
+                        i <= currentPage + 2)
+                ) {
+                    html +=
+                        `<li class="page-item
+            ${i===currentPage?'active':''}">
+                <a
+                class="page-link"
+                href="#"
+                onclick="goPage(${i})">
+                ${i}
                 </a>
+            </li>`;
+                }
+            }
 
-            </li>
-        `;
-
-                lastPage = page;
-            });
-
-
-            // NEXT
-            hiddenPagination.innerHTML += `
-        <li class="page-item ${currentHiddenPage === totalPages ? 'disabled' : ''}">
-
+            if (currentPage < totalPages) {
+                html +=
+                    `<li class="page-item">
             <a class="page-link"
                href="#"
-               onclick="changeHiddenPage(${currentHiddenPage + 1})">
-
-                &raquo;
-
+               onclick="goPage(${currentPage+1})">
+               Next
             </a>
+        </li>`;
+            }
 
-        </li>
-    `;
+            document
+                .getElementById(
+                    'paginationKomentar'
+                )
+                .innerHTML = html;
+        }
+    </script>
+
+    <script>
+        function goPage(page) {
+            currentPage = page;
+            renderTable();
         }
 
-
-
-        function changeHiddenPage(page) {
-
-            currentHiddenPage = page;
-
-            renderKomentarHidden();
-        }
-
-
-
-        // =========================================
-        // ARSIPKAN KOMENTAR
-        // =========================================
-
-        function arsipkanKomentar(id) {
-
-            const confirmArsip =
-                confirm("Yakin ingin menyembunyikan komentar ini?");
-
-            if (!confirmArsip) return;
-
-
-            const index =
-                komentarMasuk.findIndex(item => item.id === id);
-
-            if (index === -1) return;
-
-
-            const komentar = komentarMasuk[index];
-
-
-            komentarHidden.unshift(komentar);
-
-
-            komentarMasuk.splice(index, 1);
-
-
-            renderKomentarMasuk();
-
-            renderKomentarHidden();
-        }
-
-
-
-        // =========================================
-        // UP KOMENTAR
-        // =========================================
-
-        function upKomentar(id) {
-
-            const confirmUp =
-                confirm("Tampilkan kembali komentar ini?");
-
-            if (!confirmUp) return;
-
-
-            const index =
-                komentarHidden.findIndex(item => item.id === id);
-
-            if (index === -1) return;
-
-
-            const komentar = komentarHidden[index];
-
-
-            komentar.new = true;
-
-
-            komentarMasuk.unshift(komentar);
-
-
-            komentarHidden.splice(index, 1);
-
-
-            currentMasukPage = 1;
-
-
-            renderKomentarMasuk();
-
-            renderKomentarHidden();
-        }
-
-
-
-        // =========================================
-        // EVENT FILTER MASUK
-        // =========================================
-
-        filterPostingan.addEventListener("change", () => {
-
-            currentMasukPage = 1;
-
-            renderKomentarMasuk();
-        });
-
-        filterWaktu.addEventListener("change", () => {
-
-            currentMasukPage = 1;
-
-            renderKomentarMasuk();
-        });
-
-        showEntries.addEventListener("change", () => {
-
-            currentMasukPage = 1;
-
-            renderKomentarMasuk();
-        });
-
-
-
-        // =========================================
-        // EVENT FILTER HIDDEN
-        // =========================================
-
-        hiddenFilterPostingan.addEventListener("change", () => {
-
-            currentHiddenPage = 1;
-
-            renderKomentarHidden();
-        });
-
-        hiddenFilterWaktu.addEventListener("change", () => {
-
-            currentHiddenPage = 1;
-
-            renderKomentarHidden();
-        });
-
-        hiddenShowEntries.addEventListener("change", () => {
-
-            currentHiddenPage = 1;
-
-            renderKomentarHidden();
-        });
-
-
-
-        // =========================================
-        // SIMULASI KOMENTAR BARU
-        // =========================================
-
-        function simulasiPesanMasuk() {
-
-            const randomId = Math.floor(Math.random() * 70);
-
-            komentarMasuk.unshift({
-
-                id: Date.now(),
-
-                nama: "Komentar Baru",
-
-                avatar: `https://i.pravatar.cc/50?img=${randomId}`,
-
-                email: "baru@example.com",
-
-                komentar: "Ini simulasi komentar baru masuk.",
-
-                status: "Aktif",
-
-                postingan: "Tips Produktivitas",
-
-                tanggal: new Date(),
-
-                new: true
-            });
-
-
-            currentMasukPage = 1;
-
-
-            renderKomentarMasuk();
-        }
-
-
-
-        // AUTO SIMULASI
-        setInterval(() => {
-
-            simulasiPesanMasuk();
-
-        }, 10000);
-
-
-
-        // =========================================
-        // INITIAL
-        // =========================================
-
-        renderKomentarMasuk();
-
-        renderKomentarHidden();
+        document
+            .getElementById(
+                'filterWaktu'
+            )
+            .addEventListener(
+                'change',
+                () => {
+                    currentPage = 1;
+                    renderTable();
+                }
+            );
+
+        document
+            .getElementById(
+                'showEntries'
+            )
+            .addEventListener(
+                'change',
+                function() {
+
+                    rowsPerPage =
+                        parseInt(
+                            this.value
+                        );
+
+                    currentPage = 1;
+
+                    renderTable();
+                }
+            );
+
+        renderTable();
+    </script>
+
+    <script>
+        $(document).on(
+            'click',
+            '.btn-detail',
+            function() {
+
+                let id =
+                    $(this).data('id');
+
+                $('#detailKomentarModal')
+                    .modal('show');
+
+                $('#detailKomentarContent')
+                    .html('Loading...');
+
+                $('#detailKomentarContent')
+                    .load(
+                        'logic/get_comment_detail.php?id=' +
+                        id
+                    );
+
+            }
+        );
     </script>
 
 </body>

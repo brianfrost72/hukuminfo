@@ -1,3 +1,132 @@
+<?php
+session_start();
+require_once __DIR__ . "/../koneksi.php";
+
+
+/*
+|--------------------------------------------------------------------------
+| LOGIC SIMPAN
+|--------------------------------------------------------------------------
+*/
+if (
+    $_SERVER['REQUEST_METHOD'] == 'POST'
+    &&
+    $_POST['aksi'] == 'add'
+) {
+
+    $platform_id = (int) $_POST['platform_id'];
+    $url = trim($_POST['url']);
+
+    $cek = mysqli_query(
+        $conn,
+        "SELECT id
+         FROM social_media
+         WHERE platform_id='$platform_id'
+         LIMIT 1"
+    );
+
+    if (mysqli_num_rows($cek) > 0) {
+
+        echo "
+        <script>
+            alert('Platform sudah pernah ditambahkan');
+            window.location='manage_socmed.php';
+        </script>";
+        exit;
+    }
+
+    mysqli_query(
+        $conn,
+        "INSERT INTO social_media
+        (
+            platform_id,
+            link_platform
+        )
+        VALUES
+        (
+            '$platform_id',
+            '" . mysqli_real_escape_string($conn, $url) . "'
+        )"
+    );
+
+    header("Location: manage_socmed.php?success=add");
+    exit;
+}
+/*
+|--------------------------------------------------------------------------
+| LOGIC UPDATE
+|--------------------------------------------------------------------------
+*/
+if (
+    $_SERVER['REQUEST_METHOD'] == 'POST'
+    &&
+    $_POST['aksi'] == 'edit'
+) {
+
+    $id  = (int) $_POST['id'];
+    $url = trim($_POST['url']);
+
+    mysqli_query(
+        $conn,
+        "UPDATE social_media
+        SET
+            link_platform='" . mysqli_real_escape_string($conn, $url) . "'
+        WHERE id='$id'
+    "
+    );
+
+    echo "
+    <script>
+        window.location='manage_socmed.php?success=edit';
+    </script>";
+    exit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| LOGIC DELETE
+|--------------------------------------------------------------------------
+*/
+if (
+    $_SERVER['REQUEST_METHOD'] == 'POST'
+    &&
+    $_POST['aksi'] == 'delete'
+) {
+
+    $id = (int) $_POST['id'];
+
+    mysqli_query(
+        $conn,
+        "DELETE FROM social_media
+        WHERE id='$id'
+    "
+    );
+
+    echo "
+    <script>
+        window.location='manage_socmed.php?success=delete';
+    </script>";
+    exit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| GET DATA
+|--------------------------------------------------------------------------
+*/
+
+$qSisaPlatform = mysqli_query($conn, "
+                            SELECT COUNT(*) total
+                            FROM list_socmed ls
+                            WHERE ls.id NOT IN (
+                            SELECT platform_id
+                            FROM social_media
+                            )
+                            ");
+
+$sisaPlatform = mysqli_fetch_assoc($qSisaPlatform);
+?>
+
 <!doctype html>
 <html lang="id">
 
@@ -102,13 +231,17 @@
 
                             </div>
 
-                            <button class="btn btn-primary"
-                                onclick="openAddModal()">
+                            <?php if ($sisaPlatform['total'] > 0): ?>
 
-                                <i class="fa fa-plus mr-1"></i>
-                                Tambah Social Media
+                                <button class="btn btn-primary"
+                                    onclick="openAddModal()">
 
-                            </button>
+                                    <i class="fa fa-plus mr-1"></i>
+                                    Tambah Social Media
+
+                                </button>
+
+                            <?php endif; ?>
 
                         </div>
 
@@ -124,7 +257,6 @@
                                         <th width="80">Icon</th>
                                         <th>Platform</th>
                                         <th>URL</th>
-                                        <th width="140">Status</th>
                                         <th width="150" class="text-center">
                                             Aksi
                                         </th>
@@ -134,63 +266,100 @@
 
                                 <tbody id="socmedBody">
 
-                                    <tr>
+                                    <?php
 
-                                        <td class="align-middle">
-                                            1
-                                        </td>
+                                    $qSocmed = mysqli_query($conn, "
+    SELECT
+        sm.id,
+        sm.platform_id,
+        sm.link_platform,
+        ls.name_platform
+    FROM social_media sm
+    INNER JOIN list_socmed ls
+        ON ls.id = sm.platform_id
+    ORDER BY ls.name_platform ASC
+");
 
-                                        <td class="align-middle">
+                                    $no = 1;
 
-                                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center shadow-sm"
-                                                style="width:40px; height:40px;">
+                                    while ($row = mysqli_fetch_assoc($qSocmed)) :
 
-                                                <i class="fab fa-instagram text-danger"></i>
+                                    ?>
+                                        <tr>
 
-                                            </div>
+                                            <td><?= $no++; ?></td>
 
-                                        </td>
+                                            <td>
+                                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                                                    style="width:40px;height:40px;">
 
-                                        <td class="align-middle font-weight-bold">
-                                            Instagram
-                                        </td>
+                                                    <?php
+                                                    $platform = strtolower($row['name_platform']);
 
-                                        <td class="align-middle text-truncate"
-                                            style="max-width:250px;">
+                                                    switch ($platform) {
 
-                                            https://instagram.com/example
+                                                        case 'instagram':
+                                                            echo '<i class="fab fa-instagram text-danger"></i>';
+                                                            break;
 
-                                        </td>
+                                                        case 'facebook':
+                                                            echo '<i class="fab fa-facebook text-primary"></i>';
+                                                            break;
 
-                                        <td class="align-middle">
+                                                        case 'youtube':
+                                                            echo '<i class="fab fa-youtube text-danger"></i>';
+                                                            break;
 
-                                            <span class="badge badge-success px-3 py-2">
-                                                Aktif
-                                            </span>
+                                                        case 'linkedin':
+                                                            echo '<i class="fab fa-linkedin text-info"></i>';
+                                                            break;
 
-                                        </td>
+                                                        case 'tiktok':
+                                                            echo '<i class="fab fa-tiktok"></i>';
+                                                            break;
 
-                                        <td class="align-middle text-center">
+                                                        default:
+                                                            echo '<i class="fa fa-globe"></i>';
+                                                            break;
+                                                    }
+                                                    ?>
 
-                                            <!-- EDIT -->
-                                            <button onclick="openEditModal(this)"
-                                                class="btn btn-sm btn-primary mr-1">
+                                                </div>
+                                            </td>
 
-                                                <i class="fa fa-pen"></i>
+                                            <td class="font-weight-bold">
+                                                <?= htmlspecialchars($row['name_platform']); ?>
+                                            </td>
 
-                                            </button>
+                                            <td style="max-width:250px;">
+                                                <?= htmlspecialchars($row['link_platform']); ?>
+                                            </td>
 
-                                            <!-- DELETE -->
-                                            <button onclick="openDeleteModal(this)"
-                                                class="btn btn-sm btn-danger">
+                                            <td class="text-center">
 
-                                                <i class="fa fa-trash"></i>
+                                                <button
+                                                    class="btn btn-sm btn-primary mr-1 editBtn"
+                                                    data-id="<?= $row['id']; ?>"
+                                                    data-platform="<?= htmlspecialchars($row['name_platform']); ?>"
+                                                    data-url="<?= htmlspecialchars($row['link_platform']); ?>">
 
-                                            </button>
+                                                    <i class="fa fa-pen"></i>
 
-                                        </td>
+                                                </button>
 
-                                    </tr>
+                                                <button
+                                                    class="btn btn-sm btn-danger deleteBtn"
+                                                    data-id="<?= $row['id']; ?>"
+                                                    data-platform="<?= htmlspecialchars($row['name_platform']); ?>">
+
+                                                    <i class="fa fa-trash"></i>
+
+                                                </button>
+
+                                            </td>
+
+                                        </tr>
+                                    <?php endwhile; ?>
 
                                 </tbody>
 
@@ -257,7 +426,8 @@
 
                             <label>Platform</label>
 
-                            <select name="platform"
+                            <select
+                                name="platform_id"
                                 class="form-control"
                                 required>
 
@@ -265,25 +435,28 @@
                                     -- pilih --
                                 </option>
 
-                                <option value="instagram">
-                                    Instagram
-                                </option>
+                                <?php
 
-                                <option value="linkedin">
-                                    LinkedIn
-                                </option>
+                                $platform = mysqli_query($conn, "
+    SELECT
+        ls.*
+    FROM list_socmed ls
+    WHERE ls.id NOT IN (
+        SELECT platform_id
+        FROM social_media
+    )
+    ORDER BY ls.name_platform ASC
+");
 
-                                <option value="youtube">
-                                    YouTube
-                                </option>
+                                while ($p = mysqli_fetch_assoc($platform)) :
 
-                                <option value="facebook">
-                                    Facebook
-                                </option>
+                                ?>
 
-                                <option value="tiktok">
-                                    TikTok
-                                </option>
+                                    <option value="<?= $p['id']; ?>">
+                                        <?= htmlspecialchars($p['name_platform']); ?>
+                                    </option>
+
+                                <?php endwhile; ?>
 
                             </select>
 
@@ -371,7 +544,8 @@
 
         <input type="hidden" name="aksi" value="edit">
 
-        <input type="hidden"
+        <input
+            type="hidden"
             name="id"
             id="edit_id">
 
@@ -485,9 +659,7 @@
 
                         </div>
 
-                        <h4 class="font-weight-bold mb-3 delete-title">
-                            Hapus Social Media?
-                        </h4>
+                        <h4 class="font-weight-bold mb-3 delete-title"></h4>
 
                         <p class="text-muted mb-4 delete-desc">
                             Data tidak bisa dikembalikan.
@@ -612,467 +784,75 @@
     <script src="../assets/js/settings.js"></script>
 
     <!-- Toastr -->
-    <script src="assets/vendor/toastr.min.js"></script>
-    <script src="assets/js/toastr.js"></script>
+    <script src="../assets/vendor/toastr.min.js"></script>
+    <script src="../assets/js/toastr.js"></script>
 
-    <script>
-        let editRow = null;
-        let deleteRow = null;
+    <?php if (isset($_GET['success'])) : ?>
 
-        // =========================
-        // ICON PLATFORM
-        // =========================
-        function getPlatformIcon(platform) {
+        <script>
+            $(function() {
 
-            switch (platform) {
+                toastr.options = {
+                    closeButton: true,
+                    progressBar: false,
+                };
 
-                case 'instagram':
-                    return 'fab fa-instagram text-danger';
+                <?php if ($_GET['success'] == 'add'): ?>
 
-                case 'linkedin':
-                    return 'fab fa-linkedin text-primary';
+                    toastr.success('Social media berhasil ditambahkan');
 
-                case 'youtube':
-                    return 'fab fa-youtube text-danger';
+                <?php elseif ($_GET['success'] == 'edit'): ?>
 
-                case 'facebook':
-                    return 'fab fa-facebook text-primary';
+                    toastr.success('Social media berhasil diperbarui');
 
-                case 'tiktok':
-                    return 'fab fa-tiktok text-dark';
+                <?php elseif ($_GET['success'] == 'delete'): ?>
 
-                default:
-                    return 'fa fa-globe';
+                    toastr.success('Social media berhasil dihapus');
 
-            }
-
-        }
-
-        // =========================
-        // UPDATE NOMOR
-        // =========================
-        function updateTableNumber() {
-
-            $('#socmedBody tr').each(function(index) {
-
-                $(this)
-                    .find('td:first')
-                    .text(index + 1);
+                <?php endif; ?>
 
             });
+        </script>
 
-        }
+    <?php endif; ?>
 
-        // =========================
-        // SUCCESS MODAL
-        // =========================
-        function showSuccess(title, message) {
+    <script>
+        $(document).on('click', '.editBtn', function() {
 
-            $('.success-title').text(title);
+            $('#edit_id').val($(this).data('id'));
+            $('#editPlatform').val($(this).data('platform'));
+            $('#editUrl').val($(this).data('url'));
 
-            $('.success-desc').text(message);
+            $('#editModal').modal('show');
 
-            $('#successModal').modal('show');
+        });
 
-        }
+        $(document).on('click', '.deleteBtn', function() {
 
-        // =========================
-        // OPEN MODAL
-        // =========================
+            let id = $(this).data('id');
+            let platform = $(this).data('platform');
+
+            $('#delete_id').val(id);
+
+            $('.delete-title').html(
+                'Hapus <b>' + platform + '</b>?'
+            );
+
+            $('.delete-desc').html(
+                'Data social media ' +
+                '<b>' + platform + '</b> akan dihapus permanen.'
+            );
+
+            $('#deleteModal').modal('show');
+
+        });
+
         function openAddModal() {
 
             $('#addModal').modal('show');
 
         }
-
-        // =========================
-        // EDIT
-        // =========================
-        function openEditModal(button) {
-
-            $('#loadingModal').modal('show');
-
-            setTimeout(function() {
-
-                $('#loadingModal').modal('hide');
-
-                editRow = $(button).closest('tr');
-
-                const platform = editRow
-                    .find('td:eq(2)')
-                    .text()
-                    .trim();
-
-                const url = editRow
-                    .find('td:eq(3)')
-                    .text()
-                    .trim();
-
-                $('#editPlatform').val(platform);
-
-                $('#editUrl').val(url);
-
-                $('#editModal').modal('show');
-
-            }, 800);
-
-        }
-
-        // =========================
-        // DELETE
-        // =========================
-        function openDeleteModal(button) {
-
-            $('#loadingModal').modal('show');
-
-            setTimeout(function() {
-
-                $('#loadingModal').modal('hide');
-
-                deleteRow = $(button).closest('tr');
-
-                const platform = deleteRow
-                    .find('td:eq(2)')
-                    .text()
-                    .trim();
-
-                $('.delete-title').text(
-                    'Hapus ' + platform + '?'
-                );
-
-                $('.delete-desc').text(
-                    'Social media ' +
-                    platform +
-                    ' akan dihapus permanen'
-                );
-
-                $('#deleteModal').modal('show');
-
-            }, 800);
-
-        }
-
-        // =========================
-        // ADD DATA
-        // =========================
-        $('#addModal form, form').submit(function(e) {
-
-            e.preventDefault();
-
-        });
-
-        // =========================
-        // DISABLE PLATFORM
-        // =========================
-        function refreshPlatformOption() {
-
-            const usedPlatforms = [];
-
-            $('#socmedBody tr').each(function() {
-
-                const platform = $(this)
-                    .find('td:eq(2)')
-                    .text()
-                    .trim()
-                    .toLowerCase();
-
-                usedPlatforms.push(platform);
-
-            });
-
-            $('select[name="platform"] option').each(function() {
-
-                const value = $(this).val();
-
-                if (usedPlatforms.includes(value)) {
-
-                    $(this).prop('disabled', true);
-
-                } else {
-
-                    $(this).prop('disabled', false);
-
-                }
-
-            });
-
-        }
-
-        // =========================
-        // SIMPAN
-        // =========================
-        $('#addModal .btn-primary').on('click', function() {
-
-            const platform = $('select[name="platform"]').val();
-
-            const url = $('input[name="url"]').val().trim();
-
-            const urutan = parseInt(
-                $('input[name="urutan"]').val()
-            );
-
-            $('.urutan-error').text('');
-
-            // VALIDASI
-            if (
-                platform === '' ||
-                url === '' ||
-                !urutan
-            ) {
-
-                showSuccess(
-                    'Validasi Gagal',
-                    'Silahkan isi semua data'
-                );
-
-                return;
-
-            }
-
-            // TIDAK BOLEH MINUS
-            if (urutan < 1) {
-
-                $('.urutan-error')
-                    .text('Urutan tidak boleh minus atau 0');
-
-                return;
-
-            }
-
-            // VALIDASI LOMPAT
-            const totalData =
-                $('#socmedBody tr').length;
-
-            const maxUrutan = totalData + 1;
-
-            if (urutan > maxUrutan) {
-
-                $('.urutan-error')
-                    .text(
-                        'Urutan tidak boleh lompat. Maksimal urutan ' +
-                        maxUrutan
-                    );
-
-                return;
-
-            }
-
-            // VALIDASI DUPLIKAT
-            let duplicate = false;
-
-            $('#socmedBody tr').each(function() {
-
-                const no = parseInt(
-                    $(this)
-                    .find('td:eq(0)')
-                    .text()
-                );
-
-                if (no === urutan) {
-
-                    duplicate = true;
-
-                }
-
-            });
-
-            if (duplicate) {
-
-                $('.urutan-error')
-                    .text(
-                        'Urutan sudah dipakai'
-                    );
-
-                return;
-
-            }
-
-            $('#addModal').modal('hide');
-
-            $('#loadingModal').modal('show');
-
-            setTimeout(function() {
-
-                $('#loadingModal').modal('hide');
-
-                const iconClass = getPlatformIcon(platform);
-
-                const platformName =
-                    platform.charAt(0).toUpperCase() +
-                    platform.slice(1);
-
-                const row = `
-        <tr>
-
-            <td class="align-middle">
-                ${urutan}
-            </td>
-
-            <td class="align-middle">
-
-                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center shadow-sm"
-                    style="width:40px; height:40px;">
-
-                    <i class="${iconClass}"></i>
-
-                </div>
-
-            </td>
-
-            <td class="align-middle font-weight-bold">
-                ${platformName}
-            </td>
-
-            <td class="align-middle text-truncate"
-                style="max-width:250px;">
-
-                ${url}
-
-            </td>
-
-            <td class="align-middle">
-
-                <span class="badge badge-success px-3 py-2">
-                    Aktif
-                </span>
-
-            </td>
-
-            <td class="align-middle text-center">
-
-                <button type="button"
-                    onclick="openEditModal(this)"
-                    class="btn btn-sm btn-primary mr-1">
-
-                    <i class="fa fa-pen"></i>
-
-                </button>
-
-                <button type="button"
-                    onclick="openDeleteModal(this)"
-                    class="btn btn-sm btn-danger">
-
-                    <i class="fa fa-trash"></i>
-
-                </button>
-
-            </td>
-
-        </tr>
-        `;
-
-                $('#socmedBody').append(row);
-
-                // SORT
-                const rows =
-                    $('#socmedBody tr').get();
-
-                rows.sort(function(a, b) {
-
-                    return parseInt(
-                            $(a).find('td:eq(0)').text()
-                        ) -
-                        parseInt(
-                            $(b).find('td:eq(0)').text()
-                        );
-
-                });
-
-                $.each(rows, function(index, row) {
-
-                    $('#socmedBody').append(row);
-
-                });
-
-                refreshPlatformOption();
-
-                showSuccess(
-                    'Tambah Berhasil',
-                    platformName +
-                    ' berhasil ditambahkan'
-                );
-
-                // RESET
-                $('select[name="platform"]').val('');
-
-                $('input[name="url"]').val('');
-
-                $('input[name="urutan"]').val(
-                    $('#socmedBody tr').length + 1
-                );
-
-            }, 800);
-
-        });
-
-        // =========================
-        // UPDATE DATA
-        // =========================
-        $('#editModal .btn-primary').on('click', function() {
-
-            const newUrl = $('#editUrl').val();
-
-            if (newUrl === '') {
-
-                showSuccess(
-                    'Validasi Gagal',
-                    'Link social media wajib diisi'
-                );
-
-                return;
-
-            }
-
-            $('#editModal').modal('hide');
-
-            $('#loadingModal').modal('show');
-
-            setTimeout(function() {
-
-                $('#loadingModal').modal('hide');
-
-                editRow
-                    .find('td:eq(3)')
-                    .text(newUrl);
-
-                showSuccess(
-                    'Update Berhasil',
-                    'Social media berhasil diperbarui'
-                );
-
-            }, 800);
-
-        });
-
-        // =========================
-        // HAPUS DATA
-        // =========================
-        $('#deleteModal .btn-danger').on('click', function() {
-
-            $('#deleteModal').modal('hide');
-
-            $('#loadingModal').modal('show');
-
-            setTimeout(function() {
-
-                $('#loadingModal').modal('hide');
-
-                deleteRow.remove();
-
-                updateTableNumber();
-
-                showSuccess(
-                    'Hapus Berhasil',
-                    'Social media berhasil dihapus'
-                );
-
-            }, 800);
-
-        });
-
-        refreshPlatformOption();
     </script>
-
 </body>
 
 </html>

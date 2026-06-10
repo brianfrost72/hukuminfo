@@ -2,12 +2,295 @@
 session_start();
 
 if (
-    !isset($_SESSION['logged_in']) ||
-    $_SESSION['user_type'] != 'internal'
+  !isset($_SESSION['logged_in']) ||
+  $_SESSION['user_type'] != 'internal'
 ) {
-    header("Location: ../../../../index.php");
-    exit;
+  header("Location: ../../../../index.php");
+  exit;
 }
+
+require_once __DIR__ . "/../koneksi.php";
+/*
+|--------------------------------------------------------------------------
+| TOTAL AKUN PUBLIC
+|--------------------------------------------------------------------------
+*/
+$total_public = mysqli_fetch_assoc(mysqli_query($conn, "
+    SELECT COUNT(*) AS total
+    FROM users
+    WHERE user_type = 'public'
+"));
+
+$total_public = $total_public['total'];
+
+
+/*
+|--------------------------------------------------------------------------
+| TOTAL PROVINSI YANG MEMILIKI USER PUBLIC
+|--------------------------------------------------------------------------
+*/
+$total_province = mysqli_fetch_assoc(mysqli_query($conn, "
+    SELECT COUNT(DISTINCT pp.provinces_id) AS total
+    FROM public_profile pp
+    INNER JOIN users u ON u.id = pp.user_id
+    WHERE u.user_type = 'public'
+"));
+
+$total_province = $total_province['total'];
+
+
+/*
+|--------------------------------------------------------------------------
+| TOTAL KABUPATEN/KOTA YANG MEMILIKI USER PUBLIC
+|--------------------------------------------------------------------------
+*/
+$total_regency = mysqli_fetch_assoc(mysqli_query($conn, "
+    SELECT COUNT(DISTINCT pp.regencies_id) AS total
+    FROM public_profile pp
+    INNER JOIN users u ON u.id = pp.user_id
+    WHERE u.user_type = 'public'
+"));
+
+$total_regency = $total_regency['total'];
+
+
+/*
+|--------------------------------------------------------------------------
+| PROVINSI DENGAN USER TERBANYAK
+|--------------------------------------------------------------------------
+*/
+$top_province = mysqli_fetch_assoc(mysqli_query($conn, "
+    SELECT
+        p.name,
+        COUNT(*) AS total_user
+    FROM public_profile pp
+    INNER JOIN users u
+        ON u.id = pp.user_id
+    INNER JOIN provinces p
+        ON p.id = pp.provinces_id
+    WHERE u.user_type = 'public'
+    GROUP BY p.id
+    ORDER BY total_user DESC
+    LIMIT 1
+"));
+
+/*
+|--------------------------------------------------------------------------
+| CHART USER PUBLIC PER PROVINSI
+|--------------------------------------------------------------------------
+*/
+$chart_query = mysqli_query($conn, "
+    SELECT
+        p.name,
+        COUNT(*) AS total_user
+    FROM public_profile pp
+    INNER JOIN users u
+        ON u.id = pp.user_id
+    INNER JOIN provinces p
+        ON p.id = pp.provinces_id
+    WHERE u.user_type = 'public'
+    GROUP BY p.id
+    ORDER BY total_user DESC
+");
+
+$labels = [];
+$values = [];
+
+while ($row = mysqli_fetch_assoc($chart_query)) {
+  $labels[] = $row['name'];
+  $values[] = (int)$row['total_user'];
+}
+/*
+|--------------------------------------------------------------------------
+| AMBIL DATA PROVINSI
+|--------------------------------------------------------------------------
+*/
+$province_query = mysqli_query($conn, "
+    SELECT id,name
+    FROM provinces
+    ORDER BY name ASC
+");
+/*
+|--------------------------------------------------------------------------
+| TOTAL LIKES (AKUN PUBLIC)
+|--------------------------------------------------------------------------
+*/
+$total_likes = mysqli_fetch_assoc(mysqli_query($conn, "
+    SELECT COUNT(pl.id) AS total
+    FROM post_likes pl
+    INNER JOIN users u
+        ON u.id = pl.user_id
+    WHERE u.user_type = 'public'
+"));
+
+$total_likes = (int)$total_likes['total'];
+
+
+/*
+|--------------------------------------------------------------------------
+| TOTAL BOOKMARKS (AKUN PUBLIC)
+|--------------------------------------------------------------------------
+*/
+$total_bookmarks = mysqli_fetch_assoc(mysqli_query($conn, "
+    SELECT COUNT(pb.id) AS total
+    FROM post_bookmarks pb
+    INNER JOIN users u
+        ON u.id = pb.user_id
+    WHERE u.user_type = 'public'
+"));
+
+$total_bookmarks = (int)$total_bookmarks['total'];
+
+
+/*
+|--------------------------------------------------------------------------
+| RINGKASAN INTERAKSI
+|--------------------------------------------------------------------------
+*/
+$total_interaction = $total_likes + $total_bookmarks;
+
+$likes_percent = $total_interaction > 0
+  ? round(($total_likes / $total_interaction) * 100)
+  : 0;
+
+$bookmark_percent = $total_interaction > 0
+  ? round(($total_bookmarks / $total_interaction) * 100)
+  : 0;
+
+$most_interaction = $total_likes >= $total_bookmarks
+  ? 'Likes'
+  : 'Bookmark';
+
+/*
+|--------------------------------------------------------------------------
+| TOTAL KOMENTAR (AKUN PUBLIC)
+|--------------------------------------------------------------------------
+*/
+$total_comments = mysqli_fetch_assoc(mysqli_query($conn, "
+    SELECT COUNT(pc.id) AS total
+    FROM post_comments pc
+    INNER JOIN users u
+        ON u.id = pc.user_id
+    WHERE
+        u.user_type = 'public'
+        AND pc.status = 'approved'
+"));
+
+$total_comments = (int)$total_comments['total'];
+
+
+/*
+|--------------------------------------------------------------------------
+| TOTAL REPLY KOMENTAR (AKUN PUBLIC)
+|--------------------------------------------------------------------------
+*/
+$total_comment_reply = mysqli_fetch_assoc(mysqli_query($conn, "
+    SELECT COUNT(pcr.id) AS total
+    FROM post_comment_reply pcr
+    INNER JOIN users u
+        ON u.id = pcr.user_id
+    WHERE
+        u.user_type = 'public'
+        AND pcr.status = 'approved'
+"));
+
+$total_comment_reply = (int)$total_comment_reply['total'];
+
+
+/*
+|--------------------------------------------------------------------------
+| TOTAL KOMENTAR + REPLY
+|--------------------------------------------------------------------------
+*/
+$total_comment_all = $total_comments + $total_comment_reply;
+
+
+/*
+|--------------------------------------------------------------------------
+| KOMENTAR HARI INI
+|--------------------------------------------------------------------------
+*/
+$today_comments = mysqli_fetch_assoc(mysqli_query($conn, "
+    SELECT COUNT(pc.id) AS total
+    FROM post_comments pc
+    INNER JOIN users u
+        ON u.id = pc.user_id
+    WHERE
+        u.user_type = 'public'
+        AND pc.status = 'approved'
+        AND DATE(pc.created_at) = CURDATE()
+"));
+
+$today_replies = mysqli_fetch_assoc(mysqli_query($conn, "
+    SELECT COUNT(pcr.id) AS total
+    FROM post_comment_reply pcr
+    INNER JOIN users u
+        ON u.id = pcr.user_id
+    WHERE
+        u.user_type = 'public'
+        AND pcr.status = 'approved'
+        AND DATE(pcr.created_at) = CURDATE()
+"));
+
+$total_today_comments =
+  (int)$today_comments['total']
+  +
+  (int)$today_replies['total'];
+
+/*
+|--------------------------------------------------------------------------
+| TOTAL VIEWERS
+|--------------------------------------------------------------------------
+*/
+$total_viewers = mysqli_fetch_assoc(mysqli_query($conn, "
+    SELECT COUNT(*) AS total
+    FROM post_views
+"));
+
+$total_viewers = (int)$total_viewers['total'];
+
+
+/*
+|--------------------------------------------------------------------------
+| TOP 5 POST VIEWERS
+|--------------------------------------------------------------------------
+*/
+$top_posts = mysqli_query($conn, "
+    SELECT
+        p.id,
+        p.post_title,
+        COUNT(pv.id) AS total_view
+    FROM post_views pv
+    INNER JOIN post p
+        ON p.id = pv.post_id
+    GROUP BY p.id
+    ORDER BY total_view DESC
+    LIMIT 5
+");
+
+
+/*
+|--------------------------------------------------------------------------
+| DEVICE STATISTIC
+|--------------------------------------------------------------------------
+*/
+$device_stat = [];
+
+$device_query = mysqli_query($conn, "
+    SELECT
+        device,
+        COUNT(*) AS total
+    FROM post_views
+    GROUP BY device
+");
+
+while ($row = mysqli_fetch_assoc($device_query)) {
+  $device_stat[$row['device']] = $row['total'];
+}
+
+$desktop_total = $device_stat['Desktop'] ?? 0;
+$mobile_total  = $device_stat['Mobile'] ?? 0;
+$tablet_total  = $device_stat['Tablet'] ?? 0;
 
 ?>
 
@@ -21,6 +304,11 @@ if (
     name="viewport"
     content="width=device-width, initial-scale=1, shrink-to-fit=no" />
   <title>Dashboard | Hukuminfo.id</title>
+
+  <!-- Select2 -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
 
   <!-- Perfect Scrollbar -->
   <link
@@ -113,7 +401,7 @@ if (
                   </div>
                   <div>
                     <h6 class="text-muted mb-1">Total Akun</h6>
-                    <h2 class="mb-0">25.430</h2>
+                    <h2 class="mb-0"> <?= number_format($total_public, 0, ',', '.') ?> </h2>
                   </div>
                 </div>
               </div>
@@ -132,7 +420,7 @@ if (
                   </div>
                   <div>
                     <h6 class="text-muted mb-1">Total Provinsi</h6>
-                    <h2 class="mb-0">38</h2>
+                    <h2 class="mb-0"><?= number_format($total_province, 0, ',', '.') ?></h2>
                   </div>
                 </div>
               </div>
@@ -151,7 +439,7 @@ if (
                   </div>
                   <div>
                     <h6 class="text-muted mb-1">Total Kota/Kabupaten</h6>
-                    <h2 class="mb-0">514</h2>
+                    <h2 class="mb-0"><?= number_format($total_regency, 0, ',', '.') ?></h2>
                   </div>
                 </div>
               </div>
@@ -170,8 +458,8 @@ if (
                   </div>
                   <div>
                     <h6 class="text-muted mb-1">Wilayah Terbanyak</h6>
-                    <h5 class="mb-0">DKI Jakarta</h5>
-                    <small class="text-muted">3.520 Akun</small>
+                    <h5 class="mb-0"><?= htmlspecialchars($top_province['name'] ?? '-') ?></h5>
+                    <small class="text-muted"><?= number_format($top_province['total_user'] ?? 0, 0, ',', '.') ?></small>
                   </div>
                 </div>
               </div>
@@ -189,7 +477,7 @@ if (
                 <h4 class="mb-0">
                   Statistik Akun Publik Berdasarkan Wilayah
                 </h4>
-                <a href="manage_income_reports" class="btn btn-sm btn-primary">Lihat</a>
+                <a href="manage_users" class="btn btn-sm btn-primary">Lihat</a>
               </div>
 
               <div class="card-body">
@@ -199,31 +487,48 @@ if (
 
                   <div class="col-md-4">
                     <label>Provinsi</label>
-                    <select class="form-control">
-                      <option>Semua Provinsi</option>
-                      <option>DKI Jakarta</option>
-                      <option>Jawa Barat</option>
-                      <option>Jawa Tengah</option>
-                      <option>Jawa Timur</option>
-                      <option>Banten</option>
+
+                    <select
+                      id="province_id"
+                      class="form-control select2">
+
+                      <option value="">
+                        Semua Provinsi
+                      </option>
+
+                      <?php while ($province = mysqli_fetch_assoc($province_query)): ?>
+
+                        <option value="<?= $province['id'] ?>">
+                          <?= htmlspecialchars($province['name']) ?>
+                        </option>
+
+                      <?php endwhile; ?>
+
                     </select>
                   </div>
 
                   <div class="col-md-4">
                     <label>Kota / Kabupaten</label>
-                    <select class="form-control">
-                      <option>Semua Kota/Kabupaten</option>
-                      <option>Jakarta Selatan</option>
-                      <option>Jakarta Timur</option>
-                      <option>Jakarta Barat</option>
-                      <option>Jakarta Utara</option>
-                      <option>Jakarta Pusat</option>
+
+                    <select
+                      id="regency_id"
+                      class="form-control select2">
+
+                      <option value="">
+                        Semua Kota/Kabupaten
+                      </option>
+
                     </select>
                   </div>
 
                   <div class="col-md-2">
                     <label>&nbsp;</label>
-                    <button class="btn btn-primary btn-block">
+
+                    <button
+                      type="button"
+                      id="btnFilter"
+                      class="btn btn-primary btn-block">
+
                       <i class="material-icons">filter_list</i>
                       Filter
                     </button>
@@ -231,7 +536,12 @@ if (
 
                   <div class="col-md-2">
                     <label>&nbsp;</label>
-                    <button class="btn btn-outline-secondary btn-block">
+
+                    <button
+                      type="button"
+                      id="btnReset"
+                      class="btn btn-outline-secondary btn-block">
+
                       <i class="material-icons">refresh</i>
                       Reset
                     </button>
@@ -252,8 +562,185 @@ if (
         </div>
         <!-- ***************** END Statistik Akun Publik Berdasarkan Wilayah ************************* -->
 
-        <!-- *********************************** DONAT CHART LIKE & BOOKMARK ************************* -->
+        <!-- *********************************** TOP 5 POST VIEWERS ************************* -->
         <div class="row mt-4">
+
+          <!-- TOP USER AGENT -->
+          <div class="col-lg-8">
+
+            <div class="card">
+
+              <div class="card-header d-flex justify-content-between align-items-center">
+
+                <h4 class="mb-0">
+                  Top 5 Post Popular
+                </h4>
+
+                <span class="badge badge-primary">
+                  Total Viewer :
+                  <?= number_format($total_viewers, 0, ',', '.') ?>
+                </span>
+
+              </div>
+
+              <div class="card-body p-0">
+
+                <div class="table-responsive">
+
+                  <table class="table table-hover mb-0">
+
+                    <thead>
+                      <tr>
+                        <th width="60">#</th>
+                        <th>Post</th>
+                        <th width="150">Total View</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+
+                      <?php
+                      $no = 1;
+
+                      while ($post = mysqli_fetch_assoc($top_posts)):
+                      ?>
+
+                        <tr>
+
+                          <td>
+                            <span class="badge badge-primary">
+                              <?= $no++ ?>
+                            </span>
+                          </td>
+
+                          <td>
+
+                            <div class="font-weight-bold">
+                              <?= htmlspecialchars($post['post_title']) ?>
+                            </div>
+
+                          </td>
+
+                          <td>
+
+                            <?php
+                            $percent = $total_viewers > 0
+                              ? round(($post['total_view'] / $total_viewers) * 100, 1)
+                              : 0;
+                            ?>
+
+                            <div class="font-weight-bold">
+                              <?= number_format($post['total_view'], 0, ',', '.') ?>
+                            </div>
+
+                            <small class="text-muted">
+                              <?= $percent ?>% dari total view
+                            </small>
+
+                          </td>
+
+                        </tr>
+
+                      <?php endwhile; ?>
+
+                    </tbody>
+
+                  </table>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- DEVICE -->
+          <div class="col-lg-4">
+
+            <div class="card h-100">
+
+              <div class="card-header">
+                <h4 class="mb-0">
+                  Statistik Device
+                </h4>
+              </div>
+
+              <div class="card-body">
+
+                <div class="mb-4">
+
+                  <div class="d-flex justify-content-between">
+                    <span>
+                      <i class="material-icons text-primary">
+                        desktop_windows
+                      </i>
+                      Desktop
+                    </span>
+
+                    <strong>
+                      <?= number_format($desktop_total, 0, ',', '.') ?>
+                    </strong>
+                  </div>
+
+                </div>
+
+                <div class="mb-4">
+
+                  <div class="d-flex justify-content-between">
+                    <span>
+                      <i class="material-icons text-success">
+                        smartphone
+                      </i>
+                      Mobile
+                    </span>
+
+                    <strong>
+                      <?= number_format($mobile_total, 0, ',', '.') ?>
+                    </strong>
+                  </div>
+
+                </div>
+
+                <div>
+
+                  <div class="d-flex justify-content-between">
+                    <span>
+                      <i class="material-icons text-warning">
+                        tablet_mac
+                      </i>
+                      Tablet
+                    </span>
+
+                    <strong>
+                      <?= number_format($tablet_total, 0, ',', '.') ?>
+                    </strong>
+                  </div>
+
+                </div>
+
+                <hr>
+
+                <h3 class="text-center mb-0">
+                  <?= number_format($total_viewers, 0, ',', '.') ?>
+                </h3>
+
+                <small class="text-muted d-block text-center">
+                  Total Views
+                </small>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- *********************************** TOP 5 POST VIEWERS END ************************* -->
+
+        <!-- *********************************** DONAT CHART LIKE & BOOKMARK ************************* -->
+        <div class="row mt-5">
 
           <div class="col-lg-6">
             <div class="card">
@@ -278,21 +765,70 @@ if (
             <div class="row">
 
               <div class="col-md-6 mb-3">
-                <div class="card border-left-primary">
+                <div class="card shadow-sm border-0 bg-primary text-white h-100">
                   <div class="card-body">
-                    <small class="text-muted">Total Likes</small>
-                    <h2 class="mb-0">128.540</h2>
-                    <a href="manage_income_reports" class="btn btn-sm btn-primary">Lihat</a>
+
+                    <div class="d-flex justify-content-between align-items-center">
+
+                      <div>
+                        <small style="color: white;">
+                          Total Likes
+                        </small>
+
+                        <h1 class="font-weight-bold mb-2">
+                          <?= number_format($total_likes, 0, ',', '.') ?>
+                        </h1>
+
+                        <a href="list_likes"
+                          class="btn btn-light btn-sm">
+                          Lihat Detail
+                        </a>
+                      </div>
+
+                      <div>
+                        <i class="material-icons"
+                          style="font-size:60px;opacity:.3;">
+                          thumb_up
+                        </i>
+                      </div>
+
+                    </div>
+
                   </div>
                 </div>
               </div>
 
+
               <div class="col-md-6 mb-3">
-                <div class="card border-left-success">
+                <div class="card shadow-sm border-0 bg-success text-white h-100">
                   <div class="card-body">
-                    <small class="text-muted">Total Bookmark</small>
-                    <h2 class="mb-0">42.875</h2>
-                    <a href="manage_income_reports" class="btn btn-sm btn-primary">Lihat</a>
+
+                    <div class="d-flex justify-content-between align-items-center">
+
+                      <div>
+                        <small style="color:white;">
+                          Total Bookmark
+                        </small>
+
+                        <h1 class="font-weight-bold mb-2">
+                          <?= number_format($total_bookmarks, 0, ',', '.') ?>
+                        </h1>
+
+                        <a href="list_bookmarks"
+                          class="btn btn-light btn-sm">
+                          Lihat Detail
+                        </a>
+                      </div>
+
+                      <div>
+                        <i class="material-icons"
+                          style="font-size:60px;opacity:.3;">
+                          bookmark
+                        </i>
+                      </div>
+
+                    </div>
+
                   </div>
                 </div>
               </div>
@@ -308,19 +844,28 @@ if (
                   <tbody>
                     <tr>
                       <th>Total Interaksi</th>
-                      <td>171.415</td>
+                      <td><?= number_format($total_interaction, 0, ',', '.') ?></td>
                     </tr>
+
                     <tr>
                       <th>Likes</th>
-                      <td>128.540 (75%)</td>
+                      <td>
+                        <?= number_format($total_likes, 0, ',', '.') ?>
+                        (<?= $likes_percent ?>%)
+                      </td>
                     </tr>
+
                     <tr>
                       <th>Bookmark</th>
-                      <td>42.875 (25%)</td>
+                      <td>
+                        <?= number_format($total_bookmarks, 0, ',', '.') ?>
+                        (<?= $bookmark_percent ?>%)
+                      </td>
                     </tr>
+
                     <tr>
                       <th>Interaksi Terbanyak</th>
-                      <td>Likes</td>
+                      <td><?= $most_interaction ?></td>
                     </tr>
                   </tbody>
                 </table>
@@ -374,7 +919,7 @@ if (
 
                 <h6 class="text-muted">Total Komentar</h6>
                 <h1 class="font-weight-bold mb-0">
-                  84.275
+                  <?= number_format($total_comment_all, 0, ',', '.') ?>
                 </h1>
 
               </div>
@@ -389,19 +934,30 @@ if (
                   <tbody>
                     <tr>
                       <th>Total Komentar</th>
-                      <td>84.275</td>
+                      <td>
+                        <?= number_format($total_comment_all, 0, ',', '.') ?>
+                      </td>
                     </tr>
+
                     <tr>
-                      <th>Rata-rata per Artikel</th>
-                      <td>48</td>
+                      <th>Komentar Utama</th>
+                      <td>
+                        <?= number_format($total_comments, 0, ',', '.') ?>
+                      </td>
                     </tr>
+
+                    <tr>
+                      <th>Balasan Komentar</th>
+                      <td>
+                        <?= number_format($total_comment_reply, 0, ',', '.') ?>
+                      </td>
+                    </tr>
+
                     <tr>
                       <th>Komentar Hari Ini</th>
-                      <td>125</td>
-                    </tr>
-                    <tr>
-                      <th>Status</th>
-                      <td>Aktif</td>
+                      <td>
+                        <?= number_format($total_today_comments, 0, ',', '.') ?>
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -446,6 +1002,9 @@ if (
 
   <!-- jQuery -->
   <script src="../assets/vendor/jquery.min.js"></script>
+
+  <!-- Select2 -->
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
   <!-- Bootstrap -->
   <script src="../assets/vendor/popper.min.js"></script>
@@ -492,35 +1051,13 @@ if (
   <script>
     const ctx = document.getElementById('userRegionChart');
 
-    new Chart(ctx, {
+    let userRegionChart = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: [
-          'DKI Jakarta',
-          'Jawa Barat',
-          'Jawa Tengah',
-          'Jawa Timur',
-          'Banten',
-          'Sumatera Utara',
-          'Lampung',
-          'Riau',
-          'Bali',
-          'Sulawesi Selatan'
-        ],
+        labels: <?= json_encode($labels) ?>,
         datasets: [{
           label: 'Jumlah Akun',
-          data: [
-            3520,
-            2875,
-            2540,
-            2380,
-            1820,
-            1420,
-            1210,
-            1180,
-            960,
-            890
-          ],
+          data: <?= json_encode($values) ?>,
           borderWidth: 1,
           borderRadius: 8
         }]
@@ -570,8 +1107,8 @@ if (
         ],
         datasets: [{
           data: [
-            128540,
-            42875
+            <?= $total_likes ?>,
+            <?= $total_bookmarks ?>
           ],
           backgroundColor: [
             '#6774df',
@@ -621,7 +1158,10 @@ if (
       data: {
         labels: ['Komentar'],
         datasets: [{
-          data: [84275],
+          data: [
+            <?= $total_comments ?>,
+            <?= $total_comment_reply ?>
+          ],
           backgroundColor: ['#36b9cc'],
           borderWidth: 0
         }]
@@ -676,6 +1216,113 @@ if (
           ctx.save();
         }
       }]
+    });
+  </script>
+
+  <script>
+    $('.select2').select2({
+      width: '100%'
+    });
+
+    $('#province_id').on('change', function() {
+
+      let province_id = $(this).val();
+
+      $('#regency_id').html(
+        '<option value="">Semua Kota/Kabupaten</option>'
+      );
+
+      if (province_id == '') {
+        return;
+      }
+
+      $.ajax({
+
+        url: 'ajax/get_regencies.php',
+
+        type: 'GET',
+
+        data: {
+          province_id: province_id
+        },
+
+        dataType: 'json',
+
+        success: function(response) {
+
+          $.each(response, function(i, row) {
+
+            $('#regency_id').append(`
+                    <option value="${row.id}">
+                        ${row.name}
+                    </option>
+                `);
+
+          });
+
+        }
+
+      });
+
+    });
+
+    // FILTER BTN
+    $('#btnFilter').on('click', function() {
+
+      $.ajax({
+
+        url: 'ajax/get_user_region_chart.php',
+
+        type: 'GET',
+
+        data: {
+          province_id: $('#province_id').val(),
+          regency_id: $('#regency_id').val()
+        },
+
+        dataType: 'json',
+
+        success: function(res) {
+
+          userRegionChart.data.labels = res.labels;
+          userRegionChart.data.datasets[0].data = res.values;
+
+          userRegionChart.update();
+
+        }
+
+      });
+
+    });
+
+    // RESET BTN
+    $('#btnReset').on('click', function() {
+
+      $('#province_id').val('').trigger('change');
+
+      $('#regency_id').html(
+        '<option value="">Semua Kota/Kabupaten</option>'
+      );
+
+      $.ajax({
+
+        url: 'ajax/get_user_region_chart.php',
+
+        type: 'GET',
+
+        dataType: 'json',
+
+        success: function(res) {
+
+          userRegionChart.data.labels = res.labels;
+          userRegionChart.data.datasets[0].data = res.values;
+
+          userRegionChart.update();
+
+        }
+
+      });
+
     });
   </script>
 </body>

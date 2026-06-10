@@ -1,3 +1,88 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+require_once __DIR__ . "/../../koneksi.php";
+// =========================
+// USER PROFILE SIDEBAR
+// =========================
+$user_id = $_SESSION['user_id'] ?? 0;
+
+$userData = [
+    'full_name'      => 'Unknown User',
+    'email'          => '-',
+    'role_name'      => '-',
+    'gender'         => 'Laki-laki',
+    'photo_profile'  => ''
+];
+
+if ($user_id > 0) {
+
+    $queryUser = mysqli_query($conn, "
+        SELECT 
+            u.id,
+            u.email,
+            r.role_name,
+            up.full_name,
+            up.gender,
+            up.photo_profile
+        FROM users u
+        LEFT JOIN roles r 
+            ON r.id = u.role_id
+        LEFT JOIN user_profile up 
+            ON up.user_id = u.id
+        WHERE u.id = '$user_id'
+        LIMIT 1
+    ");
+
+    if ($queryUser && mysqli_num_rows($queryUser) > 0) {
+        $userData = mysqli_fetch_assoc($queryUser);
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| FOTO PROFILE
+|--------------------------------------------------------------------------
+| Jika user upload foto:
+| dashboard/assets/images/uploads/user_photos/
+|
+| Jika tidak upload:
+| Laki-laki  => avatar-men.png
+| Perempuan => avatar-women.png
+|--------------------------------------------------------------------------
+*/
+
+$baseUrl = '/hukuminfo/dashboard/';
+
+$avatarPath = $baseUrl . 'assets/images/avatar/avatar-men.png';
+
+if (
+    !empty($userData['gender']) &&
+    $userData['gender'] === 'Perempuan'
+) {
+    $avatarPath = $baseUrl . 'assets/images/avatar/avatar-women.png';
+}
+
+if (!empty($userData['photo_profile'])) {
+
+    $photoFile = basename($userData['photo_profile']);
+
+    $photoServerPath =
+        $_SERVER['DOCUMENT_ROOT'] .
+        '/hukuminfo/dashboard/assets/images/uploads/user_photos/' .
+        $photoFile;
+
+    if (file_exists($photoServerPath)) {
+
+        $avatarPath =
+            $baseUrl .
+            'assets/images/uploads/user_photos/' .
+            $photoFile;
+    }
+}
+?>
+
 <div class="mdk-drawer js-mdk-drawer" id="default-drawer" data-align="end">
     <div class="mdk-drawer__content">
         <div
@@ -47,54 +132,12 @@
             </ul>
             <!-- *********************************FIRST MENU END********************************* -->
 
-            <!-- *********************************FINANCIAL MENU********************************* -->
-            <!-- <div class="sidebar-heading">Financial Menu</div>
-            <ul class="sidebar-menu"> -->
-                <!-- LAPORAN FINANSIAL MENU -->
-
-                <!-- <li class="sidebar-menu-item ">
-                    <a
-                        class="sidebar-menu-button"
-                        data-toggle="collapse"
-                        href="#financial_reports_menu">
-                        <i
-                            class="sidebar-menu-icon sidebar-menu-icon--left material-icons">work</i>
-                        <span class="sidebar-menu-text">Laporan Finansial</span>
-                        <span class="ml-auto sidebar-menu-toggle-icon"></span>
-                    </a>
-                    <ul class="sidebar-submenu collapse" id="financial_reports_menu">
-                        <li class="sidebar-menu-item">
-                            <a class="sidebar-menu-button" href="manage_income_reports">
-                                <span class="sidebar-menu-text">Manage Laporan Pemasukan</span>
-                            </a>
-                        </li>
-                        <li class="sidebar-menu-item">
-                            <a class="sidebar-menu-button" href="manage_expense_reports">
-                                <span class="sidebar-menu-text">Manage Laporan Pengeluaran</span>
-                            </a>
-                        </li>
-                        <li class="sidebar-menu-item">
-                            <a class="sidebar-menu-button" href="manage_employee_payment">
-                                <span class="sidebar-menu-text">Manage Penggajian</span>
-                            </a>
-                        </li>
-                        <li class="sidebar-menu-item">
-                            <a class="sidebar-menu-button" href="manage_deposite_reports">
-                                <span class="sidebar-menu-text">Deposit Keuangan</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li> -->
-                <!-- LAPORAN PEMASUKAN MENU END -->
-            </ul>
-            <!-- *********************************FINANCIAL MENU END********************************* -->
-
             <!-- *********************************CLIENT MENU********************************* -->
             <div class="sidebar-heading">USER MENU</div>
             <ul class="sidebar-menu" id="components_menu">
 
-            <!-- MASTER CLIENT MENU -->
-            <li class="sidebar-menu-item">
+                <!-- MASTER CLIENT MENU -->
+                <li class="sidebar-menu-item">
                     <a
                         class="sidebar-menu-button"
                         data-toggle="collapse"
@@ -110,149 +153,9 @@
                                 <span class="sidebar-menu-text">Manage User</span>
                             </a>
                         </li>
-                        <li class="sidebar-menu-item">
-                            <a class="sidebar-menu-button" href="list_subscriber">
-                                <span class="sidebar-menu-text">Manage Subscriber</span>
-                            </a>
-                        </li>
                     </ul>
                 </li>
-            <!-- MASTER CLIENT MENU END -->
-
-            <!-- ORDER MENU -->
-            <!-- <li class="sidebar-menu-item">
-                    <a class="sidebar-menu-button" href="manage_orders">
-                        <i
-                            class="sidebar-menu-icon sidebar-menu-icon--left material-icons">local_grocery_store</i>
-                        <span class="sidebar-menu-text">Manage Order</span>
-                        <span class="badge badge-primary badge-pill ml-1">3</span>
-                    </a>
-                </li> -->
-            <!-- ORDER MENU END -->
-
-            <!-- MEMBER MENU -->
-            <!-- <li class="sidebar-menu-item">
-                    <a class="sidebar-menu-button" href="our_members">
-                        <i
-                            class="sidebar-menu-icon sidebar-menu-icon--left material-icons">card_membership</i>
-                        <span class="sidebar-menu-text">Member Konig</span>
-                    </a>
-                </li> -->
-            <!-- MEMBER MENU END -->
-
-            <!-- MEMBER MENU -->
-            <!-- <li class="sidebar-menu-item">
-                    <a class="sidebar-menu-button" href="fluid-ui-alerts.html">
-                        <i
-                            class="sidebar-menu-icon sidebar-menu-icon--left material-icons">person</i>
-                        <span class="sidebar-menu-text">Member</span>
-                    </a>
-                </li> -->
-            <!-- MEMBER MENU END -->
-
-            <!-- MASTER MEMBER FEATURE MENU -->
-            <!-- <li class="sidebar-menu-item">
-                    <a
-                        class="sidebar-menu-button"
-                        data-toggle="collapse"
-                        href="#feature_menu">
-                        <i
-                            class="sidebar-menu-icon sidebar-menu-icon--left material-icons">card_membership</i>
-                        <span class="sidebar-menu-text">Master Fitur Layanan</span>
-                        <span class="ml-auto sidebar-menu-toggle-icon"></span>
-                    </a>
-                    <ul class="sidebar-submenu collapse" id="feature_menu">
-                        <li class="sidebar-menu-item">
-                            <a class="sidebar-menu-button" href="fluid-companies.html">
-                                <span class="sidebar-menu-text">Layanan Kontrak</span>
-                            </a>
-                        </li>
-                        <li class="sidebar-menu-item">
-                            <a class="sidebar-menu-button" href="fluid-stories.html">
-                                <span class="sidebar-menu-text">Layanan Professional</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li> -->
-            <!-- MASTER MEMBER FEATURE MENU END -->
-
-            <!-- MASTER TRANSACTION MENU -->
-            <!-- <li class="sidebar-menu-item">
-                    <a
-                        class="sidebar-menu-button"
-                        data-toggle="collapse"
-                        href="#transaction_menu">
-                        <i
-                            class="sidebar-menu-icon sidebar-menu-icon--left material-icons">access_time</i>
-                        <span class="sidebar-menu-text">Riwayat Transaksi</span>
-                        <span class="ml-auto sidebar-menu-toggle-icon"></span>
-                    </a>
-                    <ul class="sidebar-submenu collapse" id="transaction_menu">
-                        <li class="sidebar-menu-item">
-                            <a class="sidebar-menu-button" href="fluid-companies.html">
-                                <span class="sidebar-menu-text">Riwayat Pembayaran</span>
-                            </a>
-                        </li>
-                        <li class="sidebar-menu-item">
-                            <a class="sidebar-menu-button" href="fluid-stories.html">
-                                <span class="sidebar-menu-text">Riwayat Invoice</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li> -->
-            <!-- MASTER TRANSACTION MENU END -->
-
-            <!-- MASTER REPORT MENU -->
-            <!-- <li class="sidebar-menu-item">
-                    <a
-                        class="sidebar-menu-button"
-                        data-toggle="collapse"
-                        href="#transaction_menu">
-                        <i
-                            class="sidebar-menu-icon sidebar-menu-icon--left material-icons">access_time</i>
-                        <span class="sidebar-menu-text">Riwayat Membership</span>
-                        <span class="ml-auto sidebar-menu-toggle-icon"></span>
-                    </a>
-                    <ul class="sidebar-submenu collapse" id="transaction_menu">
-                        <li class="sidebar-menu-item">
-                            <a class="sidebar-menu-button" href="fluid-companies.html">
-                                <span class="sidebar-menu-text">Riwayat Member</span>
-                            </a>
-                        </li>
-                        <li class="sidebar-menu-item">
-                            <a class="sidebar-menu-button" href="fluid-stories.html">
-                                <span class="sidebar-menu-text">Riwayat Kontrak</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li> -->
-            <!-- MASTER REPORT MENU END -->
-
-            <!-- MASTER TESTIMONY -->
-            <!-- <li class="sidebar-menu-item">
-                    <a
-                        class="sidebar-menu-button"
-                        data-toggle="collapse"
-                        href="#testimony_menu">
-                        <i
-                            class="sidebar-menu-icon sidebar-menu-icon--left material-icons">access_time</i>
-                        <span class="sidebar-menu-text">Riwayat Testimoni</span>
-                        <span class="ml-auto sidebar-menu-toggle-icon"></span>
-                    </a>
-                    <ul class="sidebar-submenu collapse" id="testimony_menu">
-                        <li class="sidebar-menu-item">
-                            <a class="sidebar-menu-button" href="fluid-companies.html">
-                                <span class="sidebar-menu-text">Kirim Testimoni</span>
-                            </a>
-                        </li>
-                        <li class="sidebar-menu-item">
-                            <a class="sidebar-menu-button" href="fluid-stories.html">
-                                <span class="sidebar-menu-text">Riwayat Testimoni</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li> -->
-            <!-- MASTER TESTIMONY END -->
+                <!-- MASTER CLIENT MENU END -->
             </ul>
 
             <!-- *********************************CONTENT MENU********************************* -->
@@ -322,12 +225,7 @@
                                     <span class="sidebar-menu-text">List Likes</span>
                                 </a>
                             </li>
-                             <li class="sidebar-menu-item">
-                                <a class="sidebar-menu-button" href="list_subscriber">
-                                    <span class="sidebar-menu-text">List Subscriber</span>
-                                </a>
-                            </li>
-                             <li class="sidebar-menu-item">
+                            <li class="sidebar-menu-item">
                                 <a class="sidebar-menu-button" href="list_bookmarks">
                                     <span class="sidebar-menu-text">List Bookmark</span>
                                 </a>
@@ -379,22 +277,12 @@
                         </ul>
                     </li>
                     <!-- IKLAN MENU END -->
-
-                    <!-- KOTAK MASUK MENU -->
-                    <li class="sidebar-menu-item">
-                        <a class="sidebar-menu-button" href="manage_inbox">
-                            <i
-                                class="sidebar-menu-icon sidebar-menu-icon--left material-icons">inbox</i>
-                            <span class="sidebar-menu-text">Kotak Masuk</span>
-                            <!-- <span class="badge badge-primary badge-pill ml-1">3</span> -->
-                        </a>
-                    </li>
-                    <!-- KOTAK MASUK MENU END -->
                 </ul>
                 <!-- *********************************FIRST MENU END********************************* -->
 
             </div>
 
+            <!-- ACCOUNT TOGGLE -->
             <div class="d-flex align-items-center sidebar-p-a border-bottom sidebar-account">
 
                 <a href="edit_profile"
@@ -402,8 +290,8 @@
 
                     <span class="avatar avatar-sm mr-2">
 
-                        <img src=""
-                            alt=""
+                        <img src="<?= htmlspecialchars($avatarPath); ?>"
+                            alt="<?= htmlspecialchars($userData['full_name']); ?>"
                             class="avatar-img rounded-circle"
                             style="object-fit: cover;">
 
@@ -412,11 +300,11 @@
                     <span class="flex d-flex flex-column">
 
                         <strong>
-
+                            <?= htmlspecialchars($userData['full_name']); ?>
                         </strong>
 
                         <small class="text-muted text-uppercase">
-
+                            <?= htmlspecialchars($userData['role_name']); ?>
                         </small>
 
                     </span>
@@ -439,11 +327,11 @@
                         <div class="dropdown-item-text dropdown-item-text--lh">
 
                             <div>
-                                <strong></strong>
+                                <strong><?= htmlspecialchars($userData['full_name']); ?></strong>
                             </div>
 
                             <div>
-
+                                <?= htmlspecialchars($userData['email']); ?>
                             </div>
 
                         </div>

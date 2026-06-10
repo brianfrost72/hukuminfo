@@ -1,3 +1,23 @@
+<?php
+
+session_start();
+
+/*
+|--------------------------------------------------------------------------
+| CEGAH AKSES HALAMAN REGISTRASI JIKA SUDAH LOGIN
+|--------------------------------------------------------------------------
+*/
+if (isset($_SESSION['user_id'])) {
+
+    // arahkan ke dashboard
+    header("Location: /");
+    exit;
+}
+
+require_once __DIR__ . "/koneksi.php";
+
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 
@@ -78,13 +98,13 @@
                     <div class="card mx-auto" style="max-width: 520px">
                         <article class="card-body">
                             <header class="mb-4">
-                                <h4 class="card-title text-center">Sign up</h4>
+                                <h4 class="card-title text-center">Registrasi</h4>
                             </header>
-                            <form action="#">
+                            <form action="logic/proses-registrasi.php" method="POST">
                                 <div class="form-row">
                                     <div class="col form-group">
                                         <label>Nama Lengkap</label>
-                                        <input type="text" class="form-control" placeholder="Tuliskan Nama Lengkap Anda" />
+                                        <input type="text" name="fullname" class="form-control" placeholder="Tuliskan Nama Lengkap Anda" />
                                     </div>
                                     <!-- form-group end.// -->
                                 </div>
@@ -92,33 +112,31 @@
 
                                 <div class="form-group">
                                     <label>Nomor Hp</label>
-                                    <input type="text" class="form-control" placeholder="Tuliskan Nomor Hp Anda" />
+                                    <input type="text" name="phone_number" class="form-control" placeholder="Tuliskan Nomor Hp Anda" />
                                 </div>
 
                                 <div class="form-group">
                                     <label>Email</label>
-                                    <input type="email" class="form-control" placeholder="" />
+                                    <input type="email" name="email" class="form-control" placeholder="" />
                                     <small class="form-text text-muted">Kami tidak akan membagikan email Anda.</small>
                                 </div>
                                 <!-- form-group end.// -->
                                 <div class="form-group">
                                     <label
                                         class="custom-control custom-radio custom-control-inline">
-                                        <input
-                                            class="custom-control-input"
-                                            checked=""
+                                        <input class="custom-control-input"
                                             type="radio"
                                             name="gender"
-                                            value="option1" />
+                                            value="Laki-laki"
+                                            checked>
                                         <span class="custom-control-label"> Laki-Laki </span>
                                     </label>
                                     <label
                                         class="custom-control custom-radio custom-control-inline">
-                                        <input
-                                            class="custom-control-input"
+                                        <input class="custom-control-input"
                                             type="radio"
                                             name="gender"
-                                            value="option2" />
+                                            value="Perempuan">
                                         <span class="custom-control-label"> Perempuan </span>
                                     </label>
                                 </div>
@@ -127,24 +145,33 @@
                                     <!-- form-group end.// -->
                                     <div class="form-group col-md-6">
                                         <label>Provinsi</label>
-                                        <select id="provinsi" class="form-control">
-                                            <option>Choose...</option>
-                                            <option>Uzbekistan</option>
-                                            <option>Russia</option>
-                                            <option selected="">United States</option>
-                                            <option>India</option>
-                                            <option>Afganistan</option>
+                                        <select id="provinsi"
+                                            name="provinces_id"
+                                            class="form-control">
+
+                                            <option value="">Pilih Provinsi</option>
+
+                                            <?php
+                                            $provinsi = mysqli_query(
+                                                $conn,
+                                                "SELECT id,name
+         FROM provinces
+         ORDER BY name ASC"
+                                            );
+
+                                            while ($row = mysqli_fetch_assoc($provinsi)) {
+                                            ?>
+                                                <option value="<?= $row['id']; ?>">
+                                                    <?= htmlspecialchars($row['name']); ?>
+                                                </option>
+                                            <?php } ?>
+
                                         </select>
                                     </div><!-- form-group end.// -->
                                     <div class="form-group col-md-6">
                                         <label>Kabupaten</label>
-                                        <select id="kabupaten" class="form-control">
-                                            <option>Choose...</option>
-                                            <option>Uzbekistan</option>
-                                            <option>Russia</option>
-                                            <option selected="">United States</option>
-                                            <option>India</option>
-                                            <option>Afganistan</option>
+                                        <select id="kabupaten" name="regencies_id" class="form-control" disabled>
+                                            <option value="">Pilih Provinsi Terlebih Dahulu</option>
                                         </select>
                                     </div>
                                     <!-- form-group end.// -->
@@ -153,7 +180,7 @@
                                 <div class="form-row">
                                     <div class="form-group col-md-12">
                                         <label>Alamat</label>
-                                        <textarea name="kecamatan" id="kecamatan" class="form-control"></textarea>
+                                        <textarea name="address" id="alamat" class="form-control"></textarea>
                                     </div>
                                 </div>
 
@@ -165,6 +192,7 @@
                                         <div class="input-group">
                                             <input
                                                 id="password"
+                                                name="password"
                                                 class="form-control"
                                                 type="password"
                                                 placeholder="Masukkan Password">
@@ -187,6 +215,7 @@
                                         <div class="input-group">
                                             <input
                                                 id="confirmPassword"
+                                                name="confirm_password"
                                                 class="form-control"
                                                 type="password"
                                                 placeholder="Ketik Ulang Password">
@@ -209,10 +238,10 @@
                                 <!-- form-group// -->
                                 <div class="form-group">
                                     <label class="custom-control custom-checkbox">
-                                        <input
-                                            type="checkbox"
-                                            class="custom-control-input"
-                                            id="agreeTerms">
+                                        <input type="checkbox"
+                                            name="agree_terms"
+                                            id="agreeTerms"
+                                            class="custom-control-input">
 
                                         <span class="custom-control-label">
                                             Saya menyetujui
@@ -413,6 +442,48 @@
             $('#termsModal').on('hidden.bs.modal', function() {
                 if (!checkbox.checked) {
                     checkbox.checked = false;
+                }
+            });
+
+        });
+    </script>
+
+    <script>
+        $('#provinsi').on('change', function() {
+
+            let province_id = $(this).val();
+
+            $('#kabupaten')
+                .html('<option value="">Memuat Kabupaten...</option>')
+                .prop('disabled', true);
+
+            if (province_id == '') {
+
+                $('#kabupaten')
+                    .html('<option value="">Pilih Provinsi Terlebih Dahulu</option>')
+                    .prop('disabled', true);
+
+                return;
+            }
+
+            $.ajax({
+                url: 'ajax/get-regencies.php',
+                type: 'POST',
+                data: {
+                    province_id: province_id
+                },
+                success: function(response) {
+
+                    $('#kabupaten')
+                        .html(response)
+                        .prop('disabled', false)
+                        .trigger('change');
+                },
+                error: function() {
+
+                    $('#kabupaten')
+                        .html('<option value="">Gagal Memuat Data</option>')
+                        .prop('disabled', true);
                 }
             });
 

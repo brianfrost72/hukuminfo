@@ -1,3 +1,21 @@
+<?php
+
+session_start();
+
+/*
+|--------------------------------------------------------------------------
+| CEGAH AKSES HALAMAN LOGIN JIKA SUDAH LOGIN
+|--------------------------------------------------------------------------
+*/
+if (isset($_SESSION['user_id'])) {
+
+    // arahkan ke dashboard atau halaman utama
+    header("Location: /");
+    exit;
+}
+
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 
@@ -75,7 +93,7 @@
                     <!-- Form Login -->
                     <div class="card mx-auto" style="max-width: 380px;">
                         <div class="card-body">
-                            <h4 class="card-title text-center mb-4">Sign in Hukuminfo.id</h4>
+                            <h4 class="card-title text-center mb-4">Masuk Hufo</h4>
                             <!-- ERROR LOGIN -->
                             <?php if (isset($_GET['error'])): ?>
                                 <div class="error-msg">
@@ -112,10 +130,10 @@
                                 </div> <!-- form-group// -->
 
                                 <div class="form-group">
-                                    <a href="reset-password" class="float-right">Forgot password?</a>
+                                    <a href="reset-password" class="float-right">Lupa Password?</a>
                                     <label class="float-left custom-control custom-checkbox"> <input type="checkbox"
                                             class="custom-control-input" checked="">
-                                        <span class="custom-control-label"> Remember </span>
+                                        <span class="custom-control-label"> Ingat Saya </span>
                                     </label>
                                 </div> <!-- form-group form-check .// -->
                                 <div class="form-group">
@@ -125,7 +143,7 @@
                         </div> <!-- card-body.// -->
                     </div> <!-- card .// -->
 
-                    <p class="text-center mt-4">Don't have account? <a href="registrasi">Sign up</a></p>
+                    <p class="text-center mt-4">Belum punya akun? <a href="registrasi">Registrasi</a></p>
                 </div>
             </div>
         </div>

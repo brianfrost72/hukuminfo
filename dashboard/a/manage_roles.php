@@ -56,6 +56,7 @@ if (isset($_POST['tambah_user'])) {
     $tempat    = mysqli_real_escape_string($conn, $_POST['birth_place']);
     $tgl       = $_POST['date_birth'];
     $gender    = $_POST['gender'];
+    $marital_status = mysqli_real_escape_string($conn, $_POST['marital_status'] ?? '');
     $alamat    = mysqli_real_escape_string($conn, $_POST['address']);
     $phone     = mysqli_real_escape_string($conn, $_POST['phone_number']);
 
@@ -70,13 +71,17 @@ if (isset($_POST['tambah_user'])) {
             )
         );
 
-        $filename =
-            'user_' .
-            time() .
-            '_' .
-            rand(1000, 9999) .
-            '.' .
-            $ext;
+        $slugName = strtolower($nama);
+
+        $slugName = preg_replace(
+            '/[^a-z0-9]+/',
+            '-',
+            $slugName
+        );
+
+        $slugName = trim($slugName, '-');
+
+        $filename = $slugName . '.' . $ext;
 
         $upload_dir =
             __DIR__ .
@@ -120,30 +125,37 @@ VALUES(
 
         $user_id = mysqli_insert_id($conn);
 
-        mysqli_query($conn, "
-            INSERT INTO user_profile(
-                user_id,
-                full_name,
-birth_place,
-date_birth,
-gender,
-address,
-phone_number,
-photo_profile,
-status
-            )
-            VALUES(
-                '$user_id',
-                '$nama',
-'$tempat',
-'$tgl',
-'$gender',
-'$alamat',
-'$phone',
-'$photo_profile',
-'Active'
-            )
-        ");
+        $sqlProfile = "
+INSERT INTO user_profile(
+    user_id,
+    full_name,
+    birth_place,
+    date_birth,
+    gender,
+    marital_status,
+    address,
+    phone_number,
+    linkedin,
+    instagram,
+    photo_profile
+)
+VALUES(
+    '$user_id',
+    '$nama',
+    '$tempat',
+    '$tgl',
+    '$gender',
+    '$marital_status',
+    '$alamat',
+    '$phone',
+    '',
+    '',
+    '$photo_profile'
+)";
+
+        if (!mysqli_query($conn, $sqlProfile)) {
+            die(mysqli_error($conn));
+        }
 
         mysqli_commit($conn);
 
@@ -178,6 +190,10 @@ if (isset($_POST['update_user'])) {
     $tempat   = mysqli_real_escape_string($conn, $_POST['birth_place']);
     $tgl      = $_POST['date_birth'];
     $gender   = $_POST['gender'];
+    $marital_status = mysqli_real_escape_string(
+        $conn,
+        $_POST['marital_status']
+    );
     $alamat   = mysqli_real_escape_string($conn, $_POST['address']);
 
     //***************************************************** AMBIL FOTO LAMA */ 
@@ -202,13 +218,17 @@ if (isset($_POST['update_user'])) {
             )
         );
 
-        $filename =
-            'user_' .
-            time() .
-            '_' .
-            rand(1000, 9999) .
-            '.' .
-            $ext;
+        $slugName = strtolower($nama);
+
+        $slugName = preg_replace(
+            '/[^a-z0-9]+/',
+            '-',
+            $slugName
+        );
+
+        $slugName = trim($slugName, '-');
+
+        $filename = $slugName . '.' . $ext;
 
         move_uploaded_file(
             $_FILES['photo_profile']['tmp_name'],
@@ -242,7 +262,16 @@ if (isset($_POST['update_user'])) {
         WHERE id='$id'
     ");
 
-    mysqli_query($conn, "
+    $cekProfile = mysqli_query(
+        $conn,
+        "SELECT id
+     FROM user_profile
+     WHERE user_id='$id'"
+    );
+
+    if (mysqli_num_rows($cekProfile) > 0) {
+
+        mysqli_query($conn, "
         UPDATE user_profile
         SET
             full_name='$nama',
@@ -250,10 +279,42 @@ if (isset($_POST['update_user'])) {
             birth_place='$tempat',
             date_birth='$tgl',
             gender='$gender',
+            marital_status='$marital_status',
             address='$alamat',
             photo_profile='$photo_profile'
         WHERE user_id='$id'
     ");
+    } else {
+
+        mysqli_query($conn, "
+        INSERT INTO user_profile(
+            user_id,
+            full_name,
+            birth_place,
+            date_birth,
+            gender,
+            marital_status,
+            address,
+            phone_number,
+            linkedin,
+            instagram,
+            photo_profile
+        )
+        VALUES(
+            '$id',
+            '$nama',
+            '$tempat',
+            '$tgl',
+            '$gender',
+            '$marital_status',
+            '$alamat',
+            '$phone',
+            '',
+            '',
+            '$photo_profile'
+        )
+    ");
+    }
 
     $_SESSION['toast'] = [
         'type' => 'success',
@@ -563,6 +624,10 @@ $totalRows = mysqli_num_rows($result);
 
                                                     $photo = $row['photo_profile'];
 
+                                                    if (empty($photo)) {
+                                                        $photo = 'avatar-men.png';
+                                                    }
+
                                                     if (
                                                         $photo == 'avatar-men.png' ||
                                                         $photo == 'avatar-women.png'
@@ -612,7 +677,7 @@ $totalRows = mysqli_num_rows($result);
                                                 <td>
                                                     <button
                                                         class="btn btn-warning btn-sm btnEdit"
-
+                                                        title="Edit User"
                                                         data-id="<?= $row['id']; ?>"
                                                         data-nama="<?= htmlspecialchars($row['full_name']); ?>"
                                                         data-email="<?= htmlspecialchars($row['email']); ?>"
@@ -649,6 +714,7 @@ $totalRows = mysqli_num_rows($result);
                                                             <button
                                                                 type="submit"
                                                                 name="toggle_status"
+                                                                title="Blokir Akun"
                                                                 class="btn btn-danger btn-sm"
                                                                 onclick="return confirm('Nonaktifkan akun ini?')">
 
@@ -875,7 +941,7 @@ $totalRows = mysqli_num_rows($result);
                                         class="form-control"
                                         placeholder="Password">
                                     <div class="input-group-append">
-                                        <button class="btn btn-outline-secondary" onclick="togglePassword()"><span class="material-icons">remove_red_eye</span></button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="togglePassword()"><span class="material-icons">remove_red_eye</span></button>
                                     </div>
                                 </div>
                             </div>
@@ -986,8 +1052,13 @@ $totalRows = mysqli_num_rows($result);
 
                                     <select name="marital_status" class="form-control">
                                         <option value="">Pilih Status</option>
-                                        <option value="Belum Nikah">Belum Nikah</option>
-                                        <option value="Menikah">Menikah</option>
+                                        <option value="Belum Menikah">
+                                            Belum Menikah
+                                        </option>
+
+                                        <option value="Menikah">
+                                            Menikah
+                                        </option>
                                     </select>
                                 </div>
                             </div>
@@ -1125,7 +1196,7 @@ $totalRows = mysqli_num_rows($result);
                                         id="passwordEdit"
                                         class="form-control">
                                     <div class="input-group-append">
-                                        <button class="btn btn-outline-secondary" onclick="togglePasswordEdit()"><span class="material-icons">remove_red_eye</span></button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordEdit()"><span class="material-icons">remove_red_eye</span></button>
                                     </div>
                                 </div>
                             </div>
@@ -1238,8 +1309,13 @@ $totalRows = mysqli_num_rows($result);
 
                                     <select name="marital_status" id="statusEdit" class="form-control">
                                         <option value="">Pilih Status</option>
-                                        <option value="Belum Nikah">Belum Nikah</option>
-                                        <option value="Menikah">Menikah</option>
+                                        <option value="Belum Menikah">
+                                            Belum Menikah
+                                        </option>
+
+                                        <option value="Menikah">
+                                            Menikah
+                                        </option>
                                     </select>
                                 </div>
                             </div>
@@ -1817,6 +1893,32 @@ $totalRows = mysqli_num_rows($result);
             });
 
         });
+    </script>
+
+    <script>
+        function togglePassword() {
+
+            const input =
+                document.querySelector(
+                    '#modalTambah input[name="password"]'
+                );
+
+            input.type =
+                input.type === 'password' ?
+                'text' :
+                'password';
+        }
+
+        function togglePasswordEdit() {
+
+            const input =
+                document.getElementById('passwordEdit');
+
+            input.type =
+                input.type === 'password' ?
+                'text' :
+                'password';
+        }
     </script>
 
 </body>

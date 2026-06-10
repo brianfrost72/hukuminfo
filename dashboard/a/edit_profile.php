@@ -1,3 +1,300 @@
+<?php
+session_start();
+require_once __DIR__ . "/../koneksi.php";
+
+/*
+|--------------------------------------------------------------------------
+| GET DATA
+|--------------------------------------------------------------------------
+*/
+$user_id = $_SESSION['user_id'];
+
+$qUser = mysqli_query($conn, "
+    SELECT
+        u.*,
+        up.*
+    FROM users u
+    LEFT JOIN user_profile up
+        ON up.user_id = u.id
+    WHERE u.id = '$user_id'
+");
+
+$user = mysqli_fetch_assoc($qUser);
+
+$avatarMen   = "../assets/images/avatar/avatar-men.png";
+$avatarWomen = "../assets/images/avatar/avatar-women.png";
+
+$photo = ($user['gender'] ?? '') == 'Perempuan'
+    ? $avatarWomen
+    : $avatarMen;
+
+if (
+    !empty($user['photo_profile']) &&
+    file_exists(
+        __DIR__ . "/../assets/images/uploads/user_photos/" .
+            $user['photo_profile']
+    )
+) {
+    $photo =
+        "../assets/images/uploads/user_photos/" .
+        $user['photo_profile'];
+}
+
+/*
+|--------------------------------------------------------------------------
+| SAVE INFORMATION DATA
+|--------------------------------------------------------------------------
+*/
+if (isset($_POST['save_profile'])) {
+    $full_name      = trim($_POST['full_name']);
+    $birth_place    = trim($_POST['birth_place']);
+    $date_birth     = $_POST['date_birth'];
+    $gender         = $_POST['gender'];
+    $marital_status = $_POST['marital_status'];
+    $address        = trim($_POST['address']);
+    $phone_number   = trim($_POST['phone_number']);
+    $linkedin       = trim($_POST['linkedin']);
+    $instagram      = trim($_POST['instagram']);
+
+    $cek = mysqli_query(
+        $conn,
+        "SELECT id FROM user_profile WHERE user_id='$user_id'"
+    );
+
+    if (mysqli_num_rows($cek)) {
+        mysqli_query($conn, "
+            UPDATE user_profile SET
+                full_name='$full_name',
+                birth_place='$birth_place',
+                date_birth='$date_birth',
+                gender='$gender',
+                marital_status='$marital_status',
+                address='$address',
+                phone_number='$phone_number',
+                linkedin='$linkedin',
+                instagram='$instagram'
+            WHERE user_id='$user_id'
+        ");
+    } else {
+        mysqli_query($conn, "
+            INSERT INTO user_profile
+            (
+                user_id,
+                full_name,
+                birth_place,
+                date_birth,
+                gender,
+                marital_status,
+                address,
+                phone_number,
+                linkedin,
+                instagram
+            )
+            VALUES
+            (
+                '$user_id',
+                '$full_name',
+                '$birth_place',
+                '$date_birth',
+                '$gender',
+                '$marital_status',
+                '$address',
+                '$phone_number',
+                '$linkedin',
+                '$instagram'
+            )
+        ");
+    }
+
+    $_SESSION['profile_success'] = 'Informasi pribadi berhasil diperbarui';
+
+    header("Location: edit_profile.php");
+    exit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| SAVE EMAIL & PASSWORD
+|--------------------------------------------------------------------------
+*/
+if (isset($_POST['save_account'])) {
+    $email      = trim($_POST['email']);
+    $password   = trim($_POST['password']);
+    $repassword = trim($_POST['repassword']);
+
+    if ($password != $repassword) {
+        $_SESSION['account_error'] = 'Password tidak sama';
+    } else {
+        $update = "
+            UPDATE users
+            SET email='$email'
+        ";
+
+        if (!empty($password)) {
+            $hash = password_hash(
+                $password,
+                PASSWORD_DEFAULT
+            );
+
+            $update .= ",
+                password='$hash'
+            ";
+        }
+
+        $update .= "
+            WHERE id='$user_id'
+        ";
+
+        mysqli_query($conn, $update);
+
+        $_SESSION['account_success'] = 'Email & Password berhasil diperbarui';
+    }
+
+    header("Location: edit_profile.php");
+    exit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| LOGIC PROFILE
+|--------------------------------------------------------------------------
+*/
+if (isset($_POST['save_photo'])) {
+    if (
+        isset($_FILES['photo']) &&
+        $_FILES['photo']['error'] == 0
+    ) {
+        $full_name = trim($user['full_name']);
+
+        if (empty($full_name)) {
+            $_SESSION['error'] =
+                'Isi nama lengkap terlebih dahulu';
+
+            header("Location: edit_profile.php");
+            exit;
+        }
+
+        $folder =
+            "../assets/images/uploads/user_photos/";
+
+        $slugName = strtolower($full_name);
+
+        $slugName = preg_replace(
+            '/[^a-z0-9]+/',
+            '-',
+            $slugName
+        );
+
+        $slugName = trim($slugName, '-');
+
+        $ext = strtolower(
+            pathinfo(
+                $_FILES['photo']['name'],
+                PATHINFO_EXTENSION
+            )
+        );
+
+        $allowed = [
+            'jpg',
+            'jpeg',
+            'png'
+        ];
+
+        if (!in_array($ext, $allowed)) {
+            $_SESSION['error'] =
+                'Format foto harus JPG, JPEG atau PNG';
+
+            header("Location: edit_profile.php");
+            exit;
+        }
+
+        $maxSize = 2 * 1024 * 1024;
+
+        if ($_FILES['photo']['size'] > $maxSize) {
+            $_SESSION['error'] =
+                'Ukuran foto maksimal 2 MB';
+
+            header("Location: edit_profile.php");
+            exit;
+        }
+
+        $fileName =
+            $slugName . '.' . $ext;
+
+        $newPath =
+            $folder . $fileName;
+
+        // hapus foto lama
+        if (
+            !empty($user['photo_profile']) &&
+            file_exists(
+                $folder . $user['photo_profile']
+            )
+        ) {
+            unlink(
+                $folder . $user['photo_profile']
+            );
+        }
+
+        move_uploaded_file(
+            $_FILES['photo']['tmp_name'],
+            $newPath
+        );
+
+        mysqli_query($conn, "
+            UPDATE user_profile
+            SET photo_profile='$fileName'
+            WHERE user_id='$user_id'
+        ");
+
+        $_SESSION['photo_success'] = 'Foto profile berhasil diperbarui';
+    }
+
+    header("Location: edit_profile.php");
+    exit;
+}
+
+if (isset($_POST['remove_photo'])) {
+    $folder =
+        "../assets/images/uploads/user_photos/";
+
+    if (
+        !empty($user['photo_profile'])
+        &&
+        file_exists(
+            $folder . $user['photo_profile']
+        )
+    ) {
+        unlink(
+            $folder . $user['photo_profile']
+        );
+    }
+
+    mysqli_query($conn, "
+        UPDATE user_profile
+        SET photo_profile=''
+        WHERE user_id='$user_id'
+    ");
+
+    $_SESSION['success'] =
+        'Foto profile berhasil dihapus';
+
+    header("Location: edit_profile.php");
+    exit;
+}
+
+// HITUNG UMUR
+$umur = '-';
+
+if (!empty($user['date_birth'])) {
+
+    $lahir = new DateTime($user['date_birth']);
+    $hariIni = new DateTime();
+
+    $umur = $hariIni->diff($lahir)->y . ' Tahun';
+}
+?>
+
 <!doctype html>
 <html lang="id">
 
@@ -85,414 +382,368 @@
                     <div class="col-lg-8 my-4">
 
                         <div class="card border-0 shadow-sm" style="border-radius:20px;">
-                            <div class="card-body p-4">
+                            <form method="POST"
+                                enctype="multipart/form-data">
+                                <div class="card-body p-4">
 
-                                <!-- TITLE -->
-                                <div class="d-flex align-items-start mb-4">
+                                    <!-- TITLE -->
+                                    <div class="d-flex align-items-start mb-4">
 
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3"
-                                        style="
-                                width:60px;
-                                height:60px;
-                                background:#edf3ff;
-                                color:#4a6cf7;
-                            ">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center mr-3"
+                                            style="width:60px; height:60px;
+                                        background:#edf3ff; color:#4a6cf7;">
 
-                                        <span class="material-icons">
-                                            person_outline
-                                        </span>
-
-                                    </div>
-
-                                    <div>
-
-                                        <h4 class="mb-1 font-weight-bold">
-                                            Informasi Pribadi & Data Karyawan
-                                        </h4>
-
-                                        <p class="text-muted mb-0">
-                                            Lengkapi dan perbarui informasi data diri Anda.
-                                        </p>
-
-                                    </div>
-
-                                </div>
-
-                                <div class="row">
-
-                                    <!-- NAMA -->
-                                    <div class="col-12 mb-4">
-
-                                        <label class="font-weight-medium">
-                                            Nama Lengkap
-                                        </label>
-
-                                        <div class="position-relative">
-
-                                            <span class="material-icons position-absolute"
-                                                style="
-                                        left:15px;
-                                        top:50%;
-                                        transform:translateY(-50%);
-                                        color:#8b95a7;
-                                        font-size:21px;
-                                    ">
-                                                person
+                                            <span class="material-icons">
+                                                person_outline
                                             </span>
 
-                                            <input type="text"
-                                                class="form-control"
-                                                placeholder="Masukkan nama lengkap"
-                                                style="
-                                        height:55px;
-                                        padding-left:52px;
-                                        border-radius:12px;
-                                        background:#fff;
-                                        border:1px solid #dfe5ef;
-                                        box-shadow:none;
-                                    ">
+                                        </div>
+
+                                        <div>
+
+                                            <h4 class="mb-1 font-weight-bold">
+                                                Informasi Pribadi
+                                            </h4>
+
+                                            <p class="text-muted mb-0">
+                                                Lengkapi dan perbarui informasi data diri Anda.
+                                            </p>
 
                                         </div>
 
                                     </div>
 
-                                    <!-- TEMPAT LAHIR -->
-                                    <div class="col-md-6 mb-4">
+                                    <div class="row">
 
-                                        <label class="font-weight-medium">
-                                            Tempat Lahir
-                                        </label>
+                                        <!-- NAMA -->
+                                        <div class="col-12 mb-4">
 
-                                        <div class="position-relative">
+                                            <label class="font-weight-medium">
+                                                Nama Lengkap
+                                            </label>
 
-                                            <span class="material-icons position-absolute"
-                                                style="
-                                        left:15px;
-                                        top:50%;
-                                        transform:translateY(-50%);
-                                        color:#8b95a7;
-                                        font-size:21px;
-                                    ">
-                                                location_on
-                                            </span>
+                                            <div class="position-relative">
 
-                                            <input type="text"
-                                                class="form-control"
-                                                placeholder="Masukkan tempat lahir"
-                                                style="
-                                        height:55px;
-                                        padding-left:52px;
-                                        border-radius:12px;
-                                        background:#fff;
-                                        border:1px solid #dfe5ef;
-                                        box-shadow:none;
-                                    ">
+                                                <span class="material-icons position-absolute"
+                                                    style="left:15px; top:50%;
+                                                transform:translateY(-50%); color:#8b95a7;
+                                                font-size:21px;">
+                                                    person
+                                                </span>
 
-                                        </div>
-
-                                    </div>
-
-                                    <!-- TANGGAL LAHIR -->
-                                    <div class="col-md-6 mb-4">
-
-                                        <label class="font-weight-medium">
-                                            Tanggal Lahir
-                                        </label>
-
-                                        <div class="position-relative tanggal-lahir-wrapper">
-
-
-
-                                            <!-- INPUT -->
-                                            <input type="text"
-                                                id="tanggalLahir"
-                                                class="form-control"
-                                                placeholder="Pilih tanggal lahir"
-                                                style="
-                height:55px;
-                border-radius:12px;
-                background:#fff;
-                border:1px solid #dfe5ef;
-                box-shadow:none;
-            ">
-
-                                        </div>
-
-                                        <!-- UMUR -->
-                                        <div class="mt-3"
-                                            style="
-            background:#f5f8ff;
-            border:1px solid #dfe7ff;
-            border-radius:12px;
-            padding:14px 18px;
-        ">
-
-                                            <div class="text-muted mb-1"
-                                                style="font-size:13px;">
-                                                Umur
-                                            </div>
-
-                                            <div id="hasilUmur"
-                                                style="
-                font-size:22px;
-                font-weight:700;
-                color:#2962ff;
-                line-height:1;
-            ">
-                                                -
+                                                <input type="text"
+                                                    class="form-control"
+                                                    name="full_name"
+                                                    value="<?= htmlspecialchars($user['full_name'] ?? '') ?>"
+                                                    placeholder="Masukkan nama lengkap"
+                                                    style="height:55px; padding-left:52px; border-radius:12px; background:#fff; border:1px solid #dfe5ef; box-shadow:none;">
                                             </div>
 
                                         </div>
 
-                                    </div>
+                                        <!-- TEMPAT LAHIR -->
+                                        <div class="col-md-6 mb-4">
 
-                                    <!-- JENIS KELAMIN -->
-                                    <div class="col-md-6 mb-4">
+                                            <label class="font-weight-medium">
+                                                Tempat Lahir
+                                            </label>
 
-                                        <label class="font-weight-medium">
-                                            Jenis Kelamin
-                                        </label>
+                                            <div class="position-relative">
 
-                                        <div class="position-relative">
+                                                <span class="material-icons position-absolute"
+                                                    style="left:15px; top:50%;
+                                                transform:translateY(-50%); color:#8b95a7;
+                                                font-size:21px;">
+                                                    location_on
+                                                </span>
 
-                                            <span class="material-icons position-absolute"
-                                                style="
-                                        left:15px;
-                                        top:50%;
-                                        transform:translateY(-50%);
-                                        color:#8b95a7;
-                                        font-size:21px;
-                                        z-index:2;
-                                    ">
-                                                groups
-                                            </span>
+                                                <input type="text"
+                                                    class="form-control"
+                                                    name="birth_place"
+                                                    value="<?= htmlspecialchars($user['birth_place'] ?? '') ?>"
+                                                    placeholder="Masukkan tempat lahir"
+                                                    style="height:55px; padding-left:52px;
+                                                border-radius:12px; background:#fff;
+                                                border:1px solid #dfe5ef;
+                                                box-shadow:none;">
 
-                                            <select class="form-control"
-                                                style="
-                                        height:55px;
-                                        padding-left:52px;
-                                        border-radius:12px;
-                                        background:#fff;
-                                        border:1px solid #dfe5ef;
-                                        box-shadow:none;
-                                    ">
-
-                                                <option>Pilih jenis kelamin</option>
-                                                <option>Laki-Laki</option>
-                                                <option>Perempuan</option>
-
-                                            </select>
+                                            </div>
 
                                         </div>
 
-                                    </div>
+                                        <!-- TANGGAL LAHIR -->
+                                        <div class="col-md-6 mb-4">
 
-                                    <!-- STATUS -->
-                                    <div class="col-md-6 mb-4">
+                                            <label class="font-weight-medium">
+                                                Tanggal Lahir
+                                            </label>
 
-                                        <label class="font-weight-medium">
-                                            Status Pernikahan
-                                        </label>
+                                            <div class="position-relative tanggal-lahir-wrapper">
 
-                                        <div class="position-relative">
 
-                                            <span class="material-icons position-absolute"
-                                                style="
-                                        left:15px;
-                                        top:50%;
-                                        transform:translateY(-50%);
-                                        color:#8b95a7;
-                                        font-size:21px;
-                                        z-index:2;
-                                    ">
-                                                favorite_border
-                                            </span>
 
-                                            <select class="form-control"
-                                                style="
-                                        height:55px;
-                                        padding-left:52px;
-                                        border-radius:12px;
-                                        background:#fff;
-                                        border:1px solid #dfe5ef;
-                                        box-shadow:none;
-                                    ">
+                                                <!-- INPUT -->
+                                                <input type="text"
+                                                    id="tanggalLahir"
+                                                    name="date_birth"
+                                                    class="form-control"
+                                                    value="<?= $user['date_birth'] ?? '' ?>"
+                                                    placeholder="Pilih tanggal lahir"
+                                                    style="height:55px; border-radius:12px;
+                                                background:#fff; border:1px solid #dfe5ef;
+                                                box-shadow:none;">
 
-                                                <option>Pilih status pernikahan</option>
-                                                <option>Menikah</option>
-                                                <option>Belum Menikah</option>
+                                            </div>
 
-                                            </select>
+                                            <!-- UMUR -->
+                                            <div class="mt-3"
+                                                style="background:#f5f8ff; border:1px solid #dfe7ff;
+                                            border-radius:12px; padding:14px 18px;">
 
-                                        </div>
+                                                <div class="text-muted mb-1"
+                                                    style="font-size:13px;">
+                                                    Umur
+                                                </div>
 
-                                    </div>
+                                                <div id="hasilUmur"
+                                                    style="font-size:22px; font-weight:700;
+                                                color:#2962ff; line-height:1;">
+                                                    <?= $umur ?>
+                                                </div>
 
-                                    <!-- NO HP -->
-                                    <div class="col-12 mb-4">
-
-                                        <label class="font-weight-medium">
-                                            No. Hp
-                                        </label>
-
-                                        <div class="position-relative">
-
-                                            <span class="material-icons position-absolute"
-                                                style="
-                                        left:15px;
-                                        top:50%;
-                                        transform:translateY(-50%);
-                                        color:#8b95a7;
-                                        font-size:21px;
-                                    ">
-                                                call
-                                            </span>
-
-                                            <input type="text"
-                                                class="form-control"
-                                                placeholder="08xxxxxxxxxx"
-                                                style="
-                                        height:55px;
-                                        padding-left:52px;
-                                        border-radius:12px;
-                                        background:#fff;
-                                        border:1px solid #dfe5ef;
-                                        box-shadow:none;
-                                    ">
+                                            </div>
 
                                         </div>
 
-                                    </div>
+                                        <!-- JENIS KELAMIN -->
+                                        <div class="col-md-6 mb-4">
 
-                                    <!-- ALAMAT -->
-                                    <div class="col-12 mb-4">
+                                            <label class="font-weight-medium">
+                                                Jenis Kelamin
+                                            </label>
 
-                                        <label class="font-weight-medium">
-                                            Alamat
-                                        </label>
+                                            <div class="position-relative">
 
-                                        <div class="position-relative">
+                                                <span class="material-icons position-absolute"
+                                                    style="left:15px; top:50%;
+                                                transform:translateY(-50%);
+                                                color:#8b95a7; font-size:21px; z-index:2;">
+                                                    groups
+                                                </span>
 
-                                            <span class="material-icons position-absolute"
-                                                style="
-                                        left:15px;
-                                        top:18px;
-                                        color:#8b95a7;
-                                        font-size:21px;
-                                    ">
-                                                home
-                                            </span>
+                                                <select
+                                                    name="gender"
+                                                    class="form-control"
+                                                    style="height:55px; padding-left:52px;
+                                                border-radius:12px; background:#fff;
+                                                border:1px solid #dfe5ef;
+                                                box-shadow:none;">
 
-                                            <textarea class="form-control"
-                                                rows="4"
-                                                placeholder="Masukkan alamat lengkap"
-                                                style="
-                                        padding-left:52px;
-                                        border-radius:12px;
-                                        background:#fff;
-                                        border:1px solid #dfe5ef;
-                                        box-shadow:none;
-                                        resize:none;
-                                    "></textarea>
+                                                    <option value="">Pilih jenis kelamin</option>
 
-                                        </div>
+                                                    <option
+                                                        value="Laki-laki"
+                                                        <?= ($user['gender'] ?? '') == 'Laki-laki' ? 'selected' : '' ?>>
+                                                        Laki-laki
+                                                    </option>
 
-                                    </div>
+                                                    <option
+                                                        value="Perempuan"
+                                                        <?= ($user['gender'] ?? '') == 'Perempuan' ? 'selected' : '' ?>>
+                                                        Perempuan
+                                                    </option>
 
-                                    <!-- LINKEDIN -->
-                                    <div class="col-12 mb-4">
+                                                </select>
 
-                                        <label class="font-weight-medium">
-                                            LinkedIn
-                                        </label>
-
-                                        <div class="position-relative">
-
-                                            <span class="material-icons position-absolute"
-                                                style="
-                                        left:15px;
-                                        top:50%;
-                                        transform:translateY(-50%);
-                                        color:#8b95a7;
-                                        font-size:21px;
-                                    ">
-                                                insert_link
-                                            </span>
-
-                                            <input type="text"
-                                                class="form-control"
-                                                placeholder="Masukkan link linkedin"
-                                                style="
-                                        height:55px;
-                                        padding-left:52px;
-                                        border-radius:12px;
-                                        background:#fff;
-                                        border:1px solid #dfe5ef;
-                                        box-shadow:none;
-                                    ">
+                                            </div>
 
                                         </div>
 
-                                    </div>
+                                        <!-- STATUS -->
+                                        <div class="col-md-6 mb-4">
 
-                                    <!-- IG -->
-                                    <div class="col-12 mb-4">
+                                            <label class="font-weight-medium">
+                                                Status Pernikahan
+                                            </label>
 
-                                        <label class="font-weight-medium">
-                                            Instagram
-                                        </label>
+                                            <div class="position-relative">
 
-                                        <div class="position-relative">
+                                                <span class="material-icons position-absolute"
+                                                    style="left:15px; top:50%;
+                                                transform:translateY(-50%);
+                                                color:#8b95a7; font-size:21px;
+                                                z-index:2;">
+                                                    favorite_border
+                                                </span>
 
-                                            <span class="material-icons position-absolute"
-                                                style="
-                                        left:15px;
-                                        top:50%;
-                                        transform:translateY(-50%);
-                                        color:#8b95a7;
-                                        font-size:21px;
-                                    ">
-                                                insert_link
-                                            </span>
+                                                <select
+                                                    name="marital_status"
+                                                    class="form-control"
+                                                    style="height:55px; padding-left:52px;
+                                                border-radius:12px; background:#fff;
+                                                border:1px solid #dfe5ef; box-shadow:none;">
 
-                                            <input type="text"
-                                                class="form-control"
-                                                placeholder="Masukkan link Instagram"
-                                                style="
-                                        height:55px;
-                                        padding-left:52px;
-                                        border-radius:12px;
-                                        background:#fff;
-                                        border:1px solid #dfe5ef;
-                                        box-shadow:none;
-                                    ">
+                                                    <option value="">
+                                                        Pilih status pernikahan
+                                                    </option>
+
+                                                    <option
+                                                        value="Belum Menikah"
+                                                        <?= ($user['marital_status'] ?? '') == 'Belum Menikah' ? 'selected' : '' ?>>
+                                                        Belum Menikah
+                                                    </option>
+
+                                                    <option
+                                                        value="Menikah"
+                                                        <?= ($user['marital_status'] ?? '') == 'Menikah' ? 'selected' : '' ?>>
+                                                        Menikah
+                                                    </option>
+
+                                                </select>
+
+                                            </div>
 
                                         </div>
 
-                                    </div>
+                                        <!-- NO HP -->
+                                        <div class="col-12 mb-4">
 
-                                    <!-- BUTTON -->
-                                    <div class="col-12 text-right">
+                                            <label class="font-weight-medium">
+                                                No. Hp
+                                            </label>
 
-                                        <button
-                                            id="btnSubmitInformasi"
-                                            class="btn text-white px-5 btn-submit-profile"
-                                            style="height:55px; border-radius:12px; background:linear-gradient(90deg,#3f7cff,#2962ff); font-weight:500; min-width:220px; border:0;">
+                                            <div class="position-relative">
 
-                                            <span class="material-icons align-middle mr-2"
-                                                style="font-size:19px;">
-                                                send
-                                            </span>
+                                                <span class="material-icons position-absolute"
+                                                    style="left:15px; top:50%;
+                                                transform:translateY(-50%);
+                                                color:#8b95a7; font-size:21px;">
+                                                    call
+                                                </span>
 
-                                            SUBMIT
+                                                <input type="text"
+                                                    class="form-control"
+                                                    name="phone_number"
+                                                    value="<?= htmlspecialchars($user['phone_number'] ?? '') ?>"
+                                                    placeholder="08xxxxxxxxxx"
+                                                    style="height:55px; padding-left:52px;
+                                                border-radius:12px; background:#fff;
+                                                border:1px solid #dfe5ef;
+                                                box-shadow:none;">
 
-                                        </button>
+                                            </div>
+
+                                        </div>
+
+                                        <!-- ALAMAT -->
+                                        <div class="col-12 mb-4">
+
+                                            <label class="font-weight-medium">
+                                                Alamat
+                                            </label>
+
+                                            <div class="position-relative">
+
+                                                <span class="material-icons position-absolute"
+                                                    style="left:15px; top:18px;
+                                                color:#8b95a7; font-size:21px;">
+                                                    home
+                                                </span>
+
+                                                <textarea class="form-control"
+                                                    rows="4"
+                                                    name="address"
+                                                    placeholder="Masukkan alamat lengkap"
+                                                    style="padding-left:52px; border-radius:12px;
+                                                    background:#fff; border:1px solid #dfe5ef;
+                                                    box-shadow:none; resize:none;"><?= htmlspecialchars($user['address'] ?? '') ?></textarea>
+
+                                            </div>
+
+                                        </div>
+
+                                        <!-- LINKEDIN -->
+                                        <div class="col-12 mb-4">
+
+                                            <label class="font-weight-medium">
+                                                LinkedIn
+                                            </label>
+
+                                            <div class="position-relative">
+
+                                                <span class="material-icons position-absolute"
+                                                    style="left:15px; top:50%;
+                                                transform:translateY(-50%);
+                                                color:#8b95a7; font-size:21px;">
+                                                    insert_link
+                                                </span>
+
+                                                <input type="text"
+                                                    class="form-control"
+                                                    name="linkedin"
+                                                    value="<?= htmlspecialchars($user['linkedin'] ?? '') ?>"
+                                                    placeholder="Masukkan link linkedin"
+                                                    style="height:55px; padding-left:52px;
+                                                border-radius:12px; background:#fff;
+                                                border:1px solid #dfe5ef;
+                                                box-shadow:none;">
+
+                                            </div>
+
+                                        </div>
+
+                                        <!-- IG -->
+                                        <div class="col-12 mb-4">
+
+                                            <label class="font-weight-medium">
+                                                Instagram
+                                            </label>
+
+                                            <div class="position-relative">
+
+                                                <span class="material-icons position-absolute"
+                                                    style="left:15px; top:50%;
+                                                transform:translateY(-50%);
+                                                color:#8b95a7; font-size:21px;">
+                                                    insert_link
+                                                </span>
+
+                                                <input type="text"
+                                                    class="form-control"
+                                                    name="instagram"
+                                                    value="<?= htmlspecialchars($user['instagram'] ?? '') ?>"
+                                                    placeholder="Masukkan link Instagram"
+                                                    style="height:55px; padding-left:52px;
+                                                border-radius:12px; background:#fff;
+                                                border:1px solid #dfe5ef;
+                                                box-shadow:none;">
+
+                                            </div>
+
+                                        </div>
+
+                                        <!-- BUTTON -->
+                                        <div class="col-12 text-right">
+
+                                            <button type="submit" name="save_profile"
+                                                class="btn text-white px-5 btn-submit-profile"
+                                                style="height:55px; border-radius:12px; background:linear-gradient(90deg,#3f7cff,#2962ff); font-weight:500; min-width:220px; border:0;">
+
+                                                <span class="material-icons align-middle mr-2"
+                                                    style="font-size:19px;">
+                                                    send
+                                                </span>
+
+                                                SUBMIT
+
+                                            </button>
+
+                                        </div>
 
                                     </div>
 
                                 </div>
-
-                            </div>
+                            </form>
                         </div>
 
                     </div>
@@ -503,280 +754,250 @@
                         <!-- EMAIL PASSWORD -->
                         <div class="card border-0 shadow-sm my-4"
                             style="border-radius:20px;">
+                            <form method="POST"
+                                enctype="multipart/form-data">
+                                <div class="card-body p-4">
 
-                            <div class="card-body p-4">
+                                    <div class="d-flex align-items-start mb-4">
 
-                                <div class="d-flex align-items-start mb-4">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center mr-3"
+                                            style="width:55px; height:55px;
+                                            background:#edf3ff; color:#4a6cf7;">
 
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3"
-                                        style="
-                                width:55px;
-                                height:55px;
-                                background:#edf3ff;
-                                color:#4a6cf7;
-                            ">
+                                            <span class="material-icons">
+                                                mail
+                                            </span>
 
-                                        <span class="material-icons">
-                                            mail
-                                        </span>
+                                        </div>
+
+                                        <div>
+
+                                            <h4 class="mb-1 font-weight-bold">
+                                                Email & Password
+                                            </h4>
+
+                                            <p class="text-muted mb-0">
+                                                Perbarui email dan password akun Anda.
+                                            </p>
+
+                                        </div>
 
                                     </div>
 
-                                    <div>
+                                    <!-- EMAIL -->
+                                    <div class="mb-4">
 
-                                        <h4 class="mb-1 font-weight-bold">
-                                            Email & Password
-                                        </h4>
+                                        <label class="font-weight-medium">
+                                            Email
+                                        </label>
 
-                                        <p class="text-muted mb-0">
-                                            Perbarui email dan password akun Anda.
+                                        <div class="position-relative">
+
+                                            <span class="material-icons position-absolute"
+                                                style="left:15px; top:50%;
+                                            transform:translateY(-50%); color:#8b95a7;
+                                            font-size:21px;">
+                                                mail
+                                            </span>
+
+                                            <input type="email"
+                                                class="form-control"
+                                                name="email"
+                                                value="<?= htmlspecialchars($user['email']) ?>"
+                                                placeholder="Masukkan email"
+                                                style="height:55px; padding-left:52px;
+                                            border-radius:12px; background:#fff;
+                                            border:1px solid #dfe5ef; box-shadow:none;">
+
+                                        </div>
+
+                                    </div>
+
+                                    <!-- PASSWORD -->
+                                    <div class="mb-4">
+
+                                        <label class="font-weight-medium">
+                                            Password
+                                        </label>
+
+                                        <div class="position-relative">
+
+                                            <span class="material-icons position-absolute"
+                                                style="left:15px; top:50%;
+                                            transform:translateY(-50%);
+                                            color:#8b95a7; font-size:21px;
+                                            z-index:2;">
+                                                lock
+                                            </span>
+
+                                            <input type="password"
+                                                class="form-control"
+                                                id="passwordInput"
+                                                name="password"
+                                                placeholder="Masukkan password"
+                                                style="height:55px; padding-left:52px;
+                                            padding-right:55px; border-radius:12px;
+                                            background:#fff; border:1px solid #dfe5ef;
+                                            box-shadow:none;">
+
+                                            <!-- TOGGLE -->
+                                            <span class="material-icons"
+                                                onclick="togglePassword('passwordInput', this)"
+                                                style="position:absolute;
+                                            right:16px; top:50%;
+                                            transform:translateY(-50%);
+                                            color:#8b95a7; font-size:22px;
+                                            cursor:pointer; z-index:2;">
+                                                visibility_off
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
+                                    <!-- RE PASSWORD -->
+                                    <div class="mb-5">
+
+                                        <label class="font-weight-medium">
+                                            Re-enter Password
+                                        </label>
+
+                                        <div class="position-relative">
+
+                                            <span class="material-icons position-absolute"
+                                                style="left:15px; top:50%;
+                                            transform:translateY(-50%);
+                                            color:#8b95a7; font-size:21px;
+                                            z-index:2;">
+                                                lock
+                                            </span>
+
+                                            <input type="password"
+                                                id="rePasswordInput"
+                                                name="repassword"
+                                                class="form-control"
+                                                placeholder="Masukkan ulang password"
+                                                style="height:55px; padding-left:52px;
+                                            padding-right:55px; border-radius:12px;
+                                            background:#fff; border:1px solid #dfe5ef;
+                                            box-shadow:none;">
+
+                                            <!-- TOGGLE -->
+                                            <span class="material-icons"
+                                                onclick="togglePassword('rePasswordInput', this)"
+                                                style="position:absolute; right:16px;
+                                            top:50%; transform:translateY(-50%);
+                                            color:#8b95a7; font-size:22px;
+                                            cursor:pointer; z-index:2;">
+                                                visibility_off
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
+                                    <!-- BUTTON -->
+                                    <button type="submit" id="btnSubmitEmail" name="save_account"
+                                        class="btn text-white px-5 btn-submit-profile"
+                                        style="height:55px; border-radius:12px; background:linear-gradient(90deg,#3f7cff,#2962ff); font-weight:500; min-width:220px; transition:.25s ease; border:0;">
+
+                                        <span class="material-icons align-middle mr-2"
+                                            style="font-size:19px;">
+                                            send
+                                        </span>
+
+                                        SUBMIT
+
+                                    </button>
+
+                                </div>
+
+                            </form>
+
+                        </div>
+
+                        <!-- PHOTO PROFILE -->
+                        <form
+                            method="POST"
+                            enctype="multipart/form-data">
+                            <div class="upload-photo-wrapper">
+
+                                <!-- INPUT -->
+                                <input type="file"
+                                    id="uploadFoto"
+                                    name="photo"
+                                    accept="image/*"
+                                    hidden>
+
+                                <!-- AREA -->
+                                <div id="uploadArea"
+                                    class="d-flex flex-column align-items-center justify-content-center mb-4"
+                                    style="border:2px dashed #d9deea;
+                                    border-radius:30px; min-height:320px;
+                                    cursor:pointer; transition:.25s ease;
+                                    overflow:hidden; position:relative;">
+
+                                    <!-- PREVIEW -->
+                                    <img
+                                        src="<?= $photo ?>"
+                                        id="previewFoto"
+                                        style="width:100%; height:320px; object-fit:cover;
+                                        display:block;">
+
+                                    <!-- PLACEHOLDER -->
+                                    <div id="uploadPlaceholder"
+                                        class="text-center">
+
+                                        <span class="material-icons mb-3"
+                                            style="font-size:70px; color:#6f7687;">
+                                            cloud_upload
+                                        </span>
+
+                                        <h6 class="font-weight-bold mb-2">
+                                            Klik untuk upload foto
+                                        </h6>
+
+                                        <p class="text-muted text-center mb-1">
+                                            atau seret & lepas file di sini
                                         </p>
 
-                                    </div>
-
-                                </div>
-
-                                <!-- EMAIL -->
-                                <div class="mb-4">
-
-                                    <label class="font-weight-medium">
-                                        Email
-                                    </label>
-
-                                    <div class="position-relative">
-
-                                        <span class="material-icons position-absolute"
-                                            style="
-                                    left:15px;
-                                    top:50%;
-                                    transform:translateY(-50%);
-                                    color:#8b95a7;
-                                    font-size:21px;
-                                ">
-                                            mail
-                                        </span>
-
-                                        <input type="email"
-                                            class="form-control"
-                                            placeholder="Masukkan email"
-                                            style="
-                                    height:55px;
-                                    padding-left:52px;
-                                    border-radius:12px;
-                                    background:#fff;
-                                    border:1px solid #dfe5ef;
-                                    box-shadow:none;
-                                ">
-
-                                    </div>
-
-                                </div>
-
-                                <!-- PASSWORD -->
-                                <div class="mb-4">
-
-                                    <label class="font-weight-medium">
-                                        Password
-                                    </label>
-
-                                    <div class="position-relative">
-
-                                        <span class="material-icons position-absolute"
-                                            style="
-                left:15px;
-                top:50%;
-                transform:translateY(-50%);
-                color:#8b95a7;
-                font-size:21px;
-                z-index:2;
-            ">
-                                            lock
-                                        </span>
-
-                                        <input type="password"
-                                            id="passwordInput"
-                                            class="form-control"
-                                            placeholder="Masukkan password"
-                                            style="
-                height:55px;
-                padding-left:52px;
-                padding-right:55px;
-                border-radius:12px;
-                background:#fff;
-                border:1px solid #dfe5ef;
-                box-shadow:none;
-            ">
-
-                                        <!-- TOGGLE -->
-                                        <span class="material-icons"
-                                            onclick="togglePassword('passwordInput', this)"
-                                            style="
-                position:absolute;
-                right:16px;
-                top:50%;
-                transform:translateY(-50%);
-                color:#8b95a7;
-                font-size:22px;
-                cursor:pointer;
-                z-index:2;
-            ">
-                                            visibility_off
-                                        </span>
-
-                                    </div>
-
-                                </div>
-
-                                <!-- RE PASSWORD -->
-                                <div class="mb-5">
-
-                                    <label class="font-weight-medium">
-                                        Re-enter Password
-                                    </label>
-
-                                    <div class="position-relative">
-
-                                        <span class="material-icons position-absolute"
-                                            style="
-                left:15px;
-                top:50%;
-                transform:translateY(-50%);
-                color:#8b95a7;
-                font-size:21px;
-                z-index:2;
-            ">
-                                            lock
-                                        </span>
-
-                                        <input type="password"
-                                            id="rePasswordInput"
-                                            class="form-control"
-                                            placeholder="Masukkan ulang password"
-                                            style="
-                height:55px;
-                padding-left:52px;
-                padding-right:55px;
-                border-radius:12px;
-                background:#fff;
-                border:1px solid #dfe5ef;
-                box-shadow:none;
-            ">
-
-                                        <!-- TOGGLE -->
-                                        <span class="material-icons"
-                                            onclick="togglePassword('rePasswordInput', this)"
-                                            style="
-                position:absolute;
-                right:16px;
-                top:50%;
-                transform:translateY(-50%);
-                color:#8b95a7;
-                font-size:22px;
-                cursor:pointer;
-                z-index:2;
-            ">
-                                            visibility_off
-                                        </span>
+                                        <small class="text-muted">
+                                            JPG, PNG maks. 2MB
+                                        </small>
 
                                     </div>
 
                                 </div>
 
                                 <!-- BUTTON -->
-                                <button
-                                    id="btnSubmitEmail"
-                                    class="btn text-white px-5 btn-submit-profile"
-                                    style="height:55px; border-radius:12px; background:linear-gradient(90deg,#3f7cff,#2962ff); font-weight:500; min-width:220px; transition:.25s ease; border:0;">
+                                <button type="submit" name="save_photo"
+                                    class="btn btn-block text-white btn-submit-profile"
+                                    style=" height:55px; border-radius:12px; background:linear-gradient(90deg,#3f7cff,#2962ff); font-weight:500; transition:.25s ease; border:0;">
 
                                     <span class="material-icons align-middle mr-2"
                                         style="font-size:19px;">
-                                        send
+                                        check
                                     </span>
 
                                     SUBMIT
 
                                 </button>
 
-                            </div>
+                                <?php if (!empty($user['photo_profile'])): ?>
 
-                        </div>
+                                    <button
+                                        type="submit"
+                                        name="remove_photo"
+                                        class="btn btn-danger btn-block mt-2">
 
-                        <!-- PHOTO PROFILE -->
-                        <div class="upload-photo-wrapper">
+                                        REMOVE PHOTO
 
-                            <!-- INPUT -->
-                            <input type="file"
-                                id="uploadFoto"
-                                accept="image/*"
-                                hidden>
+                                    </button>
 
-                            <!-- AREA -->
-                            <div id="uploadArea"
-                                class="d-flex flex-column align-items-center justify-content-center mb-4"
-                                style="
-            border:2px dashed #d9deea;
-            border-radius:30px;
-            min-height:320px;
-            cursor:pointer;
-            transition:.25s ease;
-            overflow:hidden;
-            position:relative;
-        ">
-
-                                <!-- PREVIEW -->
-                                <img src=""
-                                    id="previewFoto"
-                                    style="
-                width:100%;
-                height:320px;
-                object-fit:cover;
-                display:none;
-            ">
-
-                                <!-- PLACEHOLDER -->
-                                <div id="uploadPlaceholder"
-                                    class="text-center">
-
-                                    <span class="material-icons mb-3"
-                                        style="
-                    font-size:70px;
-                    color:#6f7687;
-                ">
-                                        cloud_upload
-                                    </span>
-
-                                    <h6 class="font-weight-bold mb-2">
-                                        Klik untuk upload foto
-                                    </h6>
-
-                                    <p class="text-muted text-center mb-1">
-                                        atau seret & lepas file di sini
-                                    </p>
-
-                                    <small class="text-muted">
-                                        JPG, PNG maks. 2MB
-                                    </small>
-
-                                </div>
+                                <?php endif; ?>
 
                             </div>
-
-                            <!-- BUTTON -->
-                            <button
-                                id="btnSubmitFoto"
-                                class="btn btn-block text-white btn-submit-profile"
-                                style=" height:55px; border-radius:12px; background:linear-gradient(90deg,#3f7cff,#2962ff); font-weight:500; transition:.25s ease; border:0;">
-
-                                <span class="material-icons align-middle mr-2"
-                                    style="font-size:19px;">
-                                    check
-                                </span>
-
-                                SUBMIT
-
-                            </button>
-
-                        </div>
+                        </form>
 
                     </div>
 
@@ -798,122 +1019,6 @@
     <!-- ********************************** // MENU-Drawer ********************************** -->
     <?php include 'includes/drawer_menu.php'; ?>
     <!-- ********************************** //END MENU-drawer ********************************** -->
-
-    <!-- =========================
-    MODAL LOADING
-========================= -->
-
-    <div class="modal fade"
-        id="modalLoading"
-        data-backdrop="static"
-        data-keyboard="false"
-        tabindex="-1">
-
-        <div class="modal-dialog modal-dialog-centered">
-
-            <div class="modal-content border-0"
-                style="
-                border-radius:20px;
-                overflow:hidden;
-            ">
-
-                <div class="modal-body text-center p-5">
-
-                    <!-- SPINNER -->
-                    <div class="spinner-border text-primary mb-4"
-                        style="
-                        width:4rem;
-                        height:4rem;
-                    ">
-                    </div>
-
-                    <h5 class="font-weight-bold mb-2">
-                        Sedang Mengirim...
-                    </h5>
-
-                    <p class="text-muted mb-0">
-                        Mohon tunggu sebentar
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <!-- =========================
-    MODAL SUCCESS
-========================= -->
-
-    <div class="modal fade"
-        id="modalSuccess"
-        tabindex="-1">
-
-        <div class="modal-dialog modal-dialog-centered">
-
-            <div class="modal-content border-0"
-                style="
-                border-radius:20px;
-                overflow:hidden;
-            ">
-
-                <div class="modal-body text-center p-5">
-
-                    <!-- ICON -->
-                    <div class="mx-auto mb-4 d-flex align-items-center justify-content-center"
-                        style="
-                        width:90px;
-                        height:90px;
-                        border-radius:50%;
-                        background:#ecfdf3;
-                    ">
-
-                        <span class="material-icons"
-                            style="
-                            font-size:50px;
-                            color:#16a34a;
-                        ">
-                            check_circle
-                        </span>
-
-                    </div>
-
-                    <!-- TITLE -->
-                    <h4 class="font-weight-bold mb-2">
-                        Berhasil
-                    </h4>
-
-                    <!-- TEXT -->
-                    <p class="text-muted mb-4"
-                        id="successMessage">
-
-                        Data berhasil diperbarui
-
-                    </p>
-
-                    <!-- BUTTON -->
-                    <button type="button"
-                        class="btn btn-success px-4"
-                        data-dismiss="modal"
-                        style="
-                        min-width:120px;
-                        height:48px;
-                        border-radius:12px;
-                    ">
-
-                        Okay
-
-                    </button>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
 
     <footer class="dashboard-footer mt-4">
         <div class="container-fluid">
@@ -959,8 +1064,65 @@
     <script src="../assets/js/flatpickr.js"></script>
 
     <!-- Toastr -->
-    <script src="assets/vendor/toastr.min.js"></script>
-    <script src="assets/js/toastr.js"></script>
+    <script src="../assets/vendor/toastr.min.js"></script>
+    <script src="../assets/js/toastr.js"></script>
+
+    <script>
+        toastr.options = {
+            closeButton: true,
+            progressBar: false,
+            newestOnTop: true,
+            preventDuplicates: true,
+        };
+    </script>
+
+    <?php if (isset($_SESSION['profile_success'])) : ?>
+
+        <script>
+            toastr.success(
+                '<?= addslashes($_SESSION['profile_success']) ?>',
+                'Informasi Pribadi'
+            );
+        </script>
+
+        <?php unset($_SESSION['profile_success']); ?>
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['account_success'])) : ?>
+
+        <script>
+            toastr.success(
+                '<?= addslashes($_SESSION['account_success']) ?>',
+                'Email & Password'
+            );
+        </script>
+
+        <?php unset($_SESSION['account_success']); ?>
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['photo_success'])) : ?>
+
+        <script>
+            toastr.success(
+                '<?= addslashes($_SESSION['photo_success']) ?>',
+                'Foto Profile'
+            );
+        </script>
+
+        <?php unset($_SESSION['photo_success']); ?>
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['photo_error'])) : ?>
+
+        <script>
+            toastr.error(
+                '<?= addslashes($_SESSION['photo_error']) ?>',
+                'Foto Profile'
+            );
+        </script>
+
+        <?php unset($_SESSION['photo_error']); ?>
+    <?php endif; ?>
 
     <script>
         // =========================
@@ -972,28 +1134,47 @@
             altFormat: "d F Y",
             dateFormat: "Y-m-d",
             maxDate: "today",
+
+            onReady: function(selectedDates) {
+
+                if (selectedDates.length > 0) {
+                    hitungUmur(selectedDates[0]);
+                }
+
+            },
+
             onChange: function(selectedDates) {
 
                 if (selectedDates.length > 0) {
-
-                    const birthDate = selectedDates[0];
-                    const today = new Date();
-
-                    let umur = today.getFullYear() - birthDate.getFullYear();
-
-                    const m = today.getMonth() - birthDate.getMonth();
-
-                    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-                        umur--;
-                    }
-
-                    document.getElementById('hasilUmur').innerHTML =
-                        umur + ' Tahun';
-
+                    hitungUmur(selectedDates[0]);
                 }
 
             }
         });
+
+        function hitungUmur(birthDate) {
+
+            const today = new Date();
+
+            let umur =
+                today.getFullYear() -
+                birthDate.getFullYear();
+
+            const m =
+                today.getMonth() -
+                birthDate.getMonth();
+
+            if (
+                m < 0 ||
+                (m === 0 &&
+                    today.getDate() < birthDate.getDate())
+            ) {
+                umur--;
+            }
+
+            document.getElementById('hasilUmur').innerHTML =
+                umur + ' Tahun';
+        }
 
         // =========================
         // TOGGLE PASSWORD
@@ -1092,25 +1273,6 @@
     </script>
 
     <script>
-        // FUNCTION LOADING
-        function showLoading(callback) {
-
-            $('#modalLoading').modal('show');
-
-            setTimeout(() => {
-
-                $('#modalLoading').modal('hide');
-
-                setTimeout(() => {
-
-                    callback();
-
-                }, 300);
-
-            }, 1500);
-
-        }
-
         // =========================
         // VALIDASI INPUT KOSONG
         // =========================
@@ -1120,7 +1282,6 @@
             return value.trim() === "";
 
         }
-
 
         // =========================
         // INFORMASI PRIBADI
@@ -1180,16 +1341,6 @@
                     return;
 
                 }
-
-                // LOADING
-                showLoading(() => {
-
-                    document.getElementById('successMessage').innerHTML =
-                        'Informasi Pribadi berhasil diperbarui';
-
-                    $('#modalSuccess').modal('show');
-
-                });
 
             });
 
@@ -1256,16 +1407,6 @@
 
                 }
 
-                // LOADING
-                showLoading(() => {
-
-                    document.getElementById('successMessage').innerHTML =
-                        'Email & Password berhasil diperbarui';
-
-                    $('#modalSuccess').modal('show');
-
-                });
-
             });
 
         // =========================
@@ -1285,16 +1426,6 @@
                     return;
 
                 }
-
-                // LOADING
-                showLoading(() => {
-
-                    document.getElementById('successMessage').innerHTML =
-                        'Foto profile berhasil diperbarui';
-
-                    $('#modalSuccess').modal('show');
-
-                });
 
             });
     </script>

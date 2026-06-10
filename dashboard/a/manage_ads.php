@@ -1,3 +1,163 @@
+<?php
+session_start();
+require_once __DIR__ . "/../koneksi.php";
+
+/*
+|--------------------------------------------------------------------------
+| LOGIC SIMPAN
+|--------------------------------------------------------------------------
+*/
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    $ad_title   = trim($_POST['ad_title'] ?? '');
+    $ad_link    = trim($_POST['ad_link'] ?? '');
+    $ad_request = trim($_POST['ad_request'] ?? '');
+
+    if (
+        empty($ad_title) ||
+        empty($ad_link) ||
+        empty($ad_request)
+    ) {
+        $_SESSION['error'] = 'Semua field wajib diisi.';
+    } else {
+
+        if (
+            !isset($_FILES['ad_img']) ||
+            $_FILES['ad_img']['error'] != 0
+        ) {
+
+            $_SESSION['error'] = 'Gambar iklan wajib diupload.';
+        } else {
+
+            $allowed = ['jpg', 'jpeg', 'png', 'webp'];
+
+            $fileName = $_FILES['ad_img']['name'];
+            $tmpName  = $_FILES['ad_img']['tmp_name'];
+            $fileSize = $_FILES['ad_img']['size'];
+
+            $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+            if (!in_array($ext, $allowed)) {
+
+                $_SESSION['error'] = 'Format gambar tidak didukung.';
+            } elseif ($fileSize > 5 * 1024 * 1024) {
+
+                $_SESSION['error'] = 'Ukuran gambar maksimal 5MB.';
+            } else {
+
+                $uploadDir = __DIR__ . '/../assets/images/uploads/ads/';
+
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+
+                $newName = time() . '_' . uniqid() . '.' . $ext;
+
+                if (move_uploaded_file(
+                    $tmpName,
+                    $uploadDir . $newName
+                )) {
+
+                    $stmt = mysqli_prepare(
+                        $conn,
+                        "INSERT INTO ads
+                        (
+                            ad_title,
+                            ad_img,
+                            ad_link,
+                            ad_request
+                        )
+                        VALUES
+                        (?, ?, ?, ?)"
+                    );
+
+                    mysqli_stmt_bind_param(
+                        $stmt,
+                        "ssss",
+                        $ad_title,
+                        $newName,
+                        $ad_link,
+                        $ad_request
+                    );
+
+                    if (mysqli_stmt_execute($stmt)) {
+
+                        $_SESSION['success'] = 'Iklan berhasil disimpan.';
+
+                        header("Location: manage_ads.php");
+                        exit;
+                    }
+
+                    $_SESSION['error'] = 'Gagal menyimpan data.';
+                } else {
+
+                    $_SESSION['error'] = 'Upload gambar gagal.';
+                }
+            }
+        }
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| GET DATA
+|--------------------------------------------------------------------------
+*/
+$ads = mysqli_query(
+    $conn,
+    "SELECT *
+     FROM ads
+     ORDER BY id DESC"
+);
+
+/*
+|--------------------------------------------------------------------------
+| DELETE DATA
+|--------------------------------------------------------------------------
+*/
+if (isset($_GET['delete'])) {
+
+    $id = (int) $_GET['delete'];
+
+    $q = mysqli_query(
+        $conn,
+        "SELECT ad_title, ad_img
+         FROM ads
+         WHERE id='$id'"
+    );
+
+    if ($row = mysqli_fetch_assoc($q)) {
+
+        $title = $row['ad_title'];
+
+        $file =
+            __DIR__ .
+            '/../assets/images/uploads/ads/' .
+            $row['ad_img'];
+
+        if (file_exists($file)) {
+            unlink($file);
+        }
+
+        mysqli_query(
+            $conn,
+            "DELETE FROM ads
+             WHERE id='$id'"
+        );
+
+        $_SESSION['success'] =
+            'Iklan "' . $title . '" berhasil dihapus.';
+    } else {
+
+        $_SESSION['error'] =
+            'Iklan tidak ditemukan.';
+    }
+
+    header("Location: manage_ads.php");
+    exit;
+}
+?>
+
 <!doctype html>
 <html lang="id">
 
@@ -68,7 +228,7 @@
                                     </li>
                                 </ol>
                             </nav>
-                            <h1 class="m-0">Manage Iklan Popup</h1>
+                            <h1 class="m-0">Manage Iklan</h1>
                         </div>
                     </div>
                 </div>
@@ -80,7 +240,7 @@
                 <div class="container mt-4">
 
                     <!-- FORM TAMBAH IKLAN -->
-                    <form id="formIklan">
+                    <form id="formIklan" method="POST" enctype="multipart/form-data">
 
                         <div class="card p-4 mb-4" style="border-radius:12px;">
                             <h6 class="mb-3">Tambah Iklan</h6>
@@ -88,7 +248,7 @@
                             <!-- JUDUL IKLAN -->
                             <div class="form-group">
                                 <label>Judul Iklan <span style="color:red">*</span></label>
-                                <input type="text" id="judulIklan" class="form-control" placeholder="Contoh: Iklan Hukum Info">
+                                <input type="text" name="ad_title" class="form-control" placeholder="Contoh: Iklan Hukum Info">
                             </div>
 
                             <!-- UPLOAD -->
@@ -109,7 +269,7 @@
                                     <p class="mt-2 mb-1">Klik atau drag & drop gambar di sini</p>
                                     <small class="text-muted">Format: JPG, PNG, WEBP (Max 5MB)</small>
 
-                                    <input type="file" id="fileInput" multiple hidden>
+                                    <input type="file" name="ad_img" id="fileInput" multiple hidden>
                                 </div>
 
                                 <!-- PREVIEW -->
@@ -119,13 +279,13 @@
                             <!-- LINK IKLAN -->
                             <div class="form-group">
                                 <label>Link Iklan <span style="color:red">*</span></label>
-                                <input type="text" id="linkIklan" class="form-control" placeholder="Contoh: https://example.com">
+                                <input type="text" name="ad_link" id="linkIklan" class="form-control" placeholder="Contoh: https://example.com">
                             </div>
 
                             <!-- DARI PENGIKLAN -->
                             <div class="form-group">
                                 <label>Nama Request Pengiklan <span style="color:red">*</span></label>
-                                <input type="text" id="" class="form-control" placeholder="Contoh: PT. Sekian sekian">
+                                <input type="text" name="ad_request" class="form-control" placeholder="Contoh: PT. Sekian sekian">
                             </div>
 
                             <!-- BUTTON -->
@@ -150,8 +310,10 @@
                             <div>
                                 Show
                                 <select id="entriesSelect" class="form-control d-inline-block" style="width:70px;">
+                                    <option>5</option>
                                     <option>10</option>
-                                    <option>25</option>
+                                    <option>15</option>
+                                    <option>20</option>
                                 </select> entries
                             </div>
 
@@ -166,7 +328,7 @@
                                 <thead>
                                     <tr>
                                         <th>No</th>
-                                        <th>Judul Iklan</th>
+                                        <th style="min-width: 220px;">Judul Iklan</th>
                                         <th>Gambar</th>
                                         <th>Link Iklan</th>
                                         <th>Nama Request Pengiklan</th>
@@ -174,7 +336,59 @@
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody id="tableBody"></tbody>
+                                <tbody id="tableBody">
+
+                                    <?php
+                                    $no = 1;
+
+                                    while ($row = mysqli_fetch_assoc($ads)):
+                                    ?>
+
+                                        <tr>
+
+                                            <td><?= $no++ ?></td>
+
+                                            <td><?= htmlspecialchars($row['ad_title']) ?></td>
+
+                                            <td>
+                                                <img
+                                                    src="../assets/images/uploads/ads/<?= htmlspecialchars($row['ad_img']) ?>"
+                                                    style="width:120px;height:auto;border-radius:8px;">
+                                            </td>
+
+                                            <td>
+                                                <a href="<?= htmlspecialchars($row['ad_link']) ?>"
+                                                    target="_blank">
+                                                    <?= htmlspecialchars($row['ad_link']) ?>
+                                                </a>
+                                            </td>
+
+                                            <td><?= htmlspecialchars($row['ad_request']) ?></td>
+
+                                            <td>
+                                                <?= date(
+                                                    'd M Y H:i',
+                                                    strtotime($row['created_at'])
+                                                ) ?>
+                                            </td>
+
+                                            <td>
+
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-danger btn-sm deleteAds"
+                                                    data-id="<?= $row['id'] ?>"
+                                                    data-title="<?= htmlspecialchars($row['ad_title']) ?>">
+                                                    Hapus
+                                                </button>
+
+                                            </td>
+
+                                        </tr>
+
+                                    <?php endwhile; ?>
+
+                                </tbody>
                             </table>
                         </div>
 
@@ -196,81 +410,79 @@
 
     <!-- App Settings FAB -->
     <div id="app-settings" style="display: none">
-        <app-settings
-            layout-active="fluid"
-            :layout-location="{
-      'default': 'index.html',
-      'fixed': 'fixed-dashboard.html',
-      'fluid': 'fluid-dashboard.html',
-      'mini': 'mini-dashboard.html'
-    }"></app-settings>
+        <app-settings layout-active="fluid"></app-settings>
     </div>
 
     <!-- ********************************** // MENU-Drawer ********************************** -->
     <?php include 'includes/drawer_menu.php'; ?>
     <!-- ********************************** //END MENU-drawer ********************************** -->
 
-    <!-- =========================
-    MODAL SUKSES SIMPAN IKLAN
-========================= -->
+    <div
+        class="modal fade"
+        id="modalDeleteAds"
+        tabindex="-1">
 
-    <div class="modal fade" id="modalSuksesIklan" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-dialog-centered">
 
             <div class="modal-content border-0"
-                style="
-                border-radius:18px;
-                overflow:hidden;
-            ">
+                style="border-radius:16px;">
 
-                <div class="modal-body text-center p-5">
+                <div class="modal-body text-center p-4">
 
-                    <!-- ICON -->
-                    <div class="mx-auto mb-4 d-flex align-items-center justify-content-center"
+                    <div
+                        class="mx-auto mb-3"
                         style="
-                        width:90px;
-                        height:90px;
+                        width:80px;
+                        height:80px;
                         border-radius:50%;
-                        background:#ecfdf3;
+                        background:#fff3f3;
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
                     ">
 
-                        <span class="material-icons"
+                        <span
+                            class="material-icons"
                             style="
-                            font-size:50px;
-                            color:#16a34a;
+                            color:#dc3545;
+                            font-size:42px;
                         ">
-                            check_circle
+                            delete
                         </span>
 
                     </div>
 
-                    <!-- TITLE -->
-                    <h4 class="font-weight-bold mb-2">
-                        Simpan Berhasil
+                    <h4 class="mb-3">
+                        Hapus Iklan
                     </h4>
 
-                    <!-- TEXT -->
-                    <p class="text-muted mb-4" id="textIklanBerhasil">
-                        Iklan berhasil disimpan
+                    <p id="deleteText" class="text-muted mb-4">
                     </p>
 
-                    <!-- BUTTON -->
-                    <button type="button"
-                        class="btn btn-success px-4"
-                        data-dismiss="modal"
-                        style="
-                        min-width:120px;
-                        height:45px;
-                        border-radius:10px;
-                    ">
-                        Okay
-                    </button>
+                    <div class="d-flex justify-content-center">
+
+                        <button
+                            type="button"
+                            class="btn btn-light mr-2"
+                            data-dismiss="modal">
+                            Batal
+                        </button>
+
+                        <a
+                            href="#"
+                            id="confirmDeleteBtn"
+                            class="btn btn-danger">
+                            Ya, Hapus
+                        </a>
+
+                    </div>
 
                 </div>
 
             </div>
 
         </div>
+
     </div>
 
     <footer class="dashboard-footer mt-4">
@@ -317,319 +529,352 @@
     <script src="../assets/js/flatpickr.js"></script>
 
     <!-- Toastr -->
-    <script src="assets/vendor/toastr.min.js"></script>
-    <script src="assets/js/toastr.js"></script>
+    <script src="../assets/vendor/toastr.min.js"></script>
+    <script src="../assets/js/toastr.js"></script>
+
+    <?php if (isset($_SESSION['success'])): ?>
+
+        <script>
+            $(function() {
+
+                toastr.options = {
+
+                    closeButton: true,
+                    progressBar: false,
+
+                    newestOnTop: true,
+
+                    showMethod: "fadeIn",
+                    hideMethod: "fadeOut",
+
+                    preventDuplicates: true
+                };
+
+                toastr.success(
+                    <?= json_encode($_SESSION['success']) ?>,
+                    "Berhasil"
+                );
+
+            });
+        </script>
+
+    <?php
+        unset($_SESSION['success']);
+    endif;
+    ?>
+
+    <?php if (isset($_SESSION['error'])): ?>
+
+        <script>
+            $(function() {
+
+                toastr.options = {
+
+                    closeButton: true,
+                    progressBar: false,
+
+                    newestOnTop: true,
+
+                    showMethod: "fadeIn",
+                    hideMethod: "fadeOut",
+
+                    preventDuplicates: true
+                };
+
+                toastr.error(
+                    <?= json_encode($_SESSION['error']) ?>,
+                    "Gagal"
+                );
+
+            });
+        </script>
+
+    <?php
+        unset($_SESSION['error']);
+    endif;
+    ?>
 
     <script>
-        let filesArray = [];
+        document.addEventListener("DOMContentLoaded", function() {
 
-        // klik upload
-        document.getElementById("dropArea").addEventListener("click", () => {
-            document.getElementById("fileInput").click();
-        });
+            const tableBody = document.getElementById("tableBody");
+            const rows = Array.from(tableBody.querySelectorAll("tr"));
 
-        // drag & drop
-        const dropArea = document.getElementById("dropArea");
+            const searchInput = document.getElementById("searchInput");
+            const entriesSelect = document.getElementById("entriesSelect");
+            const pagination = document.getElementById("pagination");
+            const infoText = document.getElementById("infoText");
 
-        dropArea.addEventListener("dragover", (e) => {
-            e.preventDefault();
-            dropArea.style.background = "#eef2ff";
-        });
+            let currentPage = 1;
+            let filteredRows = [...rows];
 
-        dropArea.addEventListener("dragleave", () => {
-            dropArea.style.background = "#fafbfe";
-        });
+            function renderTable() {
 
-        dropArea.addEventListener("drop", (e) => {
-            e.preventDefault();
-            dropArea.style.background = "#fafbfe";
-            handleFiles(e.dataTransfer.files);
-        });
-
-        // input file
-        document.getElementById("fileInput").addEventListener("change", function() {
-            handleFiles(this.files);
-        });
-
-        // handle file
-        function handleFiles(files) {
-            for (let file of files) {
-                filesArray.push(file);
-            }
-            renderPreview();
-        }
-
-        // preview
-        function renderPreview() {
-            const preview = document.getElementById("preview");
-            preview.innerHTML = "";
-
-            filesArray.forEach(file => {
-                const reader = new FileReader();
-
-                reader.onload = function(e) {
-                    const img = document.createElement("img");
-                    img.src = e.target.result;
-                    img.style.width = "60px";
-                    img.style.margin = "5px";
-                    img.style.borderRadius = "6px";
-                    preview.appendChild(img);
-                }
-
-                reader.readAsDataURL(file);
-            });
-        }
-
-        // submit form
-        document.getElementById("formIklan").addEventListener("submit", function(e) {
-            e.preventDefault();
-
-            const judul = document.getElementById("judulIklan").value.trim();
-            const link = document.getElementById("linkIklan").value.trim();
-
-            // validasi
-            if (!judul || !link || filesArray.length === 0) {
-                alert("Lengkapi judul, gambar dan link iklan!");
-                return;
-            }
-
-            // buat gambar preview untuk tabel
-            let imagesHTML = "";
-
-            filesArray.forEach(file => {
-                const url = URL.createObjectURL(file);
-
-                imagesHTML += `
-                <img 
-                    src="${url}" 
-                    width="55"
-                    height="55"
-                    style="
-                        object-fit:cover;
-                        border-radius:8px;
-                        margin:2px;
-                        border:1px solid #e5e7eb;
-                    "
-                >
-            `;
-            });
-
-            // data row
-            const rowHTML = `
-    <td>
-        <div style="
-            font-weight:600;
-            min-width:180px;
-        ">
-            ${judul}
-        </div>
-    </td>
-
-    <td>
-        <div class="d-flex align-items-center justify-content-center">
-            ${imagesHTML}
-        </div>
-    </td>
-
-    <td>
-        <a href="${link}" 
-           target="_blank"
-           style="
-                max-width:350px;
-                display:inline-block;
-                overflow:hidden;
-                text-overflow:ellipsis;
-                white-space:nowrap;
-           ">
-            ${link}
-        </a>
-    </td>
-
-    <td>
-
-    </td>
-
-    <td>
-        ${new Date().toLocaleDateString('id-ID')}
-    </td>
-
-    <td class="text-center">
-        <button class="btn btn-sm btn-light text-danger btn-delete">
-            <span class="material-icons" style="font-size:18px;">
-                delete
-            </span>
-        </button>
-    </td>
-`;
-
-            // simpan ke array utama
-            tableData.unshift({
-                html: rowHTML,
-                text: `${judul} ${link}`.toLowerCase()
-            });
-
-            // refresh filtered data
-            filteredData = [...tableData];
-
-            // kembali ke page pertama
-            currentPage = 1;
-
-            // render ulang tabel
-            renderTable();
-
-            // reset form
-            filesArray = [];
-            document.getElementById("preview").innerHTML = "";
-            document.getElementById("formIklan").reset();
-
-            // modal sukses
-            document.getElementById("textIklanBerhasil").innerHTML =
-                `<b>${judul}</b> berhasil disimpan`;
-
-            $('#modalSuksesIklan').modal('show');
-        });
-
-        // DELETE dengan konfirmasi
-        document.addEventListener("click", function(e) {
-
-            if (e.target.closest(".btn-delete")) {
-
-                const row = e.target.closest("tr");
-
-                const confirmDelete = confirm("Yakin mau hapus iklan ini?");
-
-                if (!confirmDelete) return;
-
-                // ambil index asli
-                const visibleIndex = Array.from(row.parentNode.children).indexOf(row);
-
-                const realIndex = ((currentPage - 1) * rowsPerPage) + visibleIndex;
-
-                // hapus data
-                filteredData.splice(realIndex, 1);
-
-                tableData = [...filteredData];
-
-                // cek halaman
-                const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+                const perPage = parseInt(entriesSelect.value);
+                const totalRows = filteredRows.length;
+                const totalPages = Math.ceil(totalRows / perPage) || 1;
 
                 if (currentPage > totalPages) {
-                    currentPage = totalPages || 1;
+                    currentPage = totalPages;
                 }
+
+                rows.forEach(row => row.style.display = "none");
+
+                const start = (currentPage - 1) * perPage;
+                const end = start + perPage;
+
+                filteredRows.slice(start, end).forEach(row => {
+                    row.style.display = "";
+                });
+
+                updateInfo(start, end, totalRows);
+                renderPagination(totalPages);
+            }
+
+            function updateInfo(start, end, totalRows) {
+
+                if (totalRows === 0) {
+
+                    infoText.innerHTML =
+                        "Showing 0 to 0 of 0 entries";
+
+                    return;
+                }
+
+                infoText.innerHTML =
+                    `Showing ${start + 1} to ${Math.min(end, totalRows)} of ${totalRows} entries`;
+            }
+
+            function renderPagination(totalPages) {
+
+                pagination.innerHTML = "";
+
+                let html = "";
+
+                html += `
+        <button
+            class="btn btn-sm btn-light mr-1"
+            ${currentPage === 1 ? "disabled" : ""}
+            onclick="changePage(${currentPage - 1})">
+            Prev
+        </button>
+    `;
+
+                let pages = [];
+
+                if (totalPages <= 7) {
+
+                    for (let i = 1; i <= totalPages; i++) {
+                        pages.push(i);
+                    }
+
+                } else {
+
+                    pages.push(1);
+
+                    if (currentPage > 3) {
+                        pages.push("...");
+                    }
+
+                    let start = Math.max(2, currentPage - 1);
+                    let end = Math.min(totalPages - 1, currentPage + 1);
+
+                    for (let i = start; i <= end; i++) {
+                        pages.push(i);
+                    }
+
+                    if (currentPage < totalPages - 2) {
+                        pages.push("...");
+                    }
+
+                    pages.push(totalPages);
+                }
+
+                pages.forEach(page => {
+
+                    if (page === "...") {
+
+                        html += `
+                <span class="mx-1">
+                    ...
+                </span>
+            `;
+
+                    } else {
+
+                        html += `
+                <button
+                    class="btn btn-sm ${
+                        page === currentPage
+                        ? 'btn-primary'
+                        : 'btn-light'
+                    } mr-1"
+                    onclick="changePage(${page})">
+                    ${page}
+                </button>
+            `;
+                    }
+                });
+
+                html += `
+        <button
+            class="btn btn-sm btn-light"
+            ${currentPage === totalPages ? "disabled" : ""}
+            onclick="changePage(${currentPage + 1})">
+            Next
+        </button>
+    `;
+
+                pagination.innerHTML = html;
+            }
+
+            window.changePage = function(page) {
+
+                currentPage = page;
 
                 renderTable();
             }
 
+            searchInput.addEventListener("keyup", function() {
+
+                const keyword =
+                    this.value.toLowerCase().trim();
+
+                filteredRows = rows.filter(row => {
+
+                    return row.innerText
+                        .toLowerCase()
+                        .includes(keyword);
+
+                });
+
+                currentPage = 1;
+
+                renderTable();
+            });
+
+            entriesSelect.addEventListener("change", function() {
+
+                currentPage = 1;
+
+                renderTable();
+            });
+
+            renderTable();
         });
-    </script>
 
-    <script>
-        let tableData = [];
-        let currentPage = 1;
-        let rowsPerPage = 10;
-        let filteredData = [];
+        const dropArea = document.getElementById('dropArea');
+        const fileInput = document.getElementById('fileInput');
 
-        // ambil data awal dari tabel
-        function initData() {
-            const rows = document.querySelectorAll("#tableBody tr");
+        dropArea.addEventListener('click', () => {
+            fileInput.click();
+        });
 
-            tableData = Array.from(rows).map(row => {
-                return {
-                    html: row.innerHTML,
-                    text: row.innerText.toLowerCase()
-                }
-            });
+        fileInput.addEventListener('change', function() {
 
-            filteredData = [...tableData];
-        }
+            const preview = document.getElementById('preview');
 
-        initData();
+            preview.innerHTML = '';
 
-        // render table
-        function renderTable() {
-            const table = document.getElementById("tableBody");
-            table.innerHTML = "";
+            if (!this.files.length) return;
 
-            const start = (currentPage - 1) * rowsPerPage;
-            const end = start + rowsPerPage;
+            const file = this.files[0];
 
-            const pageData = filteredData.slice(start, end);
+            if (!file.type.startsWith('image/')) {
 
-            pageData.forEach((row, index) => {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `<td>${start + index + 1}</td>` + row.html.replace(/^<td>.*?<\/td>/, '');
-                table.appendChild(tr);
-            });
+                toastr.error('File harus berupa gambar');
+                this.value = '';
 
-            renderPagination();
-            updateInfo();
-        }
-
-        // pagination
-        function renderPagination() {
-            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-            const pagination = document.getElementById("pagination");
-            pagination.innerHTML = "";
-
-            if (totalPages <= 1) return;
-
-            // prev
-            pagination.innerHTML += `
-        <button class="btn btn-light btn-sm mr-1" ${currentPage===1?'disabled':''}
-            onclick="changePage(${currentPage-1})">Previous</button>
-    `;
-
-            for (let i = 1; i <= totalPages; i++) {
-                pagination.innerHTML += `
-            <button class="btn btn-sm ${i===currentPage?'btn-primary':'btn-light'} mr-1"
-                onclick="changePage(${i})">${i}</button>
-        `;
+                return;
             }
 
-            // next
-            pagination.innerHTML += `
-        <button class="btn btn-light btn-sm ml-1" ${currentPage===totalPages?'disabled':''}
-            onclick="changePage(${currentPage+1})">Next</button>
-    `;
-        }
+            const reader = new FileReader();
 
-        // ganti halaman
-        function changePage(page) {
-            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-            if (page < 1 || page > totalPages) return;
+            reader.onload = function(e) {
 
-            currentPage = page;
-            renderTable();
-        }
+                preview.innerHTML = `
+            <div style="
+                position:relative;
+                display:inline-block;
+                margin-top:15px;
+            ">
 
-        // show entries
-        document.getElementById("entriesSelect").addEventListener("change", function() {
-            rowsPerPage = parseInt(this.value);
-            currentPage = 1;
-            renderTable();
+                <img
+                    src="${e.target.result}"
+                    style="
+                        width:250px;
+                        max-width:100%;
+                        border-radius:12px;
+                        border:1px solid #ddd;
+                        padding:5px;
+                        background:#fff;
+                    "
+                >
+
+                <button
+                    type="button"
+                    id="removePreview"
+                    style="
+                        position:absolute;
+                        top:-10px;
+                        right:-10px;
+                        width:28px;
+                        height:28px;
+                        border:none;
+                        border-radius:50%;
+                        background:#dc3545;
+                        color:#fff;
+                        cursor:pointer;
+                        font-weight:bold;
+                    ">
+                    ×
+                </button>
+
+                <div
+                    style="
+                        margin-top:8px;
+                        font-size:13px;
+                        color:#666;
+                    ">
+                    ${file.name}
+                </div>
+
+            </div>
+        `;
+
+                document
+                    .getElementById('removePreview')
+                    .addEventListener('click', function() {
+
+                        fileInput.value = '';
+                        preview.innerHTML = '';
+
+                    });
+            };
+
+            reader.readAsDataURL(file);
+
         });
 
-        // search
-        document.getElementById("searchInput").addEventListener("keyup", function() {
-            const keyword = this.value.toLowerCase();
+        // MODAL DELETE
+        document.addEventListener('click', function(e) {
 
-            filteredData = tableData.filter(row => row.text.includes(keyword));
-            currentPage = 1;
-            renderTable();
+            const btn = e.target.closest('.deleteAds');
+
+            if (!btn) return;
+
+            const id = btn.dataset.id;
+            const title = btn.dataset.title;
+
+            document.getElementById('deleteText').innerHTML =
+                `Apakah Anda yakin ingin menghapus <b>"${title}"</b> ?`;
+
+            document.getElementById('confirmDeleteBtn').href =
+                '?delete=' + id;
+
+            $('#modalDeleteAds').modal('show');
+
         });
-
-        // info text
-        function updateInfo() {
-            const info = document.getElementById("infoText");
-
-            const start = filteredData.length === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
-            const end = Math.min(currentPage * rowsPerPage, filteredData.length);
-
-            info.innerText = `Showing ${start} to ${end} of ${filteredData.length} entries`;
-        }
-
-        // first render
-        renderTable();
     </script>
 </body>
 

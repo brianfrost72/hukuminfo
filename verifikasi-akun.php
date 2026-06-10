@@ -1,3 +1,18 @@
+<?php
+
+session_start();
+
+if (
+    !isset($_SESSION['register_data']) ||
+    !isset($_SESSION['verification_email'])
+) {
+    header("Location: registrasi.php");
+    exit;
+}
+
+$email = $_SESSION['verification_email'];
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 
@@ -20,6 +35,13 @@
 
     <style>
         .otp-input {
+            display: flex;
+            justify-content: center;
+            gap: 2px;
+            margin-bottom: 40px;
+        }
+
+        .otp-input input {
             width: 60px !important;
             height: 60px;
             text-align: center;
@@ -97,22 +119,25 @@
                             <h2 class="mb-3">Verifikasi Akun</h2>
 
                             <p class="text-muted mb-4">
-                                Masukkan 5 digit kode verifikasi yang telah dikirim ke email Anda.
+                                Masukkan 6 digit kode verifikasi yang telah dikirim ke email Anda.
+                                <br>
+                                <strong><?= htmlspecialchars($email) ?></strong>
                             </p>
 
-                            <form action="proses-verifikasi.php" method="POST" id="otpForm">
+                            <form action="logic/proses-verifikasi.php" method="POST" id="otpForm">
 
-                                <div class="d-flex justify-content-center gap-2 mb-4">
-                                    <input type="text" class="otp-input form-control" maxlength="1" name="otp1" autocomplete="off">
-                                    <input type="text" class="otp-input form-control" maxlength="1" name="otp2" autocomplete="off">
-                                    <input type="text" class="otp-input form-control" maxlength="1" name="otp3" autocomplete="off">
-                                    <input type="text" class="otp-input form-control" maxlength="1" name="otp4" autocomplete="off">
-                                    <input type="text" class="otp-input form-control" maxlength="1" name="otp5" autocomplete="off">
+                                <div class="otp-input">
+                                    <input type="text" class="form-control" maxlength="1">
+                                    <input type="text" class="form-control" maxlength="1">
+                                    <input type="text" class="form-control" maxlength="1">
+                                    <input type="text" class="form-control" maxlength="1">
+                                    <input type="text" class="form-control" maxlength="1">
+                                    <input type="text" class="form-control" maxlength="1">
                                 </div>
 
                                 <input type="hidden" name="kode_verifikasi" id="kode_verifikasi">
 
-                                <button type="submit" class="btn btn-primary btn-block rounded-pill">
+                                <button type="submit" id="verifyBtn" class="btn btn-primary btn-block rounded-pill">
                                     Verifikasi Akun
                                 </button>
 
@@ -121,7 +146,8 @@
                             <div class="mt-4">
                                 <small class="text-muted">
                                     Tidak menerima kode?
-                                    <a href="#">Kirim Ulang</a>
+                                    <span class="resend-link"> Kirim Ulang OTP</span>
+                                    <span id="timer"></span>
                                 </small>
                             </div>
 
@@ -147,7 +173,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
 
-            const inputs = document.querySelectorAll('.otp-input');
+            const inputs = document.querySelectorAll('.otp-input input');
             const form = document.getElementById('otpForm');
             const hiddenInput = document.getElementById('kode_verifikasi');
 
@@ -193,7 +219,7 @@
                     let data = (e.clipboardData || window.clipboardData)
                         .getData('text')
                         .replace(/\D/g, '')
-                        .substring(0, 5);
+                        .substring(0, 6);
 
                     data.split('').forEach((char, i) => {
                         if (inputs[i]) {
@@ -203,7 +229,7 @@
 
                     updateOTP();
 
-                    let lastIndex = Math.min(data.length, 5) - 1;
+                    let lastIndex = Math.min(data.length, 6) - 1;
                     if (lastIndex >= 0) {
                         inputs[lastIndex].focus();
                     }
@@ -221,6 +247,75 @@
             }
 
             inputs[0].focus();
+        });
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            // ================= AMBIL ELEMEN =================
+            const inputs = document.querySelectorAll(".otp-input input");
+            const verifyBtn = document.getElementById("verifyBtn");
+            const otpContent = document.querySelector(".otp-content");
+            const otpSuccess = document.querySelector(".otp-success");
+            const resendLink = document.querySelector(".resend-link");
+            const timerDisplay = document.getElementById("timer");
+
+            let timeLeft = 60; // detik
+            let timerId = null;
+
+            // ================= INPUT OTP =================
+            inputs.forEach((input, index) => {
+                input.addEventListener("input", () => {
+                    input.value = input.value.replace(/[^0-9]/g, "").slice(0, 1);
+                    if (input.value && index < inputs.length - 1) {
+                        inputs[index + 1].focus();
+                    }
+                });
+
+                input.addEventListener("keydown", (e) => {
+                    if (e.key === "Backspace" && !input.value && index > 0) {
+                        inputs[index - 1].focus();
+                    }
+                });
+            });
+
+            // ================= TIMER =================
+            function startTimer() {
+                clearInterval(timerId);
+                timeLeft = 60;
+
+                resendLink.style.pointerEvents = "none";
+                resendLink.style.opacity = "0.5";
+
+                timerId = setInterval(() => {
+                    if (timeLeft <= 0) {
+                        clearInterval(timerId);
+                        timerDisplay.textContent = "(boleh kirim ulang)";
+                        resendLink.style.pointerEvents = "auto";
+                        resendLink.style.opacity = "1";
+                    } else {
+                        timerDisplay.textContent = `(${timeLeft}s)`;
+                        timeLeft--;
+                    }
+                }, 1000);
+            }
+
+            // ================= RESEND OTP =================
+            resendLink.addEventListener("click", async () => {
+                if (timeLeft > 0) return;
+
+                try {
+                    await fetch("logic/resend_verify.php");
+                    startTimer();
+                } catch {
+                    alert("Gagal kirim ulang OTP");
+                }
+            });
+
+            // ================= START TIMER PERTAMA =================
+            startTimer();
+
         });
     </script>
 </body>

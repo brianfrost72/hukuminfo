@@ -1,3 +1,74 @@
+<?php
+session_start();
+require_once __DIR__ . "/../koneksi.php";
+
+/*
+|--------------------------------------------------------------------------
+| GET BOOKMARKS
+|--------------------------------------------------------------------------
+*/
+$bookmarks = [];
+
+$sql = "
+SELECT
+    pb.id,
+    pb.created_at,
+
+    p.post_title,
+
+    u.email,
+
+    pp.full_name,
+    pp.gender,
+    pp.photo_profile
+
+FROM post_bookmarks pb
+
+INNER JOIN post p
+    ON p.id = pb.post_id
+
+INNER JOIN users u
+    ON u.id = pb.user_id
+
+LEFT JOIN public_profile pp
+    ON pp.user_id = u.id
+
+ORDER BY pb.created_at DESC
+";
+
+$result = mysqli_query($conn, $sql);
+
+while ($row = mysqli_fetch_assoc($result)) {
+
+    $avatar = '';
+
+    if (!empty($row['photo_profile'])) {
+
+        $avatar = '../assets/images/uploads/public_photos/' . $row['photo_profile'];
+    } else {
+
+        if ($row['gender'] === 'Perempuan') {
+            $avatar = '../assets/images/avatar/avatar_women.png';
+        } else {
+            $avatar = '../assets/images/avatar/avatar_men.png';
+        }
+    }
+
+    $bookmarks[] = [
+        'id' => $row['id'],
+        'full_name' => $row['full_name'] ?: '-',
+        'email' => $row['email'],
+        'post_title' => $row['post_title'],
+        'avatar' => $avatar,
+        'created_at' => $row['created_at'],
+        'created_at_format' => date(
+            'd/m/Y H:i',
+            strtotime($row['created_at'])
+        ) . ' WIB'
+    ];
+}
+?>
+
 <!doctype html>
 <html lang="id">
 
@@ -66,11 +137,11 @@
                                 <ol class="breadcrumb mb-0">
                                     <li class="breadcrumb-item"><a href="#">Beranda</a></li>
                                     <li class="breadcrumb-item active" aria-current="page">
-                                        List Bookmark
+                                        Daftar Bookmark
                                     </li>
                                 </ol>
                             </nav>
-                            <h1 class="m-0">List Bookmark</h1>
+                            <h1 class="m-0">Daftar Bookmark</h1>
                         </div>
                     </div>
                 </div>
@@ -79,7 +150,7 @@
 
             <!-- ********************************// START page__content //******************************* -->
             <div class="container-fluid page__container">
-                <!-- KOMENTAR MASUK -->
+                <!-- BOOKMARKS -->
                 <div class="card mt-4 mb-4 shadow-sm" style="border-radius:14px;">
                     <div class="card-body">
 
@@ -93,16 +164,6 @@
 
                         <!-- FILTER -->
                         <div class="row mb-4">
-
-                            <div class="col-md-3">
-                                <label>Filter Postingan</label>
-                                <select class="form-control" id="filterPostingan">
-                                    <option value="Semua">Semua Postingan</option>
-                                    <option value="Tips Produktivitas">Tips Produktivitas</option>
-                                    <option value="Belajar Efektif">Belajar Efektif</option>
-                                    <option value="Manajemen Waktu">Manajemen Waktu</option>
-                                </select>
-                            </div>
 
                             <div class="col-md-3">
                                 <label>Waktu</label>
@@ -131,13 +192,12 @@
                                         <th>Nama</th>
                                         <th>Avatar / Photo</th>
                                         <th>Email</th>
-                                        <th>Status</th>
                                         <th>Postingan</th>
                                         <th>Tanggal Bookmark</th>
                                     </tr>
                                 </thead>
 
-                                <tbody id="komentarMasukBody"></tbody>
+                                <tbody id="bookmarks"></tbody>
                             </table>
                         </div>
 
@@ -148,7 +208,7 @@
                                 Showing 0 to 0 of 0 entries
                             </div>
 
-                            <ul class="pagination mb-0" id="paginationKomentar"></ul>
+                            <ul class="pagination mb-0" id="paginationBookmark"></ul>
 
                         </div>
 
@@ -218,689 +278,180 @@
     <script src="assets/vendor/toastr.min.js"></script>
     <script src="assets/js/toastr.js"></script>
 
+
     <script>
-        // =========================================
-        // DATA
-        // =========================================
+        const allBookmarks = <?= json_encode(
+                                    $bookmarks,
+                                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                                ); ?>;
 
-        let komentarMasuk = [{
-                id: 1,
-                nama: "Budi Santoso",
-                avatar: "https://i.pravatar.cc/50?img=1",
-                email: "budi@example.com",
-                status: "Aktif",
-                postingan: "Tips Produktivitas",
-                tanggal: "2026-05-24 14:35"
-            },
-            {
-                id: 2,
-                nama: "Siti Nurhaliza",
-                avatar: "https://i.pravatar.cc/50?img=5",
-                email: "siti@example.com",
-                status: "Aktif",
-                postingan: "Belajar Efektif",
-                tanggal: "2026-05-23 11:20"
-            }
-        ];
+        let currentPage = 1;
+        let perPage = 10;
 
+        function renderBookmarks() {
 
-        let komentarHidden = [];
+            let data = [...allBookmarks];
 
+            const filterWaktu = document.getElementById('filterWaktu').value;
 
+            if (filterWaktu === 'baru') {
 
-        // =========================================
-        // PAGINATION STATE
-        // =========================================
+                data.sort((a, b) =>
+                    new Date(b.created_at) - new Date(a.created_at)
+                );
 
-        let currentMasukPage = 1;
-        let currentHiddenPage = 1;
+            } else {
 
-
-
-        // =========================================
-        // ELEMENT MASUK
-        // =========================================
-
-        const masukBody = document.getElementById("komentarMasukBody");
-
-        const masukPagination = document.getElementById("paginationKomentar");
-
-        const masukPaginationInfo = document.getElementById("paginationInfo");
-
-        const filterPostingan = document.getElementById("filterPostingan");
-
-        const filterWaktu = document.getElementById("filterWaktu");
-
-        const showEntries = document.getElementById("showEntries");
-
-
-
-        // =========================================
-        // ELEMENT HIDDEN
-        // =========================================
-
-        const hiddenBody = document.getElementById("hiddenKomentarBody");
-
-        const hiddenPagination =
-            document.getElementById("hiddenPagination");
-
-        const hiddenPaginationInfo =
-            document.getElementById("hiddenPaginationInfo");
-
-        const hiddenFilterPostingan =
-            document.getElementById("hiddenFilterPostingan");
-
-        const hiddenFilterWaktu =
-            document.getElementById("hiddenFilterWaktu");
-
-        const hiddenShowEntries =
-            document.getElementById("hiddenShowEntries");
-
-
-
-        // =========================================
-        // FORMAT TANGGAL
-        // =========================================
-
-        function formatTanggal(dateString) {
-
-            const date = new Date(dateString);
-
-            return date.toLocaleString("id-ID", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit"
-            });
-        }
-
-
-
-        // =========================================
-        // RENDER KOMENTAR MASUK
-        // =========================================
-
-        function renderKomentarMasuk() {
-
-            let data = [...komentarMasuk];
-
-
-            // FILTER
-            if (filterPostingan.value !== "Semua") {
-
-                data = data.filter(item =>
-                    item.postingan === filterPostingan.value
+                data.sort((a, b) =>
+                    new Date(a.created_at) - new Date(b.created_at)
                 );
             }
 
+            const totalRows = data.length;
+            const totalPages = Math.ceil(totalRows / perPage);
 
-            // SORT
-            data.sort((a, b) => {
-
-                const dateA = new Date(a.tanggal);
-                const dateB = new Date(b.tanggal);
-
-                return filterWaktu.value === "baru" ?
-                    dateB - dateA :
-                    dateA - dateB;
-            });
-
-
-            // PAGINATION
-            const limit = parseInt(showEntries.value);
-
-            const start = (currentMasukPage - 1) * limit;
-
-            const end = start + limit;
-
-            const paginatedData = data.slice(start, end);
-
-
-            masukBody.innerHTML = "";
-
-
-            paginatedData.forEach(item => {
-
-                masukBody.innerHTML += `
-                <tr class="${item.new ? 'new-comment-highlight' : ''}">
-
-                    <td>${item.nama}</td>
-
-                    <td>
-                        <img src="${item.avatar}"
-                             width="45"
-                             height="45"
-                             style="border-radius:50%; object-fit:cover;">
-                    </td>
-
-                    <td>${item.email}</td>
-
-                    <td>
-                        <span class="badge badge-success px-3 py-2">
-                            Aktif
-                        </span>
-                    </td>
-
-                    <td>${item.postingan}</td>
-
-                    <td>${formatTanggal(item.tanggal)}</td>
-
-                </tr>
-            `;
-
-                item.new = false;
-
-            });
-
-
-            renderMasukPagination(data.length, limit);
-
-
-            masukPaginationInfo.innerHTML =
-                `Showing ${data.length === 0 ? 0 : start + 1}
-            to ${Math.min(end, data.length)}
-            of ${data.length} entries`;
-        }
-
-
-
-        // =========================================
-        // PAGINATION MASUK
-        // =========================================
-
-        function renderMasukPagination(totalData, limit) {
-
-            const totalPages = Math.ceil(totalData / limit);
-
-            masukPagination.innerHTML = "";
-
-            // PREV
-            masukPagination.innerHTML += `
-        <li class="page-item ${currentMasukPage === 1 ? 'disabled' : ''}">
-            <a class="page-link"
-               href="#"
-               onclick="changeMasukPage(${currentMasukPage - 1})">
-
-                &laquo;
-
-            </a>
-        </li>
-    `;
-
-
-            const visiblePages = [];
-
-            // PAGE AWAL
-            visiblePages.push(1);
-
-            // PAGE TENGAH
-            for (
-                let i = currentMasukPage - 1; i <= currentMasukPage + 1; i++
-            ) {
-
-                if (i > 1 && i < totalPages) {
-                    visiblePages.push(i);
-                }
+            if (currentPage > totalPages) {
+                currentPage = 1;
             }
 
-            // PAGE AKHIR
-            if (totalPages > 1) {
-                visiblePages.push(totalPages);
-            }
+            const start = (currentPage - 1) * perPage;
+            const end = start + perPage;
 
+            const rows = data.slice(start, end);
 
-            // HAPUS DUPLIKAT
-            const uniquePages = [...new Set(visiblePages)];
+            let html = '';
 
+            if (rows.length === 0) {
 
-            let lastPage = 0;
-
-            uniquePages.forEach(page => {
-
-                // TITIK TITIK
-                if (page - lastPage > 1) {
-
-                    masukPagination.innerHTML += `
-                <li class="page-item disabled">
-
-                    <span class="page-link">
-                        ...
-                    </span>
-
-                </li>
-            `;
-                }
-
-                // PAGE
-                masukPagination.innerHTML += `
-            <li class="page-item ${currentMasukPage === page ? 'active' : ''}">
-
-                <a class="page-link"
-                   href="#"
-                   onclick="changeMasukPage(${page})">
-
-                    ${page}
-
-                </a>
-
-            </li>
+                html = `
+        <tr>
+            <td colspan="5" class="text-center">
+                Tidak ada data bookmark
+            </td>
+        </tr>
         `;
 
-                lastPage = page;
-            });
+            } else {
 
+                rows.forEach(item => {
 
-            // NEXT
-            masukPagination.innerHTML += `
-        <li class="page-item ${currentMasukPage === totalPages ? 'disabled' : ''}">
+                    html += `
+            <tr>
 
-            <a class="page-link"
-               href="#"
-               onclick="changeMasukPage(${currentMasukPage + 1})">
+                <td>${item.full_name}</td>
 
-                &raquo;
+                <td>
+                    <img
+                        src="${item.avatar}"
+                        width="45"
+                        height="45"
+                        style="border-radius:50%;object-fit:cover;"
+                    >
+                </td>
 
-            </a>
+                <td>${item.email}</td>
 
-        </li>
-    `;
-        }
+                <td>${item.post_title}</td>
 
+                <td>${item.created_at_format}</td>
 
-
-        function changeMasukPage(page) {
-
-            currentMasukPage = page;
-
-            renderKomentarMasuk();
-        }
-
-
-
-        // =========================================
-        // RENDER KOMENTAR HIDDEN
-        // =========================================
-
-        function renderKomentarHidden() {
-
-            let data = [...komentarHidden];
-
-
-            // FILTER
-            if (hiddenFilterPostingan.value !== "Semua") {
-
-                data = data.filter(item =>
-                    item.postingan === hiddenFilterPostingan.value
-                );
-            }
-
-
-            // SORT
-            data.sort((a, b) => {
-
-                const dateA = new Date(a.tanggal);
-                const dateB = new Date(b.tanggal);
-
-                return hiddenFilterWaktu.value === "baru" ?
-                    dateB - dateA :
-                    dateA - dateB;
-            });
-
-
-            // PAGINATION
-            const limit = parseInt(hiddenShowEntries.value);
-
-            const start = (currentHiddenPage - 1) * limit;
-
-            const end = start + limit;
-
-            const paginatedData = data.slice(start, end);
-
-
-            hiddenBody.innerHTML = "";
-
-
-            paginatedData.forEach(item => {
-
-                hiddenBody.innerHTML += `
-                <tr>
-
-                    <td>${item.nama}</td>
-
-                    <td>
-                        <img src="${item.avatar}"
-                             width="45"
-                             height="45"
-                             style="border-radius:50%; object-fit:cover;">
-                    </td>
-
-                    <td>${item.email}</td>
-
-                    <td>
-                        <span class="badge badge-danger px-3 py-2">
-                            Disembunyikan
-                        </span>
-                    </td>
-
-                    <td>${item.postingan}</td>
-
-                    <td>${formatTanggal(item.tanggal)}</td>
-
-                </tr>
+            </tr>
             `;
-            });
-
-
-            renderHiddenPagination(data.length, limit);
-
-
-            hiddenPaginationInfo.innerHTML =
-                `Showing ${data.length === 0 ? 0 : start + 1}
-            to ${Math.min(end, data.length)}
-            of ${data.length} entries`;
-        }
-
-
-
-        // =========================================
-        // PAGINATION HIDDEN
-        // =========================================
-
-        function renderHiddenPagination(totalData, limit) {
-
-            const totalPages = Math.ceil(totalData / limit);
-
-            hiddenPagination.innerHTML = "";
-
-
-            // PREV
-            hiddenPagination.innerHTML += `
-        <li class="page-item ${currentHiddenPage === 1 ? 'disabled' : ''}">
-
-            <a class="page-link"
-               href="#"
-               onclick="changeHiddenPage(${currentHiddenPage - 1})">
-
-                &laquo;
-
-            </a>
-
-        </li>
-    `;
-
-
-            const visiblePages = [];
-
-            // PAGE AWAL
-            visiblePages.push(1);
-
-            // PAGE TENGAH
-            for (
-                let i = currentHiddenPage - 1; i <= currentHiddenPage + 1; i++
-            ) {
-
-                if (i > 1 && i < totalPages) {
-                    visiblePages.push(i);
-                }
+                });
             }
 
-            // PAGE AKHIR
+            document.getElementById('bookmarks').innerHTML = html;
+
+            renderPagination(totalPages, totalRows);
+        }
+
+        function renderPagination(totalPages, totalRows) {
+
+            const pagination = document.getElementById('paginationBookmark');
+
+            let html = '';
+
             if (totalPages > 1) {
-                visiblePages.push(totalPages);
-            }
 
-
-            const uniquePages = [...new Set(visiblePages)];
-
-            let lastPage = 0;
-
-
-            uniquePages.forEach(page => {
-
-                // TITIK TITIK
-                if (page - lastPage > 1) {
-
-                    hiddenPagination.innerHTML += `
-                <li class="page-item disabled">
-
-                    <span class="page-link">
-                        ...
-                    </span>
-
-                </li>
-            `;
-                }
-
-
-                // PAGE
-                hiddenPagination.innerHTML += `
-            <li class="page-item ${currentHiddenPage === page ? 'active' : ''}">
-
-                <a class="page-link"
-                   href="#"
-                   onclick="changeHiddenPage(${page})">
-
-                    ${page}
-
-                </a>
-
-            </li>
+                html += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link"
+               href="#"
+               onclick="changePage(${currentPage - 1})">
+                Prev
+            </a>
+        </li>
         `;
 
-                lastPage = page;
-            });
+                for (let i = 1; i <= totalPages; i++) {
 
+                    html += `
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link"
+                   href="#"
+                   onclick="changePage(${i})">
+                    ${i}
+                </a>
+            </li>
+            `;
+                }
 
-            // NEXT
-            hiddenPagination.innerHTML += `
-        <li class="page-item ${currentHiddenPage === totalPages ? 'disabled' : ''}">
-
+                html += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
             <a class="page-link"
                href="#"
-               onclick="changeHiddenPage(${currentHiddenPage + 1})">
-
-                &raquo;
-
+               onclick="changePage(${currentPage + 1})">
+                Next
             </a>
-
         </li>
-    `;
+        `;
+            }
+
+            pagination.innerHTML = html;
+
+            const startEntry =
+                totalRows === 0 ?
+                0 :
+                ((currentPage - 1) * perPage) + 1;
+
+            const endEntry =
+                Math.min(currentPage * perPage, totalRows);
+
+            document.getElementById('paginationInfo').innerHTML =
+                `Showing ${startEntry} to ${endEntry} of ${totalRows} entries`;
         }
 
+        function changePage(page) {
 
+            event.preventDefault();
 
-        function changeHiddenPage(page) {
+            currentPage = page;
 
-            currentHiddenPage = page;
-
-            renderKomentarHidden();
+            renderBookmarks();
         }
 
+        document
+            .getElementById('filterWaktu')
+            .addEventListener('change', function() {
 
+                currentPage = 1;
 
-        // =========================================
-        // ARSIPKAN KOMENTAR
-        // =========================================
-
-        function arsipkanKomentar(id) {
-
-            const confirmArsip =
-                confirm("Yakin ingin menyembunyikan komentar ini?");
-
-            if (!confirmArsip) return;
-
-
-            const index =
-                komentarMasuk.findIndex(item => item.id === id);
-
-            if (index === -1) return;
-
-
-            const komentar = komentarMasuk[index];
-
-
-            komentarHidden.unshift(komentar);
-
-
-            komentarMasuk.splice(index, 1);
-
-
-            renderKomentarMasuk();
-
-            renderKomentarHidden();
-        }
-
-
-
-        // =========================================
-        // UP KOMENTAR
-        // =========================================
-
-        function upKomentar(id) {
-
-            const confirmUp =
-                confirm("Tampilkan kembali komentar ini?");
-
-            if (!confirmUp) return;
-
-
-            const index =
-                komentarHidden.findIndex(item => item.id === id);
-
-            if (index === -1) return;
-
-
-            const komentar = komentarHidden[index];
-
-
-            komentar.new = true;
-
-
-            komentarMasuk.unshift(komentar);
-
-
-            komentarHidden.splice(index, 1);
-
-
-            currentMasukPage = 1;
-
-
-            renderKomentarMasuk();
-
-            renderKomentarHidden();
-        }
-
-
-
-        // =========================================
-        // EVENT FILTER MASUK
-        // =========================================
-
-        filterPostingan.addEventListener("change", () => {
-
-            currentMasukPage = 1;
-
-            renderKomentarMasuk();
-        });
-
-        filterWaktu.addEventListener("change", () => {
-
-            currentMasukPage = 1;
-
-            renderKomentarMasuk();
-        });
-
-        showEntries.addEventListener("change", () => {
-
-            currentMasukPage = 1;
-
-            renderKomentarMasuk();
-        });
-
-
-
-        // =========================================
-        // EVENT FILTER HIDDEN
-        // =========================================
-
-        hiddenFilterPostingan.addEventListener("change", () => {
-
-            currentHiddenPage = 1;
-
-            renderKomentarHidden();
-        });
-
-        hiddenFilterWaktu.addEventListener("change", () => {
-
-            currentHiddenPage = 1;
-
-            renderKomentarHidden();
-        });
-
-        hiddenShowEntries.addEventListener("change", () => {
-
-            currentHiddenPage = 1;
-
-            renderKomentarHidden();
-        });
-
-
-
-        // =========================================
-        // SIMULASI KOMENTAR BARU
-        // =========================================
-
-        function simulasiPesanMasuk() {
-
-            const randomId = Math.floor(Math.random() * 70);
-
-            komentarMasuk.unshift({
-
-                id: Date.now(),
-
-                nama: "Komentar Baru",
-
-                avatar: `https://i.pravatar.cc/50?img=${randomId}`,
-
-                email: "baru@example.com",
-
-                status: "Aktif",
-
-                postingan: "Tips Produktivitas",
-
-                tanggal: new Date(),
-
-                new: true
+                renderBookmarks();
             });
 
+        document
+            .getElementById('showEntries')
+            .addEventListener('change', function() {
 
-            currentMasukPage = 1;
+                perPage = parseInt(this.value);
 
+                currentPage = 1;
 
-            renderKomentarMasuk();
-        }
+                renderBookmarks();
+            });
 
-
-
-        // AUTO SIMULASI
-        setInterval(() => {
-
-            simulasiPesanMasuk();
-
-        }, 10000);
-
-
-
-        // =========================================
-        // INITIAL
-        // =========================================
-
-        renderKomentarMasuk();
-
-        renderKomentarHidden();
+        renderBookmarks();
     </script>
-
 </body>
 
 </html>
