@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . '/auth.php';
 require_once __DIR__ . "/../koneksi.php";
 
 
@@ -15,6 +16,7 @@ if (
 ) {
 
     $platform_id = (int) $_POST['platform_id'];
+    $name_platform = trim($_POST['name_platform']);
     $url = trim($_POST['url']);
 
     $cek = mysqli_query(
@@ -40,11 +42,13 @@ if (
         "INSERT INTO social_media
         (
             platform_id,
+            name_platform,
             link_platform
         )
         VALUES
         (
             '$platform_id',
+            '" . mysqli_real_escape_string($conn, $name_platform) . "',
             '" . mysqli_real_escape_string($conn, $url) . "'
         )"
     );
@@ -62,17 +66,18 @@ if (
     &&
     $_POST['aksi'] == 'edit'
 ) {
-
-    $id  = (int) $_POST['id'];
+    
+    $id = (int) $_POST['id'];
+    $name_platform = trim($_POST['name_platform']);
     $url = trim($_POST['url']);
 
     mysqli_query(
         $conn,
         "UPDATE social_media
-        SET
-            link_platform='" . mysqli_real_escape_string($conn, $url) . "'
-        WHERE id='$id'
-    "
+     SET
+        name_platform='" . mysqli_real_escape_string($conn, $name_platform) . "',
+        link_platform='" . mysqli_real_escape_string($conn, $url) . "'
+     WHERE id='$id'"
     );
 
     echo "
@@ -255,6 +260,7 @@ $sisaPlatform = mysqli_fetch_assoc($qSisaPlatform);
                                     <tr>
                                         <th width="60">No</th>
                                         <th width="80">Icon</th>
+                                        <th>Nama Social Media</th>
                                         <th>Platform</th>
                                         <th>URL</th>
                                         <th width="150" class="text-center">
@@ -272,13 +278,18 @@ $sisaPlatform = mysqli_fetch_assoc($qSisaPlatform);
     SELECT
         sm.id,
         sm.platform_id,
+    sm.name_platform AS socmed_name,
         sm.link_platform,
-        ls.name_platform
+        ls.name_platform AS platform_name
     FROM social_media sm
     INNER JOIN list_socmed ls
         ON ls.id = sm.platform_id
     ORDER BY ls.name_platform ASC
 ");
+
+                                    if (!$qSocmed) {
+                                        die(mysqli_error($conn));
+                                    }
 
                                     $no = 1;
 
@@ -294,7 +305,7 @@ $sisaPlatform = mysqli_fetch_assoc($qSisaPlatform);
                                                     style="width:40px;height:40px;">
 
                                                     <?php
-                                                    $platform = strtolower($row['name_platform']);
+                                                    $platform = strtolower($row['platform_name']);
 
                                                     switch ($platform) {
 
@@ -328,7 +339,11 @@ $sisaPlatform = mysqli_fetch_assoc($qSisaPlatform);
                                             </td>
 
                                             <td class="font-weight-bold">
-                                                <?= htmlspecialchars($row['name_platform']); ?>
+                                                <?= htmlspecialchars($row['platform_name']); ?>
+                                            </td>
+
+                                            <td>
+                                                <?= htmlspecialchars($row['socmed_name']); ?>
                                             </td>
 
                                             <td style="max-width:250px;">
@@ -340,7 +355,8 @@ $sisaPlatform = mysqli_fetch_assoc($qSisaPlatform);
                                                 <button
                                                     class="btn btn-sm btn-primary mr-1 editBtn"
                                                     data-id="<?= $row['id']; ?>"
-                                                    data-platform="<?= htmlspecialchars($row['name_platform']); ?>"
+                                                    data-platform="<?= htmlspecialchars($row['platform_name']); ?>"
+                                                    data-name="<?= htmlspecialchars($row['socmed_name']); ?>"
                                                     data-url="<?= htmlspecialchars($row['link_platform']); ?>">
 
                                                     <i class="fa fa-pen"></i>
@@ -350,7 +366,7 @@ $sisaPlatform = mysqli_fetch_assoc($qSisaPlatform);
                                                 <button
                                                     class="btn btn-sm btn-danger deleteBtn"
                                                     data-id="<?= $row['id']; ?>"
-                                                    data-platform="<?= htmlspecialchars($row['name_platform']); ?>">
+                                                    data-platform="<?= htmlspecialchars($row['socmed_name']); ?>">
 
                                                     <i class="fa fa-trash"></i>
 
@@ -459,6 +475,18 @@ $sisaPlatform = mysqli_fetch_assoc($qSisaPlatform);
                                 <?php endwhile; ?>
 
                             </select>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>Nama Social Media</label>
+
+                            <input type="text"
+                                name="name_platform"
+                                class="form-control"
+                                maxlength="100"
+                                required>
 
                         </div>
 
@@ -585,6 +613,18 @@ $sisaPlatform = mysqli_fetch_assoc($qSisaPlatform);
                                 id="editPlatform"
                                 class="form-control"
                                 readonly>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label>Nama Social Media</label>
+
+                            <input type="text"
+                                id="editNamePlatform"
+                                name="name_platform"
+                                class="form-control"
+                                required>
 
                         </div>
 
@@ -821,6 +861,7 @@ $sisaPlatform = mysqli_fetch_assoc($qSisaPlatform);
 
             $('#edit_id').val($(this).data('id'));
             $('#editPlatform').val($(this).data('platform'));
+            $('#editNamePlatform').val($(this).data('name'));
             $('#editUrl').val($(this).data('url'));
 
             $('#editModal').modal('show');

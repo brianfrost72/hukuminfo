@@ -2,6 +2,11 @@
 if (session_status() === PHP_SESSION_NONE) {
   session_start();
 }
+
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
+header("Expires: 0");
+
 require_once __DIR__ . "/../../koneksi.php";
 // =========================
 // USER PROFILE HEADER
@@ -124,7 +129,7 @@ if (!empty($userData['photo_profile'])) {
               <span class="mr-1 d-flex-inline">
 
                 <span class="text-light">
-                 Hi, <?= htmlspecialchars($userData['full_name']); ?>
+                  Hi, <?= htmlspecialchars($userData['full_name']); ?>
                 </span>
 
               </span>

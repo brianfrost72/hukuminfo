@@ -1,10 +1,280 @@
+<?php
+
+session_start();
+
+require_once 'koneksi.php';
+
+function tanggalIndonesia($datetime)
+{
+    $bulan = [
+        1 => 'Januari',
+        'Februari',
+        'Maret',
+        'April',
+        'Mei',
+        'Juni',
+        'Juli',
+        'Agustus',
+        'September',
+        'Oktober',
+        'November',
+        'Desember'
+    ];
+
+    $timestamp = strtotime($datetime);
+
+    return date('d', $timestamp) . ' ' .
+        $bulan[(int)date('n', $timestamp)] . ' ' .
+        date('Y', $timestamp);
+}
+
+/*
+|--------------------------------------------------------------------------
+| TAGS
+|--------------------------------------------------------------------------
+*/
+
+$selectedTag = '';
+
+if (isset($_GET['tag'])) {
+    $selectedTag = trim($_GET['tag']);
+} elseif (isset($_GET['slug'])) {
+    $selectedTag = trim($_GET['slug']);
+}
+
+$tagsPerPage = 20;
+$tagPage = isset($_GET['tag_page']) ? max(1, (int)$_GET['tag_page']) : 1;
+$tagOffset = ($tagPage - 1) * $tagsPerPage;
+
+$totalTagsQuery = mysqli_query($conn, "
+    SELECT COUNT(DISTINCT t.id) AS total
+    FROM tags t
+    INNER JOIN post_tags pt
+        ON pt.tag_id = t.id
+    INNER JOIN post p
+        ON p.id = pt.post_id
+    WHERE p.status='publish'
+");
+
+if (!$totalTagsQuery) {
+
+    error_log(
+        'Tags Query Error: ' .
+            mysqli_error($conn)
+    );
+
+    $totalTags = 0;
+} else {
+
+    $row = mysqli_fetch_assoc($totalTagsQuery);
+
+    $totalTags = (int)$row['total'];
+}
+
+$totalTagPages = ceil($totalTags / $tagsPerPage);
+
+$tagsQuery = mysqli_query($conn, "
+    SELECT
+        t.id,
+        t.tag_name,
+        t.tag_slug,
+        COUNT(DISTINCT p.id) total_posts
+    FROM tags t
+    INNER JOIN post_tags pt
+        ON pt.tag_id = t.id
+    INNER JOIN post p
+        ON p.id = pt.post_id
+    WHERE p.status='publish'
+    GROUP BY t.id
+    ORDER BY total_posts DESC, t.tag_name ASC
+    LIMIT $tagOffset,$tagsPerPage
+");
+
+// QUERY TAG 
+$postsPerPage = 6;
+
+$postPage = isset($_GET['page'])
+    ? max(1, (int)$_GET['page'])
+    : 1;
+
+$postOffset = ($postPage - 1) * $postsPerPage;
+
+$selectedTagData = null;
+$tagPosts = [];
+$totalPostPages = 0;
+
+// TAG AKTIF SETELAH DIPILIH
+if (!empty($selectedTag)) {
+    $tagInfoQuery = mysqli_query($conn, "
+        SELECT *
+        FROM tags
+        WHERE tag_slug='" . mysqli_real_escape_string($conn, $selectedTag) . "'
+        LIMIT 1
+    ");
+
+    $selectedTagData = mysqli_fetch_assoc($tagInfoQuery);
+
+    if ($selectedTagData) {
+        $tagId = (int)$selectedTagData['id'];
+
+        $countPostQuery = mysqli_query($conn, "
+            SELECT COUNT(DISTINCT p.id) total
+            FROM post p
+            INNER JOIN post_tags pt
+                ON pt.post_id = p.id
+            WHERE pt.tag_id='$tagId'
+            AND p.status='publish'
+        ");
+
+        $totalPosts = mysqli_fetch_assoc($countPostQuery)['total'];
+
+        $totalPostPages = ceil($totalPosts / $postsPerPage);
+
+        $postQuery = mysqli_query($conn, "
+            SELECT
+                p.*,
+                COALESCE(up.full_name,'Administrator') author_name
+            FROM post p
+            INNER JOIN post_tags pt
+                ON pt.post_id = p.id
+            LEFT JOIN user_profile up
+                ON up.user_id = p.user_id
+            WHERE pt.tag_id='$tagId'
+            AND p.status='publish'
+            GROUP BY p.id
+            ORDER BY p.created_at DESC
+            LIMIT $postOffset,$postsPerPage
+        ");
+
+        while ($row = mysqli_fetch_assoc($postQuery)) {
+            $tagPosts[] = $row;
+        }
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| CATEGORIES SIDEBAR
+|--------------------------------------------------------------------------
+*/
+
+$sidebarCategoryQuery = mysqli_query($conn, "
+    SELECT
+        id,
+        name_category
+    FROM post_category
+    ORDER BY RAND()
+");
+
+$sidebarCategories = [];
+
+while ($row = mysqli_fetch_assoc($sidebarCategoryQuery)) {
+    $sidebarCategories[] = $row;
+}
+
+$totalCategoriesSidebar = count($sidebarCategories);
+
+/*
+|--------------------------------------------------------------------------
+| SOCIAL MEDIA
+|--------------------------------------------------------------------------
+*/
+
+$socialMediaQuery = mysqli_query($conn, "
+    SELECT
+        sm.account_name,
+        sm.link_platform,
+        ls.name_platform
+    FROM social_media sm
+    INNER JOIN list_socmed ls
+        ON ls.id = sm.platform_id
+    ORDER BY sm.id ASC
+");
+
+if (!$socialMediaQuery) {
+    die(mysqli_error($conn));
+}
+
+/*
+|--------------------------------------------------------------------------
+| RANDOM ADS
+|--------------------------------------------------------------------------
+*/
+
+$adsQuery = mysqli_query($conn, "
+    SELECT
+        id,
+        ad_title,
+        ad_img,
+        ad_link
+    FROM ads
+    ORDER BY RAND()
+    LIMIT 1
+");
+
+$adsData = mysqli_fetch_assoc($adsQuery);
+
+/*
+|--------------------------------------------------------------------------
+| SEO OPTIMIZE
+|--------------------------------------------------------------------------
+*/
+$metaTitle = 'Tags - Hukuminfo.id';
+$metaDescription = 'Jelajahi berbagai topik hukum, berita terbaru, edukasi hukum, dan artikel informatif di Hukuminfo.id.';
+
+if (!empty($selectedTagData)) {
+
+    $metaTitle = 'Tag: ' . $selectedTagData['tag_name'] . ' - Hukuminfo.id';
+
+    $totalArtikel = count($tagPosts);
+
+    $metaDescription =
+        'Kumpulan artikel dengan tag ' .
+        $selectedTagData['tag_name'] .
+        ' di Hukuminfo.id. Temukan berita, analisis, dan informasi hukum terbaru terkait ' .
+        $selectedTagData['tag_name'] . '.';
+}
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 
 <head>
     <meta charset="utf-8">
-    <title>Tags - Hukuminfo.id</title>
-    <meta name="description" content="">
+    <title>
+        <?php if (!empty($selectedTagData)): ?>
+            Tags: <?= htmlspecialchars($selectedTagData['tag_name']); ?>
+        <?php else: ?>
+            Tags
+        <?php endif; ?>
+        &ndash; Hukuminfo.id
+    </title>
+    <meta
+        name="keywords"
+        content="<?= !empty($selectedTagData)
+                        ? htmlspecialchars($selectedTagData['tag_name']) . ', hukum, berita hukum, hukuminfo'
+                        : 'hukum, berita hukum, edukasi hukum, hukuminfo'; ?>">
+
+    <meta name="robots" content="index,follow">
+
+    <meta property="og:type" content="website">
+
+    <meta
+        property="og:title"
+        content="<?= htmlspecialchars($metaTitle); ?>">
+
+    <meta
+        property="og:description"
+        content="<?= htmlspecialchars($metaDescription); ?>">
+
+    <meta
+        property="og:url"
+        content="https://hukuminfo.id/tags.php<?= !empty($selectedTagData) ? '?tag=' . urlencode($selectedTagData['tag_slug']) : ''; ?>">
+
+    <meta
+        property="og:site_name"
+        content="Hukuminfo.id">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
@@ -14,27 +284,11 @@
         href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,500;0,700;1,300;1,500&family=Poppins:ital,wght@0,300;0,500;0,700;1,300;1,400&display=swap"
         rel="stylesheet">
     <link href="./css/styles.css?537a1bbd0e5129401d28" rel="stylesheet">
-    <style>
-        .pagination {
-            display: flex !important;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 0;
-        }
-
-        .pagination .page-item {
-            display: inline-flex !important;
-        }
-
-        .pagination .page-link {
-            min-width: 42px;
-            height: 42px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-    </style>
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/v4-shims.min.css">
 </head>
 
 <body>
@@ -97,311 +351,117 @@
 
                                 <div class="d-flex flex-wrap gap-2">
 
-                                    <a href="#" class="btn btn-outline-primary rounded-pill mb-2">
-                                        #Hukum Pidana <span class="badge badge-primary ml-1">125</span>
-                                    </a>
+                                    <?php while ($tag = mysqli_fetch_assoc($tagsQuery)): ?>
 
-                                    <a href="#" class="btn btn-outline-primary rounded-pill mb-2">
-                                        #Hukum Perdata <span class="badge badge-primary ml-1">98</span>
-                                    </a>
+                                        <?php
+                                        $isActive = ($selectedTag == $tag['tag_slug']);
+                                        ?>
 
-                                    <a href="#" class="btn btn-outline-primary rounded-pill mb-2">
-                                        #Korupsi <span class="badge badge-primary ml-1">76</span>
-                                    </a>
+                                        <a
+                                            href="?tag=<?= urlencode($tag['tag_slug']); ?>&tag_page=<?= $tagPage; ?>"
+                                            class="btn <?= $isActive ? 'btn-primary' : 'btn-outline-primary'; ?> rounded-pill mb-2">
 
-                                    <a href="#" class="btn btn-outline-primary rounded-pill mb-2">
-                                        #Mahkamah Agung <span class="badge badge-primary ml-1">54</span>
-                                    </a>
+                                            #<?= htmlspecialchars($tag['tag_name']); ?>
 
-                                    <a href="#" class="btn btn-outline-primary rounded-pill mb-2">
-                                        #Kejaksaan <span class="badge badge-primary ml-1">41</span>
-                                    </a>
+                                            <span class="badge badge-light ml-1">
+                                                <?= number_format($tag['total_posts']); ?>
+                                            </span>
 
-                                    <a href="#" class="btn btn-outline-primary rounded-pill mb-2">
-                                        #Kepolisian <span class="badge badge-primary ml-1">87</span>
-                                    </a>
+                                        </a>
 
-                                    <a href="#" class="btn btn-outline-primary rounded-pill mb-2">
-                                        #HAM <span class="badge badge-primary ml-1">33</span>
-                                    </a>
-
-                                    <a href="#" class="btn btn-outline-primary rounded-pill mb-2">
-                                        #Bisnis <span class="badge badge-primary ml-1">62</span>
-                                    </a>
-
-                                    <a href="#" class="btn btn-outline-primary rounded-pill mb-2">
-                                        #Teknologi <span class="badge badge-primary ml-1">29</span>
-                                    </a>
-
-                                    <a href="#" class="btn btn-outline-primary rounded-pill mb-2">
-                                        #Internasional <span class="badge badge-primary ml-1">15</span>
-                                    </a>
+                                    <?php endwhile; ?>
 
                                 </div>
                             </div>
 
                             <!-- Pagination -->
-                            <nav aria-label="Kategori Pagination" class="mt-4">
-                                <ul class="pagination justify-content-center d-flex flex-row">
-
-                                    <li class="page-item disabled">
-                                        <a class="page-link" href="#" tabindex="-1">
-                                            <i class="fa fa-angle-left"></i>
-                                        </a>
-                                    </li>
-
-                                    <li class="page-item active">
-                                        <a class="page-link" href="#">1</a>
-                                    </li>
-
-                                    <li class="page-item">
-                                        <a class="page-link" href="#">2</a>
-                                    </li>
-
-                                    <li class="page-item">
-                                        <a class="page-link" href="#">3</a>
-                                    </li>
-
-                                    <li class="page-item">
-                                        <a class="page-link" href="#">4</a>
-                                    </li>
-
-                                    <li class="page-item">
-                                        <a class="page-link" href="#">
-                                            <i class="fa fa-angle-right"></i>
-                                        </a>
-                                    </li>
-
-                                </ul>
+                            <nav class="mt-4">
+                                <ul class="pagination justify-content-center" id="postPagination"></ul>
                             </nav>
 
                             <aside class="wrapper__list__article mb-0">
-                                <h4 class="border_section">#Lifestyle</h4>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-4">
-                                            <!-- Post Article -->
-                                            <div class="article__entry">
-                                                <div class="article__image">
-                                                    <a href="#">
-                                                        <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                                    </a>
-                                                </div>
-                                                <div class="article__content">
-                                                    <ul class="list-inline">
-                                                        <li class="list-inline-item">
-                                                            <span class="text-primary">
-                                                                by david hall
-                                                            </span>
-                                                        </li>
-                                                        <li class="list-inline-item">
-                                                            <span>
-                                                                descember 09, 2016
-                                                            </span>
-                                                        </li>
 
-                                                    </ul>
-                                                    <h5>
-                                                        <a href="#">
-                                                            Maecenas accumsan tortor ut velit pharetra mollis.
-                                                        </a>
-                                                    </h5>
+                                <?php if (empty($selectedTagData)): ?>
 
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="mb-4">
-                                            <!-- Post Article -->
-                                            <div class="article__entry">
-                                                <div class="article__image">
-                                                    <a href="#">
-                                                        <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                                    </a>
-                                                </div>
-                                                <div class="article__content">
-                                                    <ul class="list-inline">
-                                                        <li class="list-inline-item">
-                                                            <span class="text-primary">
-                                                                by david hall
-                                                            </span>
-                                                        </li>
-                                                        <li class="list-inline-item">
-                                                            <span>
-                                                                descember 09, 2016
-                                                            </span>
-                                                        </li>
-
-                                                    </ul>
-                                                    <h5>
-                                                        <a href="#">
-                                                            Maecenas accumsan tortor ut velit pharetra mollis.
-                                                        </a>
-                                                    </h5>
-
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="mb-4">
-                                            <!-- Post Article -->
-                                            <div class="article__entry">
-                                                <div class="article__image">
-                                                    <a href="#">
-                                                        <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                                    </a>
-                                                </div>
-                                                <div class="article__content">
-                                                    <ul class="list-inline">
-                                                        <li class="list-inline-item">
-                                                            <span class="text-primary">
-                                                                by david hall
-                                                            </span>
-                                                        </li>
-                                                        <li class="list-inline-item">
-                                                            <span>
-                                                                descember 09, 2016
-                                                            </span>
-                                                        </li>
-
-                                                    </ul>
-                                                    <h5>
-                                                        <a href="#">
-                                                            Maecenas accumsan tortor ut velit pharetra mollis.
-                                                        </a>
-                                                    </h5>
-
-                                                </div>
-                                            </div>
-                                        </div>
+                                    <div class="alert alert-info mb-0">
+                                        Silakan pilih tag terlebih dahulu untuk melihat daftar artikel.
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-4">
-                                            <!-- Post Article -->
-                                            <div class="article__entry">
-                                                <div class="article__image">
-                                                    <a href="#">
-                                                        <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                                    </a>
-                                                </div>
-                                                <div class="article__content">
-                                                    <ul class="list-inline">
-                                                        <li class="list-inline-item">
-                                                            <span class="text-primary">
-                                                                by david hall
-                                                            </span>
-                                                        </li>
-                                                        <li class="list-inline-item">
-                                                            <span>
-                                                                descember 09, 2016
-                                                            </span>
-                                                        </li>
 
-                                                    </ul>
-                                                    <h5>
-                                                        <a href="#">
-                                                            Maecenas accumsan tortor ut velit pharetra mollis.
-                                                        </a>
-                                                    </h5>
+                                <?php else: ?>
 
+                                    <h4 class="border_section">
+                                        #<?= htmlspecialchars($selectedTagData['tag_name']); ?>
+                                    </h4>
+
+                                    <div class="row">
+
+                                        <?php foreach ($tagPosts as $post): ?>
+
+                                            <div class="col-md-6">
+
+                                                <div class="mb-4">
+                                                    <div class="article__entry">
+
+                                                        <div class="article__image">
+                                                            <a href="detail.php?slug=<?= $post['slug']; ?>">
+
+                                                                <img
+                                                                    src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']); ?>"
+                                                                    class="img-fluid"
+                                                                    alt="<?= htmlspecialchars($post['post_title']); ?>">
+
+                                                            </a>
+                                                        </div>
+
+                                                        <div class="article__content">
+
+                                                            <ul class="list-inline">
+
+                                                                <li class="list-inline-item">
+                                                                    <span class="text-primary">
+                                                                        <?= htmlspecialchars($post['author_name']); ?>
+                                                                    </span>
+                                                                </li>
+
+                                                                <li class="list-inline-item">
+                                                                    <span>
+                                                                        <?= tanggalIndonesia($post['created_at']); ?>
+                                                                    </span>
+                                                                </li>
+
+                                                            </ul>
+
+                                                            <h5>
+
+                                                                <a href="detail.php?slug=<?= $post['slug']; ?>">
+
+                                                                    <?= htmlspecialchars($post['post_title']); ?>
+
+                                                                </a>
+
+                                                            </h5>
+
+                                                        </div>
+
+                                                    </div>
                                                 </div>
+
                                             </div>
-                                        </div>
-                                        <div class="mb-4">
-                                            <!-- Post Article -->
-                                            <div class="article__entry">
-                                                <div class="article__image">
-                                                    <a href="#">
-                                                        <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                                    </a>
-                                                </div>
-                                                <div class="article__content">
-                                                    <ul class="list-inline">
-                                                        <li class="list-inline-item">
-                                                            <span class="text-primary">
-                                                                by david hall
-                                                            </span>
-                                                        </li>
-                                                        <li class="list-inline-item">
-                                                            <span>
-                                                                descember 09, 2016
-                                                            </span>
-                                                        </li>
 
-                                                    </ul>
-                                                    <h5>
-                                                        <a href="#">
-                                                            Maecenas accumsan tortor ut velit pharetra mollis.
-                                                        </a>
-                                                    </h5>
+                                        <?php endforeach; ?>
 
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="mb-4">
-                                            <!-- Post Article -->
-                                            <div class="article__entry">
-                                                <div class="article__image">
-                                                    <a href="#">
-                                                        <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                                    </a>
-                                                </div>
-                                                <div class="article__content">
-                                                    <ul class="list-inline">
-                                                        <li class="list-inline-item">
-                                                            <span class="text-primary">
-                                                                by david hall
-                                                            </span>
-                                                        </li>
-                                                        <li class="list-inline-item">
-                                                            <span>
-                                                                descember 09, 2016
-                                                            </span>
-                                                        </li>
-
-                                                    </ul>
-                                                    <h5>
-                                                        <a href="#">
-                                                            Maecenas accumsan tortor ut velit pharetra mollis.
-                                                        </a>
-                                                    </h5>
-
-                                                </div>
-                                            </div>
-                                        </div>
                                     </div>
-                                </div>
-                                <!-- Pagination -->
-                                <nav aria-label="Kategori Pagination" class="mt-4">
-                                    <ul class="pagination justify-content-center d-flex flex-row">
 
-                                        <li class="page-item disabled">
-                                            <a class="page-link" href="#" tabindex="-1">
-                                                <i class="fa fa-angle-left"></i>
-                                            </a>
-                                        </li>
+                                <?php endif; ?>
+                                <!-- Pagination Detail Tags -->
+                                <nav aria-label="tags pagination" class="mt-4">
 
-                                        <li class="page-item active">
-                                            <a class="page-link" href="#">1</a>
-                                        </li>
-
-                                        <li class="page-item">
-                                            <a class="page-link" href="#">2</a>
-                                        </li>
-
-                                        <li class="page-item">
-                                            <a class="page-link" href="#">3</a>
-                                        </li>
-
-                                        <li class="page-item">
-                                            <a class="page-link" href="#">4</a>
-                                        </li>
-
-                                        <li class="page-item">
-                                            <a class="page-link" href="#">
-                                                <i class="fa fa-angle-right"></i>
-                                            </a>
-                                        </li>
+                                    <ul
+                                        class="pagination justify-content-center d-flex flex-row"
+                                        id="detailTagPagination">
 
                                     </ul>
+
                                 </nav>
                             </aside>
                         </div>
@@ -409,162 +469,209 @@
                         <div class="col-md-4">
                             <div class="sticky-top">
                                 <aside class="wrapper__list__article">
-                                    <h4 class="border_section">stay conected</h4>
-                                    <!-- widget Social media -->
+                                    <h4 class="border_section">Follow Akun Kami</h4>
+
                                     <div class="wrap__social__media">
-                                        <a href="#" target="_blank">
-                                            <div class="social__media__widget facebook">
-                                                <span class="social__media__widget-icon">
-                                                    <i class="fa fa-facebook"></i>
-                                                </span>
-                                                <span class="social__media__widget-counter">
-                                                    Hukuminfo
-                                                </span>
-                                                <span class="social__media__widget-name">
-                                                    like
-                                                </span>
-                                            </div>
-                                        </a>
-                                        <a href="#" target="_blank">
-                                            <div class="social__media__widget twitter">
-                                                <span class="social__media__widget-icon">
-                                                    <i class="fa fa-twitter"></i>
-                                                </span>
-                                                <span class="social__media__widget-counter">
-                                                    @hukuminfo
-                                                </span>
-                                                <span class="social__media__widget-name">
-                                                    follow
-                                                </span>
-                                            </div>
-                                        </a>
-                                        <a href="#" target="_blank">
-                                            <div class="social__media__widget youtube">
-                                                <span class="social__media__widget-icon">
-                                                    <i class="fa fa-youtube"></i>
-                                                </span>
-                                                <span class="social__media__widget-counter">
-                                                    Hukum Info News
-                                                </span>
-                                                <span class="social__media__widget-name">
-                                                    subscribe
-                                                </span>
-                                            </div>
-                                        </a>
+
+                                        <?php while ($socmed = mysqli_fetch_assoc($socialMediaQuery)): ?>
+
+                                            <?php
+
+                                            $platform = strtolower(trim($socmed['name_platform']));
+
+                                            switch ($platform) {
+
+                                                case 'facebook':
+                                                    $class  = 'facebook';
+                                                    $icon   = 'fa-facebook';
+                                                    $action = 'like';
+                                                    break;
+
+                                                case 'twitter':
+                                                case 'x':
+                                                    $class  = 'twitter';
+                                                    $icon   = 'fa-x-twitter';
+                                                    $action = 'follow';
+                                                    break;
+
+                                                case 'youtube':
+                                                    $class  = 'youtube';
+                                                    $icon   = 'fa-youtube';
+                                                    $action = 'subscribe';
+                                                    break;
+
+                                                case 'instagram':
+                                                    $class  = 'instagram';
+                                                    $icon   = 'fa-instagram';
+                                                    $action = 'follow';
+                                                    break;
+
+                                                case 'linkedin':
+                                                    $class  = 'linkedin';
+                                                    $icon   = 'fa-linkedin';
+                                                    $action = 'follow';
+                                                    break;
+
+                                                case 'tiktok':
+                                                    $class  = 'tiktok';
+                                                    $icon   = 'fa-tiktok';
+                                                    $action = 'follow';
+                                                    break;
+
+                                                default:
+                                                    $class  = 'facebook';
+                                                    $icon   = 'fa-globe';
+                                                    $action = 'visit';
+                                            }
+
+                                            ?>
+
+                                            <a
+                                                href="<?= htmlspecialchars($socmed['link_platform']); ?>"
+                                                target="_blank">
+
+                                                <div class="social__media__widget <?= $class; ?>">
+
+                                                    <span class="social__media__widget-icon">
+                                                        <i class="fab <?= $icon; ?>"></i>
+                                                    </span>
+
+                                                    <span class="social__media__widget-counter">
+                                                        <?= htmlspecialchars($socmed['account_name']); ?>
+                                                    </span>
+
+                                                    <span class="social__media__widget-name">
+                                                        <?= ucfirst($action); ?>
+                                                    </span>
+
+                                                </div>
+
+                                            </a>
+
+                                        <?php endwhile; ?>
 
                                     </div>
                                 </aside>
+                                <!-- End social media -->
 
+                                <!-- POST CATEGORIES -->
                                 <aside class="wrapper__list__article">
-                                    <h4 class="border_section">Kategori</h4>
+
+                                    <h4 class="border_section">
+                                        Kategori
+                                    </h4>
+
                                     <div class="blog-tags p-0">
+
                                         <ul class="list-inline">
 
-                                            <li class="list-inline-item">
-                                                <a href="#">
-                                                    property
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="#">
-                                                    sea
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="#">
-                                                    programming
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="#">
-                                                    sea
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="#">
-                                                    property
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="#">
-                                                    life style
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="#">
-                                                    technology
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="#">
-                                                    framework
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="#">
-                                                    sport
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="#">
-                                                    game
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="#">
-                                                    wfh
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="#">
-                                                    sport
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="#">
-                                                    game
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="#">
-                                                    wfh
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="#">
-                                                    + 9 Lainnya...
-                                                </a>
-                                            </li>
+                                            <?php
+
+                                            $maxCategories = 15;
+
+                                            foreach (
+                                                array_slice(
+                                                    $sidebarCategories,
+                                                    0,
+                                                    $maxCategories
+                                                ) as $category
+                                            ) :
+
+                                            ?>
+
+                                                <li class="list-inline-item">
+
+                                                    <a href="kategori.php?category=<?= $category['id']; ?>">
+
+                                                        <?= htmlspecialchars($category['name_category']); ?>
+
+                                                    </a>
+
+                                                </li>
+
+                                            <?php endforeach; ?>
+
+                                            <?php if ($totalCategoriesSidebar > $maxCategories): ?>
+
+                                                <li class="list-inline-item">
+
+                                                    <a href="kategori.php">
+
+                                                        +<?= $totalCategoriesSidebar - $maxCategories; ?> Lainnya
+
+                                                    </a>
+
+                                                </li>
+
+                                            <?php endif; ?>
 
                                         </ul>
+
                                     </div>
+
                                 </aside>
 
-                                <aside class="wrapper__list__article">
-                                    <h4 class="border_section">Advertise</h4>
-                                    <a href="#">
-                                        <figure>
-                                            <img src="images/placeholder/600x400.jpg" alt="" class="img-fluid">
-                                        </figure>
-                                    </a>
-                                </aside>
+                                <!-- ADVERTISE -->
+                                <?php if ($adsData): ?>
 
-                                <aside class="wrapper__list__article">
-                                    <h4 class="border_section">newsletter</h4>
-                                    <!-- Form Subscribe -->
-                                    <div class="widget__form-subscribe bg__card-shadow">
-                                        <h6>
-                                            The most important world news and events of the day.
-                                        </h6>
-                                        <p><small>Get magzrenvi daily newsletter on your inbox.</small></p>
-                                        <div class="input-group ">
-                                            <input type="text" class="form-control" placeholder="Your email address">
-                                            <div class="input-group-append">
-                                                <button class="btn btn-primary" type="button">sign up</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </aside>
+                                    <aside class="wrapper__list__article">
+
+                                        <h4 class="border_section">
+                                            Iklan
+                                        </h4>
+
+                                        <a
+                                            href="<?= htmlspecialchars($adsData['ad_link']); ?>"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            title="<?= htmlspecialchars($adsData['ad_title']); ?>">
+
+                                            <figure class="mb-0">
+
+                                                <img
+                                                    src="dashboard/assets/images/uploads/ads/<?= htmlspecialchars($adsData['ad_img']); ?>"
+                                                    alt="<?= htmlspecialchars($adsData['ad_title']); ?>"
+                                                    title="<?= htmlspecialchars($adsData['ad_title']); ?>"
+                                                    class="img-fluid w-100">
+
+                                            </figure>
+
+                                        </a>
+
+                                    </aside>
+
+                                <?php endif; ?>
+
+                                <!-- ADVERTISE -->
+                                <?php if ($adsData): ?>
+
+                                    <aside class="wrapper__list__article">
+
+                                        <h4 class="border_section">
+                                            Iklan
+                                        </h4>
+
+                                        <a
+                                            href="<?= htmlspecialchars($adsData['ad_link']); ?>"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            title="<?= htmlspecialchars($adsData['ad_title']); ?>">
+
+                                            <figure class="mb-0">
+
+                                                <img
+                                                    src="dashboard/assets/images/uploads/ads/<?= htmlspecialchars($adsData['ad_img']); ?>"
+                                                    alt="<?= htmlspecialchars($adsData['ad_title']); ?>"
+                                                    title="<?= htmlspecialchars($adsData['ad_title']); ?>"
+                                                    class="img-fluid w-100">
+
+                                            </figure>
+
+                                        </a>
+
+                                    </aside>
+
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -585,6 +692,169 @@
     <a href="javascript:" id="return-to-top"><i class="fa fa-chevron-up"></i></a>
 
     <script type="text/javascript" src="./js/index.bundle.js?537a1bbd0e5129401d28"></script>
+    <script type="text/javascript" src="js/navbar-search.js"></script>
+
+    <script>
+        const currentPostPage = <?= $postPage ?>;
+        const totalPostPages = <?= $totalPostPages ?>;
+
+        function renderDetailPagination() {
+            const ul = document.getElementById('detailTagPagination');
+
+            if (!ul || totalPostPages <= 1) return;
+
+            let html = '';
+
+            html += `
+    <li class="page-item ${currentPostPage == 1 ? 'disabled':''}">
+        <a class="page-link"
+           href="?tag=<?= urlencode($selectedTag) ?>&tag_page=<?= $tagPage ?>&page=${currentPostPage-1}">
+            <i class="fa fa-angle-left"></i>
+        </a>
+    </li>`;
+
+            let start = Math.max(1, currentPostPage - 2);
+            let end = Math.min(totalPostPages, currentPostPage + 2);
+
+            if (start > 1) {
+                html += `
+        <li class="page-item">
+            <a class="page-link"
+               href="?tag=<?= urlencode($selectedTag) ?>&tag_page=<?= $tagPage ?>&page=1">
+               1
+            </a>
+        </li>`;
+
+                if (start > 2) {
+                    html += `
+            <li class="page-item disabled">
+                <span class="page-link">...</span>
+            </li>`;
+                }
+            }
+
+            for (let i = start; i <= end; i++) {
+                html += `
+        <li class="page-item ${i==currentPostPage?'active':''}">
+            <a class="page-link"
+               href="?tag=<?= urlencode($selectedTag) ?>&tag_page=<?= $tagPage ?>&page=${i}">
+                ${i}
+            </a>
+        </li>`;
+            }
+
+            if (end < totalPostPages) {
+                if (end < totalPostPages - 1) {
+                    html += `
+            <li class="page-item disabled">
+                <span class="page-link">...</span>
+            </li>`;
+                }
+
+                html += `
+        <li class="page-item">
+            <a class="page-link"
+               href="?tag=<?= urlencode($selectedTag) ?>&tag_page=<?= $tagPage ?>&page=${totalPostPages}">
+                ${totalPostPages}
+            </a>
+        </li>`;
+            }
+
+            html += `
+    <li class="page-item ${currentPostPage == totalPostPages ? 'disabled':''}">
+        <a class="page-link"
+           href="?tag=<?= urlencode($selectedTag) ?>&tag_page=<?= $tagPage ?>&page=${currentPostPage+1}">
+            <i class="fa fa-angle-right"></i>
+        </a>
+    </li>`;
+
+            ul.innerHTML = html;
+        }
+
+        renderDetailPagination();
+    </script>
+
+    <script>
+        const currentTagPage = <?= $tagPage ?>;
+        const totalTagPages = <?= $totalTagPages ?>;
+        const selectedTag = "<?= urlencode($selectedTag) ?>";
+
+        function renderTagPagination() {
+            const ul = document.getElementById('tagPagination');
+
+            if (!ul || totalTagPages <= 1) return;
+
+            let html = '';
+
+            html += `
+    <li class="page-item ${currentTagPage == 1 ? 'disabled':''}">
+        <a class="page-link"
+           href="?tag=${selectedTag}&tag_page=${currentTagPage-1}">
+            <i class="fa fa-angle-left"></i>
+        </a>
+    </li>`;
+
+            let start = Math.max(1, currentTagPage - 2);
+            let end = Math.min(totalTagPages, currentTagPage + 2);
+
+            if (start > 1) {
+                html += `
+        <li class="page-item">
+            <a class="page-link"
+               href="?tag=${selectedTag}&tag_page=1">
+               1
+            </a>
+        </li>`;
+
+                if (start > 2) {
+                    html += `
+            <li class="page-item disabled">
+                <span class="page-link">...</span>
+            </li>`;
+                }
+            }
+
+            for (let i = start; i <= end; i++) {
+                html += `
+        <li class="page-item ${i==currentTagPage?'active':''}">
+            <a class="page-link"
+               href="?tag=${selectedTag}&tag_page=${i}">
+                ${i}
+            </a>
+        </li>`;
+            }
+
+            if (end < totalTagPages) {
+                if (end < totalTagPages - 1) {
+                    html += `
+            <li class="page-item disabled">
+                <span class="page-link">...</span>
+            </li>`;
+                }
+
+                html += `
+        <li class="page-item">
+            <a class="page-link"
+               href="?tag=${selectedTag}&tag_page=${totalTagPages}">
+                ${totalTagPages}
+            </a>
+        </li>`;
+            }
+
+            html += `
+    <li class="page-item ${currentTagPage == totalTagPages ? 'disabled':''}">
+        <a class="page-link"
+           href="?tag=${selectedTag}&tag_page=${currentTagPage+1}">
+            <i class="fa fa-angle-right"></i>
+        </a>
+    </li>`;
+
+            ul.innerHTML = html;
+        }
+
+        renderTagPagination();
+    </script>
+
 </body>
 
 </html>

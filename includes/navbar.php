@@ -14,7 +14,27 @@
         <div class="collapse navbar-collapse justify-content-between" id="main_nav99">
             <ul class="navbar-nav ml-auto ">
                 <li class="nav-item"><a class="nav-link" href="/"> Beranda </a></li>
-                <li class="nav-item"><a class="nav-link" href="tentang-kami.php"> Tentang Kami </a></li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle"
+                        href="#"
+                        id="topikDropdown"
+                        role="button"
+                        data-toggle="dropdown"
+                        aria-haspopup="true"
+                        aria-expanded="false">
+                        Topik Hukum
+                    </a>
+
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="kategori.php">
+                            <i class="fa fa-folder-open mr-2"></i> Kategori
+                        </a>
+
+                        <a class="dropdown-item" href="tags.php">
+                            <i class="fa fa-tags mr-2"></i> Tags
+                        </a>
+                    </div>
+                </li>
 
                 <li class="nav-item dropdown has-megamenu">
                     <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown"> Trending Topik </a>
@@ -188,10 +208,10 @@
                 <li class="nav-item"><a class="nav-link" href="kontak-kami.php"> Kontak Kami </a></li>
             </ul>
 
-            <ul
-                class="navbar-actions d-none d-xl-flex align-items-center list-unstyled mb-0 mr-2">
+            <ul class="navbar-actions d-none d-xl-flex align-items-center list-unstyled mb-0 mr-2">
                 <li>
                     <div class="phone__number phone__number-light">
+
                         <div class="phone__icon">
                             <div class="icon-phone">
                                 <i class="fa fa-phone"></i>
@@ -199,6 +219,11 @@
                         </div>
 
                         <div class="phone__content">
+
+                            <span class="help__text">
+                                Butuh Bantuan?
+                            </span>
+
                             <a href="tel:08111902759" class="phone__link">
                                 0811 1902 759
                             </a>
@@ -206,7 +231,9 @@
                             <a href="mailto:cs@hukuminfo.id" class="email__link">
                                 cs@hukuminfo.id
                             </a>
+
                         </div>
+
                     </div>
                 </li>
             </ul>
@@ -226,19 +253,36 @@
             <div class="top-search navigation-shadow">
                 <div class="container">
                     <div class="input-group ">
-                        <form action="#">
+                        <form action="pencarian.php" method="GET" id="navbarSearchForm">
 
                             <div class="row no-gutters mt-3">
-                                <div class="col">
-                                    <input class="form-control border-secondary border-right-0 rounded-0"
-                                        type="search" value="" placeholder="Apa yang anda cari... " id="example-search-input4">
+
+                                <div class="col position-relative">
+
+                                    <input
+                                        type="search"
+                                        name="q"
+                                        id="navbarSearchInput"
+                                        class="form-control border-secondary border-right-0 rounded-0"
+                                        placeholder="Apa yang anda cari..."
+                                        autocomplete="off">
+
+                                    <div id="navbarSearchResult"></div>
+
                                 </div>
+
                                 <div class="col-auto">
-                                    <a class="btn btn-outline-secondary border-left-0 rounded-0 rounded-right"
-                                        href="/search-result.html">
+
+                                    <button
+                                        type="submit"
+                                        class="btn btn-outline-secondary border-left-0 rounded-0 rounded-right">
+
                                         <i class="fa fa-search"></i>
-                                    </a>
+
+                                    </button>
+
                                 </div>
+
                             </div>
 
                         </form>

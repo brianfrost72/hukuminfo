@@ -1,3 +1,80 @@
+<?php
+session_start();
+
+require_once 'koneksi.php';
+
+function tanggalIndonesia($datetime)
+{
+    $bulan = [
+        1 => 'Januari',
+        'Februari',
+        'Maret',
+        'April',
+        'Mei',
+        'Juni',
+        'Juli',
+        'Agustus',
+        'September',
+        'Oktober',
+        'November',
+        'Desember'
+    ];
+
+    $timestamp = strtotime($datetime);
+
+    return date('d', $timestamp) . ' ' .
+        $bulan[(int)date('n', $timestamp)] . ' ' .
+        date('Y', $timestamp);
+}
+
+$trendingQuery = mysqli_query($conn, "
+    SELECT *
+    FROM (
+        SELECT
+            p.id,
+            p.post_title,
+            p.slug,
+            p.post_image,
+            p.total_views,
+            p.created_at,
+            COALESCE(up.full_name, 'Administrator') AS author_name
+        FROM post p
+        LEFT JOIN user_profile up
+            ON up.user_id = p.user_id
+        WHERE p.status = 'publish'
+        ORDER BY p.total_views DESC
+        LIMIT 10
+    ) trending
+    ORDER BY RAND()
+");
+
+// DEBUG
+$trendingQuery = mysqli_query($conn, "
+    SELECT *
+    FROM (
+        SELECT
+            p.id,
+            p.post_title,
+            p.slug,
+            p.post_image,
+            p.total_views,
+            p.created_at,
+            COALESCE(up.full_name, 'Administrator') AS author_name
+        FROM post p
+        LEFT JOIN user_profile up
+            ON up.user_id = p.user_id
+        WHERE p.status = 'publish'
+        ORDER BY p.total_views DESC
+        LIMIT 10
+    ) trending
+    ORDER BY RAND()
+");
+
+if (!$trendingQuery) {
+    die(mysqli_error($conn));
+}
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 
@@ -12,9 +89,13 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,500;0,700;1,300;1,500&family=Poppins:ital,wght@0,300;0,500;0,700;1,300;1,400&display=swap"
         rel="stylesheet">
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/v4-shims.min.css">
+        
     <link href="./css/styles.css?537a1bbd0e5129401d28" rel="stylesheet">
 </head>
 
@@ -72,288 +153,61 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="wrapp__list__article-responsive wrapp__list__article-responsive-carousel">
-                        <div class="item">
-                            <!-- Post Article -->
-                            <div class="card__post card__post-list">
-                                <div class="image-sm">
-                                    <a href="./card-article-detail-v1.html">
-                                        <img src="images/placeholder/500x400.jpg" class="img-fluid" alt="">
-                                    </a>
-                                </div>
 
+                        <?php while ($trending = mysqli_fetch_assoc($trendingQuery)): ?>
 
-                                <div class="card__post__body ">
-                                    <div class="card__post__content">
+                            <div class="item">
 
-                                        <div class="card__post__author-info mb-2">
-                                            <ul class="list-inline">
-                                                <li class="list-inline-item">
-                                                    <span class="text-primary">
-                                                        by david hall
-                                                    </span>
-                                                </li>
-                                                <li class="list-inline-item">
-                                                    <span class="text-dark text-capitalize">
-                                                        descember 09, 2016
-                                                    </span>
-                                                </li>
+                                <div class="card__post card__post-list">
 
-                                            </ul>
-                                        </div>
-                                        <div class="card__post__title">
-                                            <h6>
-                                                <a href="./card-article-detail-v1.html">
-                                                    6 Best Tips for Building a Good Shipping Boat
-                                                </a>
-                                            </h6>
-                                            <!-- <p class="d-none d-lg-block d-xl-block">
-                    Maecenas accumsan tortor ut velit pharetra mollis. Proin eu nisl et arcu iaculis placerat
-                    sollicitudin ut est. In fringilla dui dui.
-                </p> -->
+                                    <div class="image-sm">
+                                        <a href="artikel-detail.php?slug=<?= urlencode($trending['slug']) ?>">
+                                            <img
+                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($trending['post_image']) ?>"
+                                                class="img-fluid"
+                                                alt="<?= htmlspecialchars($trending['post_title']) ?>">
+                                        </a>
+                                    </div>
+
+                                    <div class="card__post__body">
+
+                                        <div class="card__post__content">
+
+                                            <div class="card__post__author-info mb-2">
+                                                <ul class="list-inline">
+
+                                                    <li class="list-inline-item">
+                                                        <span class="text-primary">
+                                                            by <?= htmlspecialchars($trending['author_name']) ?>
+                                                        </span>
+                                                    </li>
+
+                                                    <li class="list-inline-item">
+                                                        <span class="text-dark text-capitalize">
+                                                            <?= tanggalIndonesia($trending['created_at']) ?>
+                                                        </span>
+                                                    </li>
+
+                                                </ul>
+                                            </div>
+
+                                            <div class="card__post__title">
+                                                <h6>
+                                                    <a href="artikel-detail.php?slug=<?= urlencode($trending['slug']) ?>">
+                                                        <?= htmlspecialchars($trending['post_title']) ?>
+                                                    </a>
+                                                </h6>
+                                            </div>
 
                                         </div>
 
                                     </div>
 
-
                                 </div>
+
                             </div>
-                        </div>
-                        <div class="item">
-                            <!-- Post Article -->
-                            <div class="card__post card__post-list">
-                                <div class="image-sm">
-                                    <a href="./card-article-detail-v1.html">
-                                        <img src="images/placeholder/500x400.jpg" class="img-fluid" alt="">
-                                    </a>
-                                </div>
 
-
-                                <div class="card__post__body ">
-                                    <div class="card__post__content">
-
-                                        <div class="card__post__author-info mb-2">
-                                            <ul class="list-inline">
-                                                <li class="list-inline-item">
-                                                    <span class="text-primary">
-                                                        by david hall
-                                                    </span>
-                                                </li>
-                                                <li class="list-inline-item">
-                                                    <span class="text-dark text-capitalize">
-                                                        descember 09, 2016
-                                                    </span>
-                                                </li>
-
-                                            </ul>
-                                        </div>
-                                        <div class="card__post__title">
-                                            <h6>
-                                                <a href="./card-article-detail-v1.html">
-                                                    6 Best Tips for Building a Good Shipping Boat
-                                                </a>
-                                            </h6>
-                                            <!-- <p class="d-none d-lg-block d-xl-block">
-                    Maecenas accumsan tortor ut velit pharetra mollis. Proin eu nisl et arcu iaculis placerat
-                    sollicitudin ut est. In fringilla dui dui.
-                </p> -->
-
-                                        </div>
-
-                                    </div>
-
-
-                                </div>
-                            </div>
-                        </div>
-                        <div class="item">
-                            <!-- Post Article -->
-                            <div class="card__post card__post-list">
-                                <div class="image-sm">
-                                    <a href="./card-article-detail-v1.html">
-                                        <img src="images/placeholder/500x400.jpg" class="img-fluid" alt="">
-                                    </a>
-                                </div>
-
-
-                                <div class="card__post__body ">
-                                    <div class="card__post__content">
-
-                                        <div class="card__post__author-info mb-2">
-                                            <ul class="list-inline">
-                                                <li class="list-inline-item">
-                                                    <span class="text-primary">
-                                                        by david hall
-                                                    </span>
-                                                </li>
-                                                <li class="list-inline-item">
-                                                    <span class="text-dark text-capitalize">
-                                                        descember 09, 2016
-                                                    </span>
-                                                </li>
-
-                                            </ul>
-                                        </div>
-                                        <div class="card__post__title">
-                                            <h6>
-                                                <a href="./card-article-detail-v1.html">
-                                                    6 Best Tips for Building a Good Shipping Boat
-                                                </a>
-                                            </h6>
-                                            <!-- <p class="d-none d-lg-block d-xl-block">
-                    Maecenas accumsan tortor ut velit pharetra mollis. Proin eu nisl et arcu iaculis placerat
-                    sollicitudin ut est. In fringilla dui dui.
-                </p> -->
-
-                                        </div>
-
-                                    </div>
-
-
-                                </div>
-                            </div>
-                        </div>
-                        <div class="item">
-                            <!-- Post Article -->
-                            <div class="card__post card__post-list">
-                                <div class="image-sm">
-                                    <a href="./card-article-detail-v1.html">
-                                        <img src="images/placeholder/500x400.jpg" class="img-fluid" alt="">
-                                    </a>
-                                </div>
-
-
-                                <div class="card__post__body ">
-                                    <div class="card__post__content">
-
-                                        <div class="card__post__author-info mb-2">
-                                            <ul class="list-inline">
-                                                <li class="list-inline-item">
-                                                    <span class="text-primary">
-                                                        by david hall
-                                                    </span>
-                                                </li>
-                                                <li class="list-inline-item">
-                                                    <span class="text-dark text-capitalize">
-                                                        descember 09, 2016
-                                                    </span>
-                                                </li>
-
-                                            </ul>
-                                        </div>
-                                        <div class="card__post__title">
-                                            <h6>
-                                                <a href="./card-article-detail-v1.html">
-                                                    6 Best Tips for Building a Good Shipping Boat
-                                                </a>
-                                            </h6>
-                                            <!-- <p class="d-none d-lg-block d-xl-block">
-                    Maecenas accumsan tortor ut velit pharetra mollis. Proin eu nisl et arcu iaculis placerat
-                    sollicitudin ut est. In fringilla dui dui.
-                </p> -->
-
-                                        </div>
-
-                                    </div>
-
-
-                                </div>
-                            </div>
-                        </div>
-                        <div class="item">
-                            <!-- Post Article -->
-                            <div class="card__post card__post-list">
-                                <div class="image-sm">
-                                    <a href="./card-article-detail-v1.html">
-                                        <img src="images/placeholder/500x400.jpg" class="img-fluid" alt="">
-                                    </a>
-                                </div>
-
-
-                                <div class="card__post__body ">
-                                    <div class="card__post__content">
-
-                                        <div class="card__post__author-info mb-2">
-                                            <ul class="list-inline">
-                                                <li class="list-inline-item">
-                                                    <span class="text-primary">
-                                                        by david hall
-                                                    </span>
-                                                </li>
-                                                <li class="list-inline-item">
-                                                    <span class="text-dark text-capitalize">
-                                                        descember 09, 2016
-                                                    </span>
-                                                </li>
-
-                                            </ul>
-                                        </div>
-                                        <div class="card__post__title">
-                                            <h6>
-                                                <a href="./card-article-detail-v1.html">
-                                                    6 Best Tips for Building a Good Shipping Boat
-                                                </a>
-                                            </h6>
-                                            <!-- <p class="d-none d-lg-block d-xl-block">
-                    Maecenas accumsan tortor ut velit pharetra mollis. Proin eu nisl et arcu iaculis placerat
-                    sollicitudin ut est. In fringilla dui dui.
-                </p> -->
-
-                                        </div>
-
-                                    </div>
-
-
-                                </div>
-                            </div>
-                        </div>
-                        <div class="item">
-                            <!-- Post Article -->
-                            <div class="card__post card__post-list">
-                                <div class="image-sm">
-                                    <a href="./card-article-detail-v1.html">
-                                        <img src="images/placeholder/500x400.jpg" class="img-fluid" alt="">
-                                    </a>
-                                </div>
-
-
-                                <div class="card__post__body ">
-                                    <div class="card__post__content">
-
-                                        <div class="card__post__author-info mb-2">
-                                            <ul class="list-inline">
-                                                <li class="list-inline-item">
-                                                    <span class="text-primary">
-                                                        by david hall
-                                                    </span>
-                                                </li>
-                                                <li class="list-inline-item">
-                                                    <span class="text-dark text-capitalize">
-                                                        descember 09, 2016
-                                                    </span>
-                                                </li>
-
-                                            </ul>
-                                        </div>
-                                        <div class="card__post__title">
-                                            <h6>
-                                                <a href="./card-article-detail-v1.html">
-                                                    6 Best Tips for Building a Good Shipping Boat
-                                                </a>
-                                            </h6>
-                                            <!-- <p class="d-none d-lg-block d-xl-block">
-                    Maecenas accumsan tortor ut velit pharetra mollis. Proin eu nisl et arcu iaculis placerat
-                    sollicitudin ut est. In fringilla dui dui.
-                </p> -->
-
-                                        </div>
-
-                                    </div>
-
-
-                                </div>
-                            </div>
-                        </div>
+                        <?php endwhile; ?>
 
                     </div>
                 </div>
@@ -371,7 +225,7 @@
                     <div class="col-md-8 ">
                         <div class="card__post-carousel">
                             <div class="item">
-                                <!-- Post Article -->
+                                <!-- Post Article 1 Big Highlight -->
                                 <div class="card__post">
                                     <div class="card__post__body">
                                         <a href="./card-article-detail-v1.html">
@@ -450,7 +304,7 @@
                     </div>
                     <div class="col-md-4">
                         <div class="popular__news-right">
-                            <!-- Post Article -->
+                            <!-- Post Article Second Highlight  -->
                             <div class="card__post ">
                                 <div class="card__post__body card__post__transition">
                                     <a href="./card-article-detail-v1.html">
@@ -484,7 +338,7 @@
                                 </div>
 
                             </div>
-                            <!-- Post Article -->
+                            <!-- Post Article Third Highlight -->
                             <div class="card__post ">
                                 <div class="card__post__body card__post__transition">
                                     <a href="./card-article-detail-v1.html">
