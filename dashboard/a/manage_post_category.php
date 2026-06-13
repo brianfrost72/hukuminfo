@@ -3,6 +3,14 @@ session_start();
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . "/../koneksi.php";
 
+function generateSlug($text)
+{
+    $text = strtolower(trim($text));
+
+    $text = preg_replace('/[^a-z0-9]+/', '-', $text);
+
+    return trim($text, '-');
+}
 /*
 |--------------------------------------------------------------------------
 | TAMBAH DATA
@@ -36,18 +44,22 @@ if (isset($_POST['action']) && $_POST['action'] == 'add') {
             exit;
         }
 
+        $slug = generateSlug($name_category);
+
         mysqli_query($conn, "
-        INSERT INTO post_category
-        (
-            name_category,
-            desc_category
-        )
-        VALUES
-        (
-            '$name_category',
-            '$desc_category'
-        )
-    ");
+    INSERT INTO post_category
+    (
+        name_category,
+        slug,
+        desc_category
+    )
+    VALUES
+    (
+        '$name_category',
+        '$slug',
+        '$desc_category'
+    )
+");
 
         header("Location: manage_post_category.php?success=add");
         exit;
@@ -106,12 +118,15 @@ if (isset($_POST['action']) && $_POST['action'] == 'edit') {
         exit;
     }
 
+    $slug = generateSlug($name_category);
+
     mysqli_query($conn, "
         UPDATE post_category
-        SET
-            name_category='$name_category',
-            desc_category='$desc_category'
-        WHERE id='$id'
+SET
+    name_category='$name_category',
+    slug='$slug',
+    desc_category='$desc_category'
+WHERE id='$id'
     ");
 
     header("Location: manage_post_category.php?success=edit");

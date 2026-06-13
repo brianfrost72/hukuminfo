@@ -1,3 +1,78 @@
+<?php
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require_once __DIR__ . '/PHPMailer/src/Exception.php';
+require_once __DIR__ . '/PHPMailer/src/PHPMailer.php';
+require_once __DIR__ . '/PHPMailer/src/SMTP.php';
+
+$success = '';
+$error = '';
+
+if (isset($_POST['send_message'])) {
+
+    $name    = trim($_POST['name']);
+    $email   = trim($_POST['email']);
+    $subject = trim($_POST['subject']);
+    $message = trim($_POST['message'] ?? '');
+
+    $mail = new PHPMailer(true);
+
+    try {
+
+        $mail->isSMTP();
+        $mail->Host       = 'mail.hukuminfo.id';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = 'cs@hukuminfo.id';
+        $mail->Password   = 'Hufo*2026@';
+        $mail->SMTPSecure = 'ssl';
+        $mail->Port       = 465;
+
+        $mail->setFrom('cs@hukuminfo.id', 'Website Hukuminfo');
+        $mail->addAddress('cs@hukuminfo.id');
+
+        $mail->addReplyTo($email, $name);
+
+        $mail->isHTML(true);
+
+        $mail->CharSet = 'UTF-8';
+
+        $mail->Subject = '[KELUHAN COSTUMER] ' . $subject;
+
+        $mail->Body = "
+        <h3>Pesan Baru Dari Form Kontak</h3>
+
+        <table border='1' cellpadding='10' cellspacing='0'>
+            <tr>
+                <td><b>Nama</b></td>
+                <td>{$name}</td>
+            </tr>
+            <tr>
+                <td><b>Email</b></td>
+                <td>{$email}</td>
+            </tr>
+            <tr>
+                <td><b>Topik</b></td>
+                <td>{$subject}</td>
+            </tr>
+            <tr>
+                <td><b>Pesan</b></td>
+                <td>" . nl2br(htmlspecialchars($message)) . "</td>
+            </tr>
+        </table>
+        ";
+
+        $mail->send();
+
+        $success = "Pesan berhasil dikirim.";
+    } catch (Exception $e) {
+
+        $error = "Pesan gagal dikirim. Error: " . $mail->ErrorInfo;
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 
@@ -100,17 +175,28 @@
             <div class="row">
                 <div class="card-body border-top-1 border-primary rounded-0">
                     <div class="container-fluid">
-                        <h3 class="text-center fw-bolder">Send us a Message</h3>
+                        <h3 class="text-center fw-bolder">Kirim Keluhan Anda</h3>
                         <center>
                             <hr class="bg-primary bg-opacity-100 opacity-100 my-1" width="50em">
                         </center>
-                        <form action="" id="contact-form">
+                        <?php if (!empty($success)) : ?>
+                            <div class="alert alert-success">
+                                <?= $success ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($error)) : ?>
+                            <div class="alert alert-danger">
+                                <?= $error ?>
+                            </div>
+                        <?php endif; ?>
+                        <form action="" method="POST" id="contact-form">
                             <input type="hidden" name="id">
                             <div class="row mb-3">
                                 <div class="col-md-12">
                                     <div class="form-group position-relative">
-                                        <input type="text" id="userName" name="fullname" class="form-control form-control-sm rounded-0 form-control-border" required autocomplete="off" placeholder="Enter Fullname here">
-                                        <small class="px-1 field-label">Fullname</small>
+                                        <input type="text" id="userName" name="name" class="form-control form-control-sm rounded-0 form-control-border" required autocomplete="off" placeholder="Masukkan Nama Lengkap Anda disini..." required>
+                                        <small class="px-1 field-label">Nama Lengkap Anda</small>
                                     </div>
                                 </div>
 
@@ -118,7 +204,7 @@
                             <div class="row mb-3">
                                 <div class="col-md-12">
                                     <div class="form-group position-relative">
-                                        <input type="email" id="userEmail" name="email" class="form-control form-control-sm rounded-0 form-control-border" required autocomplete="off" placeholder="Enter Email here">
+                                        <input type="email" id="userEmail" name="email" class="form-control form-control-sm rounded-0 form-control-border" required autocomplete="off" placeholder="Masukkan Email Anda disini..." required>
                                         <small class="px-1 field-label">Email</small>
                                     </div>
                                 </div>
@@ -126,28 +212,28 @@
                             <div class="row mb-3">
                                 <div class="col-md-12">
                                     <div class="form-group position-relative">
-                                        <input type="subject" id="subject" name="subject" class="form-control form-control-sm rounded-0 form-control-border" required autocomplete="off" placeholder="Enter Subject here">
-                                        <small class="px-1 field-label">Subject</small>
+                                        <input type="subject" id="subject" name="subject" class="form-control form-control-sm rounded-0 form-control-border" required autocomplete="off" placeholder="Masukkan Topik Anda disini..." required>
+                                        <small class="px-1 field-label">Topik</small>
                                     </div>
                                 </div>
                             </div>
                             <div class="row mb-3">
                                 <div class="col-md-12">
                                     <div class="form-group">
-                                        <textarea class="form-control rounded-0" id="userMessage-info" name="message" rows="4" required placeholder="Write your message here"></textarea>
-                                        <small class="px-1 field-label">Message</small>
+                                        <textarea class="form-control rounded-0" id="message" name="message" rows="4" required placeholder="Apa Keluhan Anda..." required></textarea>
+                                        <small class="px-1 field-label">Pesan</small>
                                     </div>
                                 </div>
                             </div>
                             <div class="row mb-3">
                                 <div class="col-md-12 text-center">
-                                    <button class="btn btn-primary bg-gradient rounded-pill btn-lg col-md-4"><i class="fa fa-paper-plane"></i> Send Message</button>
+                                    <button type="submit" name="send_message" class="btn btn-primary bg-gradient rounded-pill btn-lg col-md-4"><i class="fa fa-paper-plane"></i> Kirim Pesan Anda</button>
                                 </div>
                             </div>
                         </form>
                     </div>
                 </div>
-                
+
                 <div class="col-md-4">
                     <h5>Info location</h5>
                     <div class="wrap__contact-form-office">
@@ -157,29 +243,28 @@
                                     <i class="fa fa-home"></i>
                                 </span>
 
-                                PO Box 16122 Collins Street West Victoria
-                                8007 Australia
+                                Puri Botanical Residence Blok H9 No.11, Jakarta - Indonesia.
 
 
                             </li>
                             <li>
                                 <span>
                                     <i class="fa fa-phone"></i>
-                                    <a href="tel:">(+12) 34567 890 123</a>
+                                    <a href="https://wa.me/628111902759?text=Halo%20Hukuminfo.id!%20saya%20butuh%20bantuan..." target="_blank">(+62) 811 1902 759</a>
                                 </span>
 
                             </li>
                             <li>
                                 <span>
                                     <i class="fa fa-envelope"></i>
-                                    <a href="mailto:">mail@example.com</a>
+                                    <a href="mailto:cs@hukuminfo.id" target="_blank">cs@hukuminfo.id</a>
                                 </span>
 
                             </li>
                             <li>
                                 <span>
                                     <i class="fa fa-globe"></i>
-                                    <a href="#" target="_blank"> www.yourdomain.com</a>
+                                    <a href="https://hukuminfo.id" target="_blank"> Hukuminfo.id</a>
                                 </span>
                             </li>
                         </ul>

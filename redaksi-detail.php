@@ -160,7 +160,8 @@ if ($tab == 'terpopuler') {
 $queryNews = mysqli_query($conn, "
     SELECT
         p.*,
-        pc.name_category
+        pc.name_category,
+        pc.slug AS category_slug
 
     FROM post p
 
@@ -340,12 +341,12 @@ $queryOthers = mysqli_query($conn, "
                     <!-- Tab -->
                     <div class="mb-4">
 
-                        <a href="?slug=<?= urlencode($author['slug']); ?>&tab=terbaru"
+                        <a href="redaksi=<?= urlencode($author['slug']); ?>&tab=terbaru"
                             class="btn-redaksi <?= $tab == 'terbaru' ? 'active' : ''; ?>">
                             Terbaru
                         </a>
 
-                        <a href="?slug=<?= urlencode($author['slug']); ?>&tab=terpopuler"
+                        <a href="redaksi=<?= urlencode($author['slug']); ?>&tab=terpopuler"
                             class="btn-redaksi <?= $tab == 'terpopuler' ? 'active' : ''; ?>">
                             Terpopuler
                         </a>
@@ -415,7 +416,11 @@ $queryOthers = mysqli_query($conn, "
 
                                                         <div class="card__post__category">
 
-                                                            <?= htmlspecialchars($news['name_category']); ?>
+                                                            <a href="kategori=<?= urlencode($news['category_slug']); ?>" class="text-white">
+
+                                                                <?= htmlspecialchars($news['name_category']); ?>
+
+                                                            </a>
 
                                                         </div>
 
@@ -498,7 +503,7 @@ $queryOthers = mysqli_query($conn, "
 
                                         <?php if ($page > 1): ?>
 
-                                            <a href="?slug=<?= urlencode($author['slug']); ?>&tab=<?= $tab; ?>&page=<?= ($page - 1); ?>">
+                                            <a href="redaksi=<?= urlencode($author['slug']); ?>&tab=<?= $tab; ?>&page=<?= ($page - 1); ?>">
                                                 <i class="fa fa-angle-left"></i>
                                             </a>
 
@@ -510,7 +515,7 @@ $queryOthers = mysqli_query($conn, "
                                         $end   = min($totalPages, $page + 2);
 
                                         if ($start > 1) {
-                                            echo '<a href="?slug=' . urlencode($author['slug']) . '&tab=' . $tab . '&page=1">1</a>';
+                                            echo '<a href="redaksi=' . urlencode($author['slug']) . '&tab=' . $tab . '&page=1">1</a>';
 
                                             if ($start > 2) {
                                                 echo '<span class="mx-2">...</span>';
@@ -523,7 +528,7 @@ $queryOthers = mysqli_query($conn, "
 
                                             <a
                                                 class="<?= ($i == $page ? 'active' : ''); ?>"
-                                                href="?slug=<?= urlencode($author['slug']); ?>&tab=<?= $tab; ?>&page=<?= $i; ?>">
+                                                href="redaksi=<?= urlencode($author['slug']); ?>&tab=<?= $tab; ?>&page=<?= $i; ?>">
                                                 <?= $i; ?>
                                             </a>
 
@@ -537,14 +542,14 @@ $queryOthers = mysqli_query($conn, "
                                                 echo '<span class="mx-2">...</span>';
                                             }
 
-                                            echo '<a href="?slug=' . urlencode($author['slug']) . '&tab=' . $tab . '&page=' . $totalPages . '">' . $totalPages . '</a>';
+                                            echo '<a href="redaksi=' . urlencode($author['slug']) . '&tab=' . $tab . '&page=' . $totalPages . '">' . $totalPages . '</a>';
                                         }
 
                                         ?>
 
                                         <?php if ($page < $totalPages): ?>
 
-                                            <a href="?slug=<?= urlencode($author['slug']); ?>&tab=<?= $tab; ?>&page=<?= ($page + 1); ?>">
+                                            <a href="redaksi=<?= urlencode($author['slug']); ?>&tab=<?= $tab; ?>&page=<?= ($page + 1); ?>">
                                                 <i class="fa fa-angle-right"></i>
                                             </a>
 
@@ -600,7 +605,7 @@ $queryOthers = mysqli_query($conn, "
 
                             <div class="swiper-slide">
 
-                                <a href="<?= urlencode($other['slug']); ?>"
+                                <a href="redaksi=<?= urlencode($other['slug']); ?>"
                                     class="text-decoration-none">
 
                                     <div class="redaksi-card">
@@ -687,4 +692,5 @@ $queryOthers = mysqli_query($conn, "
     </script>
 
 </body>
+
 </html>

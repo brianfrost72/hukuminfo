@@ -318,7 +318,7 @@ while ($ad = mysqli_fetch_assoc($adsResult)) {
 
                                             <div class="card__post__transition">
 
-                                                <a href="artikel-detail.php?slug=<?= $row['slug']; ?>">
+                                                <a href="<?= $row['slug']; ?>">
 
                                                     <img
                                                         src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($row['post_image']); ?>"
@@ -375,7 +375,7 @@ while ($ad = mysqli_fetch_assoc($adsResult)) {
 
                                                         <h5>
 
-                                                            <a href="artikel-detail.php?slug=<?= $row['slug']; ?>">
+                                                            <a href="<?= $row['slug']; ?>">
 
                                                                 <?= htmlspecialchars($row['post_title']); ?>
 

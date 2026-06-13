@@ -3,10 +3,29 @@
 RewriteEngine On
 RewriteBase /hukuminfo/
 
-# REDAKSI DETAIL
-RewriteRule ^([a-zA-Z0-9-]+)/?$ redaksi-detail.php?slug=$1 [L,QSA]
+# =========================
+# KATEGORI
+# =========================
+RewriteRule ^kategori=([^/]+)/?$ kategori.php?slug=$1 [L,QSA]
 
-# Hilangkan .php
+# =========================
+# TAGS
+# =========================
+RewriteRule ^tags=([^/]+)/?$ tags.php?slug=$1 [L,QSA]
+
+# =========================
+# REDAKSI
+# =========================
+RewriteRule ^redaksi=([^/]+)/?$ redaksi-detail.php?slug=$1 [L,QSA]
+
+# =========================
+# ARTIKEL
+# =========================
+RewriteRule ^([a-zA-Z0-9-]+)/?$ artikel-detail.php?slug=$1 [L,QSA]
+
+# =========================
+# HILANGKAN .PHP
+# =========================
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME}.php -f
 RewriteRule ^(.+)$ $1.php [L]

@@ -42,18 +42,13 @@ if (isset($_GET['tag'])) {
     $selectedTag = trim($_GET['slug']);
 }
 
-$tagsPerPage = 20;
+$tagsPerPage = 10;
 $tagPage = isset($_GET['tag_page']) ? max(1, (int)$_GET['tag_page']) : 1;
 $tagOffset = ($tagPage - 1) * $tagsPerPage;
 
 $totalTagsQuery = mysqli_query($conn, "
-    SELECT COUNT(DISTINCT t.id) AS total
-    FROM tags t
-    INNER JOIN post_tags pt
-        ON pt.tag_id = t.id
-    INNER JOIN post p
-        ON p.id = pt.post_id
-    WHERE p.status='publish'
+    SELECT COUNT(*) AS total
+    FROM tags
 ");
 
 if (!$totalTagsQuery) {
@@ -80,18 +75,21 @@ $tagsQuery = mysqli_query($conn, "
         t.tag_slug,
         COUNT(DISTINCT p.id) total_posts
     FROM tags t
-    INNER JOIN post_tags pt
+    LEFT JOIN post_tags pt
         ON pt.tag_id = t.id
-    INNER JOIN post p
+    LEFT JOIN post p
         ON p.id = pt.post_id
-    WHERE p.status='publish'
+        AND p.status='publish'
     GROUP BY t.id
-    ORDER BY total_posts DESC, t.tag_name ASC
+    ORDER BY
+        (t.tag_slug = '" . mysqli_real_escape_string($conn, $selectedTag) . "') DESC,
+        total_posts DESC,
+        t.tag_name ASC
     LIMIT $tagOffset,$tagsPerPage
 ");
 
 // QUERY TAG 
-$postsPerPage = 6;
+$postsPerPage = 10;
 
 $postPage = isset($_GET['page'])
     ? max(1, (int)$_GET['page'])
@@ -162,7 +160,8 @@ if (!empty($selectedTag)) {
 $sidebarCategoryQuery = mysqli_query($conn, "
     SELECT
         id,
-        name_category
+        name_category,
+        slug
     FROM post_category
     ORDER BY RAND()
 ");
@@ -358,7 +357,7 @@ if (!empty($selectedTagData)) {
                                         ?>
 
                                         <a
-                                            href="?tag=<?= urlencode($tag['tag_slug']); ?>&tag_page=<?= $tagPage; ?>"
+                                            href="tags=<?= urlencode($tag['tag_slug']); ?>?tag_page=<?= $tagPage; ?>"
                                             class="btn <?= $isActive ? 'btn-primary' : 'btn-outline-primary'; ?> rounded-pill mb-2">
 
                                             #<?= htmlspecialchars($tag['tag_name']); ?>
@@ -376,7 +375,7 @@ if (!empty($selectedTagData)) {
 
                             <!-- Pagination -->
                             <nav class="mt-4">
-                                <ul class="pagination justify-content-center" id="postPagination"></ul>
+                                <ul class="pagination justify-content-center" id="tagPagination"></ul>
                             </nav>
 
                             <aside class="wrapper__list__article mb-0">
@@ -403,7 +402,7 @@ if (!empty($selectedTagData)) {
                                                     <div class="article__entry">
 
                                                         <div class="article__image">
-                                                            <a href="detail.php?slug=<?= $post['slug']; ?>">
+                                                            <a href="<?= $post['slug']; ?>">
 
                                                                 <img
                                                                     src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']); ?>"
@@ -433,7 +432,7 @@ if (!empty($selectedTagData)) {
 
                                                             <h5>
 
-                                                                <a href="detail.php?slug=<?= $post['slug']; ?>">
+                                                                <a href="<?= $post['slug']; ?>">
 
                                                                     <?= htmlspecialchars($post['post_title']); ?>
 
@@ -581,10 +580,8 @@ if (!empty($selectedTagData)) {
 
                                                 <li class="list-inline-item">
 
-                                                    <a href="kategori.php?category=<?= $category['id']; ?>">
-
+                                                    <a href="kategori=<?= urlencode($category['slug']); ?>">
                                                         <?= htmlspecialchars($category['name_category']); ?>
-
                                                     </a>
 
                                                 </li>
@@ -708,19 +705,19 @@ if (!empty($selectedTagData)) {
             html += `
     <li class="page-item ${currentPostPage == 1 ? 'disabled':''}">
         <a class="page-link"
-           href="?tag=<?= urlencode($selectedTag) ?>&tag_page=<?= $tagPage ?>&page=${currentPostPage-1}">
+           href="tags=<?= urlencode($selectedTag) ?>?tag_page=<?= $tagPage ?>&tag_page=<?= $tagPage ?>&page=${currentPostPage-1}">
             <i class="fa fa-angle-left"></i>
         </a>
     </li>`;
 
-            let start = Math.max(1, currentPostPage - 2);
-            let end = Math.min(totalPostPages, currentPostPage + 2);
+           let start = 1;
+let end = totalPostPages;
 
             if (start > 1) {
                 html += `
         <li class="page-item">
             <a class="page-link"
-               href="?tag=<?= urlencode($selectedTag) ?>&tag_page=<?= $tagPage ?>&page=1">
+               href="tags=<?= urlencode($selectedTag) ?>?tag_page=<?= $tagPage ?>&tag_page=<?= $tagPage ?>&page=1">
                1
             </a>
         </li>`;
@@ -737,7 +734,7 @@ if (!empty($selectedTagData)) {
                 html += `
         <li class="page-item ${i==currentPostPage?'active':''}">
             <a class="page-link"
-               href="?tag=<?= urlencode($selectedTag) ?>&tag_page=<?= $tagPage ?>&page=${i}">
+               href="tags=<?= urlencode($selectedTag) ?>?tag_page=<?= $tagPage ?>&tag_page=<?= $tagPage ?>&page=${i}">
                 ${i}
             </a>
         </li>`;
@@ -754,7 +751,7 @@ if (!empty($selectedTagData)) {
                 html += `
         <li class="page-item">
             <a class="page-link"
-               href="?tag=<?= urlencode($selectedTag) ?>&tag_page=<?= $tagPage ?>&page=${totalPostPages}">
+               href="tags=<?= urlencode($selectedTag) ?>?tag_page=<?= $tagPage ?>&tag_page=<?= $tagPage ?>&page=${totalPostPages}">
                 ${totalPostPages}
             </a>
         </li>`;
@@ -763,7 +760,7 @@ if (!empty($selectedTagData)) {
             html += `
     <li class="page-item ${currentPostPage == totalPostPages ? 'disabled':''}">
         <a class="page-link"
-           href="?tag=<?= urlencode($selectedTag) ?>&tag_page=<?= $tagPage ?>&page=${currentPostPage+1}">
+           href="tags=<?= urlencode($selectedTag) ?>?tag_page=<?= $tagPage ?>&tag_page=<?= $tagPage ?>&page=${currentPostPage+1}">
             <i class="fa fa-angle-right"></i>
         </a>
     </li>`;
@@ -789,7 +786,7 @@ if (!empty($selectedTagData)) {
             html += `
     <li class="page-item ${currentTagPage == 1 ? 'disabled':''}">
         <a class="page-link"
-           href="?tag=${selectedTag}&tag_page=${currentTagPage-1}">
+           href="tags=${selectedTag}?tag_page=${currentTagPage-1}">
             <i class="fa fa-angle-left"></i>
         </a>
     </li>`;
@@ -801,7 +798,7 @@ if (!empty($selectedTagData)) {
                 html += `
         <li class="page-item">
             <a class="page-link"
-               href="?tag=${selectedTag}&tag_page=1">
+               href="tags=${selectedTag}?tag_page=1">
                1
             </a>
         </li>`;
@@ -818,7 +815,7 @@ if (!empty($selectedTagData)) {
                 html += `
         <li class="page-item ${i==currentTagPage?'active':''}">
             <a class="page-link"
-               href="?tag=${selectedTag}&tag_page=${i}">
+               href="tags=${selectedTag}?tag_page=${i}">
                 ${i}
             </a>
         </li>`;
@@ -835,7 +832,7 @@ if (!empty($selectedTagData)) {
                 html += `
         <li class="page-item">
             <a class="page-link"
-               href="?tag=${selectedTag}&tag_page=${totalTagPages}">
+               href="tags=${selectedTag}?tag_page=${totalTagPages}">
                 ${totalTagPages}
             </a>
         </li>`;
@@ -844,7 +841,7 @@ if (!empty($selectedTagData)) {
             html += `
     <li class="page-item ${currentTagPage == totalTagPages ? 'disabled':''}">
         <a class="page-link"
-           href="?tag=${selectedTag}&tag_page=${currentTagPage+1}">
+           href="tags=${selectedTag}?tag_page=${currentTagPage+1}">
             <i class="fa fa-angle-right"></i>
         </a>
     </li>`;

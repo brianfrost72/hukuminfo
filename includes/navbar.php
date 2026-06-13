@@ -6,7 +6,7 @@
             </div>
         </div>
         <figure class="mb-0 mx-auto">
-            <a href="/homepage-v1.html">
+            <a href="/">
                 <img src="images/placeholder/logo.png" alt="" class="img-fluid logo">
             </a>
         </figure>

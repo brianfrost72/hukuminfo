@@ -38,6 +38,7 @@ $postQuery = mysqli_query($conn, "
     SELECT
     p.*,
     pc.name_category,
+    pc.slug AS category_slug,
 
     u.id AS author_id,
     u.user_type,
@@ -137,22 +138,30 @@ if (mysqli_num_rows($viewCheck) == 0) {
 |--------------------------------------------------------------------------
 */
 
-$authorPhoto = '';
+$defaultMale =
+    'dashboard/assets/images/avatar/avatar-men.png';
 
-if (!empty($post['photo_profile'])) {
+$defaultFemale =
+    'dashboard/assets/images/avatar/avatar-women.png';
+
+$authorPhotoName = trim($post['photo_profile'] ?? '');
+
+if (
+    !empty($authorPhotoName) &&
+    $authorPhotoName != 'avatar-men.png' &&
+    $authorPhotoName != 'avatar-women.png'
+) {
 
     $authorPhoto =
         'dashboard/assets/images/uploads/user_photos/' .
-        $post['photo_profile'];
+        $authorPhotoName;
 } else {
 
     $authorPhoto =
         ($post['gender'] == 'Perempuan')
-        ? 'dashboard/assets/images/avatar/avatar-women.png'
-        : 'dashboard/assets/images/avatar/avatar-men.png';
+        ? $defaultFemale
+        : $defaultMale;
 }
-
-$postId = (int)$post['id'];
 
 /*
 |--------------------------------------------------------------------------
@@ -465,6 +474,7 @@ $postMixQuery = mysqli_query($conn, "
         p.post_image,
         p.created_at,
         pc.name_category,
+        pc.slug AS category_slug,
         up.full_name
 
     FROM post p
@@ -545,7 +555,8 @@ $totalTagsSidebar = count($sidebarTags);
 $sidebarCategoryQuery = mysqli_query($conn, "
     SELECT
         id,
-        name_category
+        name_category,
+        slug
     FROM post_category
     ORDER BY RAND()
 ");
@@ -716,8 +727,12 @@ $shareTitle = urlencode($post['post_title']);
 
                                     <li class="list-inline-item">
                                         <span>Penulis :</span>
-                                        <a href="<?= urlencode($post['author_slug']); ?>" class="text-primary text-capitalize">
-                                            <?= $post['full_name']; ?>,
+
+                                        <a href="redaksi=<?= urlencode($post['author_slug']); ?>"
+                                            class="text-primary text-capitalize">
+
+                                            <?= htmlspecialchars($post['full_name']); ?>
+
                                         </a>
                                     </li>
 
@@ -731,8 +746,8 @@ $shareTitle = urlencode($post['post_title']);
                                         <span class="text-dark text-capitalize">
                                             &mdash; Kategori :
                                         </span>
-                                        <a href="kategori.php">
-                                            <?= $post['name_category']; ?>
+                                        <a href="kategori=<?= urlencode($post['category_slug']); ?>">
+                                            <?= htmlspecialchars($post['name_category']); ?>
                                         </a>
                                     </li>
                                 </ul>
@@ -857,7 +872,7 @@ $shareTitle = urlencode($post['post_title']);
                     </div>
                     <!-- end content article detail -->
 
-                    <!-- tags -->
+
                     <!-- News Tags -->
                     <div class="blog-tags">
                         <ul class="list-inline">
@@ -867,14 +882,14 @@ $shareTitle = urlencode($post['post_title']);
                             </li>
                             <?php while ($tag = mysqli_fetch_assoc($tagsQuery)) : ?>
                                 <li class="list-inline-item">
-                                    <a href="tag.php?slug=<?= $tag['tag_slug']; ?>">
+                                    <a href="tags=<?= $tag['tag_slug']; ?>">
                                         #<?= htmlspecialchars($tag['tag_name']); ?>
                                     </a>
                                 </li>
                             <?php endwhile; ?>
                         </ul>
                     </div>
-                    <!-- end tags-->
+                    <!-- end NEWS Tags-->
 
                     <!-- comment -->
                     <!-- Comment  -->
@@ -1257,7 +1272,7 @@ $shareTitle = urlencode($post['post_title']);
                             <?php if ($prevPost): ?>
 
                                 <div class="single_navigation-prev">
-                                    <a href="detail.php?slug=<?= $prevPost['slug']; ?>">
+                                    <a href="<?= $prevPost['slug']; ?>">
 
                                         <span>previous post</span>
 
@@ -1275,7 +1290,7 @@ $shareTitle = urlencode($post['post_title']);
                             <?php if ($nextPost): ?>
 
                                 <div class="single_navigation-next text-left text-md-right">
-                                    <a href="detail.php?slug=<?= $nextPost['slug']; ?>">
+                                    <a href="<?= $nextPost['slug']; ?>">
 
                                         <span>next post</span>
 
@@ -1307,7 +1322,7 @@ $shareTitle = urlencode($post['post_title']);
 
                                         <div class="article__image">
 
-                                            <a href="detail.php?slug=<?= $related['slug']; ?>">
+                                            <a href="<?= $related['slug']; ?>">
 
                                                 <img
                                                     src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($related['post_image']); ?>"
@@ -1346,7 +1361,7 @@ $shareTitle = urlencode($post['post_title']);
 
                                             <h5>
 
-                                                <a href="detail.php?slug=<?= $related['slug']; ?>">
+                                                <a href="<?= $related['slug']; ?>">
 
                                                     <?= htmlspecialchars($related['post_title']); ?>
 
@@ -1416,7 +1431,7 @@ $shareTitle = urlencode($post['post_title']);
 
                                             <div class="image-sm">
 
-                                                <a href="artikel-detail.php?slug=<?= $postMix[$i]['slug']; ?>">
+                                                <a href="<?= $postMix[$i]['slug']; ?>">
 
                                                     <img
                                                         src="dashboard/assets/images/uploads/posts/<?= $postMix[$i]['post_image']; ?>"
@@ -1463,7 +1478,7 @@ $shareTitle = urlencode($post['post_title']);
 
                                                         <h6>
 
-                                                            <a href="artikel-detail.php?slug=<?= $postMix[$i]['slug']; ?>">
+                                                            <a href="<?= $postMix[$i]['slug']; ?>">
 
                                                                 <?= htmlspecialchars($postMix[$i]['post_title']); ?>
 
@@ -1491,7 +1506,7 @@ $shareTitle = urlencode($post['post_title']);
 
                                         <div class="article__image">
 
-                                            <a href="artikel-detail.php?slug=<?= $postMix[3]['slug']; ?>">
+                                            <a href="<?= $postMix[3]['slug']; ?>">
 
                                                 <img
                                                     src="dashboard/assets/images/uploads/posts/<?= $postMix[3]['post_image']; ?>"
@@ -1506,7 +1521,11 @@ $shareTitle = urlencode($post['post_title']);
 
                                             <div class="article__category">
 
-                                                <?= htmlspecialchars($postMix[3]['name_category']); ?>
+                                                <a href="kategori=<?= urlencode($postMix[3]['category_slug']); ?>" class="text-white">
+
+                                                    <?= htmlspecialchars($postMix[3]['name_category']); ?>
+
+                                                </a>
 
                                             </div>
 
@@ -1536,7 +1555,7 @@ $shareTitle = urlencode($post['post_title']);
 
                                             <h5>
 
-                                                <a href="artikel-detail.php?slug=<?= $postMix[3]['slug']; ?>">
+                                                <a href="<?= $postMix[3]['slug']; ?>">
 
                                                     <?= htmlspecialchars($postMix[3]['post_title']); ?>
 
@@ -1551,7 +1570,7 @@ $shareTitle = urlencode($post['post_title']);
                                             </p>
 
                                             <a
-                                                href="artikel-detail.php?slug=<?= $postMix[3]['slug']; ?>"
+                                                href="<?= $postMix[3]['slug']; ?>"
                                                 class="btn btn-outline-primary mb-4 text-capitalize">
 
                                                 baca selengkapnya
@@ -1674,7 +1693,7 @@ $shareTitle = urlencode($post['post_title']);
 
                                         <li class="list-inline-item">
 
-                                            <a href="tags.php?slug=<?= urlencode($tag['tag_slug']); ?>">
+                                            <a href="tags=<?= urlencode($tag['tag_slug']); ?>">
 
                                                 #<?= htmlspecialchars($tag['tag_name']); ?>
 
@@ -1731,10 +1750,8 @@ $shareTitle = urlencode($post['post_title']);
 
                                         <li class="list-inline-item">
 
-                                            <a href="kategori.php?category=<?= $category['id']; ?>">
-
+                                            <a href="kategori=<?= urlencode($category['slug']); ?>">
                                                 <?= htmlspecialchars($category['name_category']); ?>
-
                                             </a>
 
                                         </li>

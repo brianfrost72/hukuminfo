@@ -27,6 +27,12 @@ function tanggalIndonesia($datetime)
         date('Y', $timestamp);
 }
 
+/* 
+|--------------------------------------------------------------------------
+| TRENDING MIX NEWS TOP
+|--------------------------------------------------------------------------
+*/
+
 $trendingQuery = mysqli_query($conn, "
     SELECT *
     FROM (
@@ -73,6 +79,477 @@ $trendingQuery = mysqli_query($conn, "
 if (!$trendingQuery) {
     die(mysqli_error($conn));
 }
+
+/* 
+|--------------------------------------------------------------------------
+| HIGHLIGHT NEWS
+|--------------------------------------------------------------------------
+*/
+$highlightQuery = mysqli_query($conn, "
+    SELECT
+        p.id,
+        p.post_title,
+        p.slug,
+        p.post_image,
+        p.created_at,
+        COUNT(pv.id) AS total_views,
+
+        pc.name_category,
+        pc.slug AS category_slug,
+
+        COALESCE(up.full_name,'Administrator') AS author_name
+
+    FROM post p
+
+    LEFT JOIN post_views pv
+        ON pv.post_id = p.id
+
+    LEFT JOIN post_category pc
+        ON pc.id = p.post_category_id
+
+    LEFT JOIN user_profile up
+        ON up.user_id = p.user_id
+
+    WHERE p.status='publish'
+
+    GROUP BY p.id
+
+    ORDER BY total_views DESC
+
+    LIMIT 3
+");
+
+$highlights = [];
+
+while ($row = mysqli_fetch_assoc($highlightQuery)) {
+    $highlights[] = $row;
+}
+
+$highlight1 = $highlights[0] ?? null;
+$highlight2 = $highlights[1] ?? null;
+$highlight3 = $highlights[2] ?? null;
+
+/* 
+|--------------------------------------------------------------------------
+| RANDOM POST CAROUSEL
+|--------------------------------------------------------------------------
+*/
+
+$excludeIds = [];
+
+foreach ($highlights as $item) {
+    $excludeIds[] = (int)$item['id'];
+}
+
+$excludeSql = '';
+
+if (!empty($excludeIds)) {
+    $excludeSql = "AND p.id NOT IN (" . implode(',', $excludeIds) . ")";
+}
+
+$randomPostQuery = mysqli_query($conn, "
+    SELECT
+        p.id,
+        p.post_title,
+        p.slug,
+        p.post_image,
+        p.created_at,
+        COALESCE(up.full_name,'Administrator') AS author_name
+    FROM post p
+    LEFT JOIN user_profile up
+        ON up.user_id = p.user_id
+    WHERE p.status='publish'
+    $excludeSql
+    ORDER BY RAND()
+    LIMIT 12
+");
+
+if (!$randomPostQuery) {
+    die(mysqli_error($conn));
+}
+
+/*
+|--------------------------------------------------------------------------
+| MOST BOOKMARKED POSTS
+|--------------------------------------------------------------------------
+*/
+
+$bookmarkQuery = mysqli_query($conn, "
+    SELECT
+        p.id,
+        p.post_title,
+        p.slug,
+        p.post_image,
+        p.created_at,
+
+        pc.name_category,
+        pc.slug AS category_slug,
+
+        COUNT(pb.id) AS total_bookmarks,
+
+        COALESCE(up.full_name,'Administrator') AS author_name
+
+    FROM post p
+
+    LEFT JOIN post_bookmarks pb
+        ON pb.post_id = p.id
+
+    LEFT JOIN post_category pc
+        ON pc.id = p.post_category_id
+
+    LEFT JOIN user_profile up
+        ON up.user_id = p.user_id
+
+    WHERE p.status='publish'
+
+    GROUP BY p.id
+
+    HAVING total_bookmarks > 0
+
+    ORDER BY total_bookmarks DESC
+
+    LIMIT 6
+");
+
+$bookmarkPosts = [];
+
+while ($row = mysqli_fetch_assoc($bookmarkQuery)) {
+    $bookmarkPosts[] = $row;
+}
+
+$bookmarkHighlightLeft  = $bookmarkPosts[0] ?? null;
+$bookmarkHighlightRight = $bookmarkPosts[1] ?? null;
+
+$bookmarkLeftPosts = array_slice($bookmarkPosts, 2, 2);
+$bookmarkRightPosts = array_slice($bookmarkPosts, 4, 2);
+
+/*
+|--------------------------------------------------------------------------
+| MOST LIKED POSTS
+|--------------------------------------------------------------------------
+*/
+
+$mostLikedQuery = mysqli_query($conn, "
+    SELECT
+        p.id,
+        p.post_title,
+        p.slug,
+        COUNT(pl.id) AS total_likes,
+
+        pc.name_category,
+        pc.slug AS category_slug
+
+    FROM post p
+
+    INNER JOIN post_likes pl
+        ON pl.post_id = p.id
+
+    LEFT JOIN post_category pc
+        ON pc.id = p.post_category_id
+
+    WHERE p.status = 'publish'
+
+    GROUP BY p.id
+
+    ORDER BY total_likes DESC, p.created_at DESC
+
+    LIMIT 4
+");
+
+if (!$mostLikedQuery) {
+    die(mysqli_error($conn));
+}
+/*
+|--------------------------------------------------------------------------
+| CATEGORY PAGINATION (OPSI B)
+|--------------------------------------------------------------------------
+*/
+
+$postPerCategory = 20;
+
+$currentPage = isset($_GET['page'])
+    ? max(1, (int)$_GET['page'])
+    : 1;
+
+/*
+|--------------------------------------------------------------------------
+| AMBIL SEMUA KATEGORI
+|--------------------------------------------------------------------------
+*/
+
+$allCategoriesQuery = mysqli_query($conn, "
+    SELECT
+        id,
+        name_category,
+        slug
+    FROM post_category
+    ORDER BY id ASC
+");
+
+$allBlocks = [];
+
+while ($category = mysqli_fetch_assoc($allCategoriesQuery)) {
+
+    $totalPostQuery = mysqli_query($conn, "
+        SELECT COUNT(*) total
+        FROM post
+        WHERE status='publish'
+        AND post_category_id = {$category['id']}
+    ");
+
+    $totalPost =
+        (int) mysqli_fetch_assoc($totalPostQuery)['total'];
+
+    if ($totalPost <= 0) {
+        continue;
+    }
+
+    $totalChunk = ceil($totalPost / $postPerCategory);
+
+    for ($chunk = 0; $chunk < $totalChunk; $chunk++) {
+
+        $allBlocks[] = [
+            'category_id'   => $category['id'],
+            'name_category' => $category['name_category'],
+            'slug'          => $category['slug'],
+            'offset'        => $chunk * $postPerCategory
+        ];
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| TOTAL PAGE
+|--------------------------------------------------------------------------
+*/
+
+$blockPerPage = 2;
+
+$totalPages = ceil(
+    count($allBlocks) / $blockPerPage
+);
+
+$pageOffset =
+    ($currentPage - 1) * $blockPerPage;
+
+$currentBlocks = array_slice(
+    $allBlocks,
+    $pageOffset,
+    $blockPerPage
+);
+
+/*
+|--------------------------------------------------------------------------
+| ASIDE 1
+|--------------------------------------------------------------------------
+*/
+
+$categoryAside1 = $currentBlocks[0] ?? null;
+$categoryAside1Posts = [];
+
+if ($categoryAside1) {
+
+    $postAside1Query = mysqli_query($conn, "
+        SELECT
+            p.id,
+            p.post_title,
+            p.slug,
+            p.post_image,
+            p.created_at,
+
+            COALESCE(
+                up.full_name,
+                'Administrator'
+            ) AS author_name
+
+        FROM post p
+
+        LEFT JOIN user_profile up
+            ON up.user_id = p.user_id
+
+        WHERE p.status='publish'
+        AND p.post_category_id =
+            {$categoryAside1['category_id']}
+
+        ORDER BY p.created_at DESC
+
+        LIMIT $postPerCategory
+        OFFSET {$categoryAside1['offset']}
+    ");
+
+    while ($row = mysqli_fetch_assoc($postAside1Query)) {
+        $categoryAside1Posts[] = $row;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| ASIDE 2
+|--------------------------------------------------------------------------
+*/
+
+$categoryAside2 = $currentBlocks[1] ?? null;
+$categoryAside2Posts = [];
+
+if ($categoryAside2) {
+
+    $postAside2Query = mysqli_query($conn, "
+        SELECT
+            p.id,
+            p.post_title,
+            p.slug,
+            p.post_image,
+            p.post_desc,
+            p.created_at,
+
+            COALESCE(
+                up.full_name,
+                'Administrator'
+            ) AS author_name
+
+        FROM post p
+
+        LEFT JOIN user_profile up
+            ON up.user_id = p.user_id
+
+        WHERE p.status='publish'
+        AND p.post_category_id =
+            {$categoryAside2['category_id']}
+
+        ORDER BY p.created_at DESC
+
+        LIMIT $postPerCategory
+        OFFSET {$categoryAside2['offset']}
+    ");
+
+    while ($row = mysqli_fetch_assoc($postAside2Query)) {
+        $categoryAside2Posts[] = $row;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| ARTIKEL TERBARU SIDEBAR
+|--------------------------------------------------------------------------
+*/
+
+$latestPostsQuery = mysqli_query($conn, "
+    SELECT
+        p.id,
+        p.post_title,
+        p.slug,
+        p.post_image,
+        p.post_desc,
+        p.created_at,
+
+        pc.name_category,
+        pc.slug AS category_slug,
+
+        COALESCE(up.full_name,'Administrator') AS author_name
+
+    FROM post p
+
+    LEFT JOIN post_category pc
+        ON pc.id = p.post_category_id
+
+    LEFT JOIN user_profile up
+        ON up.user_id = p.user_id
+
+    WHERE p.status='publish'
+
+    ORDER BY p.id DESC
+
+    LIMIT 3
+");
+
+$latestPosts = [];
+
+while ($row = mysqli_fetch_assoc($latestPostsQuery)) {
+    $latestPosts[] = $row;
+}
+
+/*
+|----------------------------------------------------
+| 99 = BIG
+| 98 = SMALL
+| 97 = SMALL
+|----------------------------------------------------
+*/
+
+$latestBig = $latestPosts[0] ?? null;
+
+$latestSmallPosts = array_slice(
+    $latestPosts,
+    1,
+    2
+);
+/*
+|--------------------------------------------------------------------------
+| SOCIAL MEDIA
+|--------------------------------------------------------------------------
+*/
+
+$socialMediaQuery = mysqli_query($conn, "
+    SELECT
+        sm.account_name,
+        sm.link_platform,
+        ls.name_platform
+    FROM social_media sm
+    INNER JOIN list_socmed ls
+        ON ls.id = sm.platform_id
+    ORDER BY sm.id ASC
+");
+
+if (!$socialMediaQuery) {
+    die(mysqli_error($conn));
+}
+
+/*
+|--------------------------------------------------------------------------
+| TAGS SIDEBAR
+|--------------------------------------------------------------------------
+*/
+
+$sidebarTagsQuery = mysqli_query($conn, "
+    SELECT
+        id,
+        tag_name,
+        tag_slug
+    FROM tags
+    ORDER BY created_at DESC
+");
+
+$sidebarTags = [];
+
+while ($row = mysqli_fetch_assoc($sidebarTagsQuery)) {
+    $sidebarTags[] = $row;
+}
+
+$totalTagsSidebar = count($sidebarTags);
+
+/*
+|--------------------------------------------------------------------------
+| RANDOM ADS
+|--------------------------------------------------------------------------
+*/
+
+$adsQuery = mysqli_query($conn, "
+    SELECT
+        id,
+        ad_title,
+        ad_img,
+        ad_link
+    FROM ads
+    ORDER BY RAND()
+    LIMIT 1
+");
+
+$adsData = mysqli_fetch_assoc($adsQuery);
+/* 
+|--------------------------------------------------------------------------
+| 
+|--------------------------------------------------------------------------
+*/
 ?>
 
 <!DOCTYPE html>
@@ -80,9 +557,27 @@ if (!$trendingQuery) {
 
 <head>
     <meta charset="utf-8">
-    <title>Hukuminfo.id - Media Informasi dan Edukasi Tentang Hukum </title>
-    <meta name="description" content="Media informasi hukum yang berkomitmen menyajikan berita, regulasi, dan analisis hukum Indonesia secara objektif, terpercaya, dan berimbang.">
+    <title>Hukuminfo.id | Media Informasi, Berita, dan Edukasi Hukum Indonesia</title>
+
+    <meta name="description" content="Hukuminfo.id menyajikan berita hukum terbaru, regulasi, peraturan perundang-undangan, analisis hukum, edukasi hukum, dan informasi terpercaya seputar perkembangan hukum di Indonesia.">
+
+    <meta name="keywords" content="berita hukum, hukum indonesia, informasi hukum, edukasi hukum, regulasi indonesia, peraturan hukum, berita hukum terbaru, artikel hukum, hukuminfo">
+
+    <meta name="robots" content="index, follow">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Hukuminfo.id | Media Informasi, Berita, dan Edukasi Hukum Indonesia">
+    <meta property="og:description" content="Portal informasi hukum Indonesia yang menyajikan berita, regulasi, analisis, dan edukasi hukum secara terpercaya dan berimbang.">
+    <meta property="og:url" content="https://hukuminfo.id/">
+    <meta property="og:site_name" content="Hukuminfo.id">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Hukuminfo.id | Media Informasi, Berita, dan Edukasi Hukum Indonesia">
+    <meta name="twitter:description" content="Portal informasi hukum Indonesia yang menyajikan berita, regulasi, analisis, dan edukasi hukum secara terpercaya dan berimbang.">
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="canonical" href="https://hukuminfo.id/">
     <!-- favicon.ico in the root directory -->
     <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
     <!-- google fonts -->
@@ -95,7 +590,7 @@ if (!$trendingQuery) {
 
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/v4-shims.min.css">
-        
+
     <link href="./css/styles.css?537a1bbd0e5129401d28" rel="stylesheet">
 </head>
 
@@ -147,7 +642,7 @@ if (!$trendingQuery) {
         <!-- End Navbar  -->
     </header>
     <!-- End Header news -->
-    <!-- Trending news  carousel-->
+    <!-- MIX NEWS TOP carousel-->
     <section class="bg-light">
         <div class="container">
             <div class="row">
@@ -161,7 +656,7 @@ if (!$trendingQuery) {
                                 <div class="card__post card__post-list">
 
                                     <div class="image-sm">
-                                        <a href="artikel-detail.php?slug=<?= urlencode($trending['slug']) ?>">
+                                        <a href="<?= urlencode($trending['slug']) ?>">
                                             <img
                                                 src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($trending['post_image']) ?>"
                                                 class="img-fluid"
@@ -193,7 +688,7 @@ if (!$trendingQuery) {
 
                                             <div class="card__post__title">
                                                 <h6>
-                                                    <a href="artikel-detail.php?slug=<?= urlencode($trending['slug']) ?>">
+                                                    <a href="<?= urlencode($trending['slug']) ?>">
                                                         <?= htmlspecialchars($trending['post_title']) ?>
                                                     </a>
                                                 </h6>
@@ -218,322 +713,232 @@ if (!$trendingQuery) {
 
     <!-- Popular news -->
     <section>
-        <!-- Popular news  header-->
+        <!-- HIGHLIGHT POST news  header-->
         <div class="popular__news-header">
             <div class="container">
                 <div class="row no-gutters">
                     <div class="col-md-8 ">
                         <div class="card__post-carousel">
-                            <div class="item">
-                                <!-- Post Article 1 Big Highlight -->
-                                <div class="card__post">
-                                    <div class="card__post__body">
-                                        <a href="./card-article-detail-v1.html">
-                                            <img src="images/placeholder/800x600.jpg" class="img-fluid" alt="">
-                                        </a>
-                                        <div class="card__post__content bg__post-cover">
-                                            <div class="card__post__category">
-                                                covid-19
-                                            </div>
-                                            <div class="card__post__title">
-                                                <h2>
-                                                    <a href="#">
-                                                        Global solidarity to fight COVID-19, and indonesia stay safe and health
+
+                            <?php foreach ($highlights as $highlight): ?>
+
+                                <div class="item">
+
+                                    <div class="card__post">
+                                        <div class="card__post__body">
+
+                                            <a href="<?= urlencode($highlight['slug']) ?>">
+                                                <img
+                                                    src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($highlight['post_image']) ?>"
+                                                    class="img-fluid"
+                                                    alt="<?= htmlspecialchars($highlight['post_title']) ?>">
+                                            </a>
+
+                                            <div class="card__post__content bg__post-cover">
+                                                <div class="card__post__category">
+                                                    <a href="kategori=<?= urlencode($highlight['category_slug']) ?>" class="text-white">
+                                                        <?= htmlspecialchars($highlight['name_category']) ?>
                                                     </a>
-                                                </h2>
-                                            </div>
-                                            <div class="card__post__author-info">
-                                                <ul class="list-inline">
-                                                    <li class="list-inline-item">
-                                                        <a href="#">
-                                                            by david hall
+                                                </div>
+                                                <div class="card__post__title">
+                                                    <h2>
+                                                        <a href="<?= urlencode($highlight['slug']) ?>">
+                                                            <?= htmlspecialchars($highlight['post_title']) ?>
                                                         </a>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <span>
-                                                            Descember 09, 2016
-                                                        </span>
-                                                    </li>
-                                                </ul>
+                                                    </h2>
+                                                </div>
+
+                                                <div class="card__post__author-info">
+                                                    <ul class="list-inline">
+
+                                                        <li class="list-inline-item">
+                                                            <span class="text-primary">
+                                                                by <?= htmlspecialchars($highlight['author_name']) ?>
+                                                            </span>
+                                                        </li>
+
+                                                        <li class="list-inline-item">
+                                                            <span>
+                                                                <?= tanggalIndonesia($highlight['created_at']) ?>
+                                                            </span>
+                                                        </li>
+
+                                                        <li class="list-inline-item">
+                                                            <span class="fa fa-eye">
+                                                                <?= number_format($highlight['total_views']) ?>
+                                                            </span>
+                                                        </li>
+
+                                                    </ul>
+                                                </div>
+
                                             </div>
+
                                         </div>
                                     </div>
 
-
                                 </div>
-                            </div>
-                            <div class="item">
-                                <!-- Post Article -->
-                                <div class="card__post">
-                                    <div class="card__post__body">
-                                        <a href="./card-article-detail-v1.html">
-                                            <img src="images/placeholder/800x600.jpg" class="img-fluid" alt="">
-                                        </a>
-                                        <div class="card__post__content bg__post-cover">
-                                            <div class="card__post__category">
-                                                covid-19
-                                            </div>
-                                            <div class="card__post__title">
-                                                <h2>
-                                                    <a href="#">
-                                                        Global solidarity to fight COVID-19, and indonesia stay safe and health
-                                                    </a>
-                                                </h2>
-                                            </div>
-                                            <div class="card__post__author-info">
-                                                <ul class="list-inline">
-                                                    <li class="list-inline-item">
-                                                        <a href="#">
-                                                            by david hall
-                                                        </a>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <span>
-                                                            Descember 09, 2016
-                                                        </span>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
 
+                            <?php endforeach; ?>
 
-                                </div>
-                            </div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="popular__news-right">
                             <!-- Post Article Second Highlight  -->
-                            <div class="card__post ">
-                                <div class="card__post__body card__post__transition">
-                                    <a href="./card-article-detail-v1.html">
-                                        <img src="images/placeholder/600x400.jpg" class="img-fluid" alt="">
-                                    </a>
-                                    <div class="card__post__content bg__post-cover">
-                                        <div class="card__post__category">
-                                            politics
-                                        </div>
-                                        <div class="card__post__title">
-                                            <h5>
-                                                <a href="./card-article-detail-v1.html">
-                                                    Barack Obama and Family Visit borobudur temple enjoy holiday indonesia.</a>
-                                            </h5>
-                                        </div>
-                                        <div class="card__post__author-info">
-                                            <ul class="list-inline">
-                                                <li class="list-inline-item">
-                                                    <a href="./card-article-detail-v1.html">
-                                                        by david hall
+                            <?php if ($highlight2): ?>
+                                <div class="card__post">
+                                    <div class="card__post__body card__post__transition">
+
+                                        <a href="<?= urlencode($highlight2['slug']) ?>">
+                                            <img
+                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($highlight2['post_image']) ?>"
+                                                class="img-fluid"
+                                                alt="<?= htmlspecialchars($highlight2['post_title']) ?>">
+                                        </a>
+
+                                        <div class="card__post__content bg__post-cover">
+                                            <div class="card__post__category">
+                                                <a href="kategori=<?= urlencode($highlight2['category_slug']) ?>" class="text-white">
+                                                    <?= htmlspecialchars($highlight2['name_category']) ?>
+                                                </a>
+                                            </div>
+                                            <div class="card__post__title">
+                                                <h5>
+                                                    <a href="<?= urlencode($highlight2['slug']) ?>">
+                                                        <?= htmlspecialchars($highlight2['post_title']) ?>
                                                     </a>
-                                                </li>
-                                                <li class="list-inline-item">
-                                                    <span>
-                                                        Descember 09, 2016
-                                                    </span>
-                                                </li>
-                                            </ul>
+                                                </h5>
+                                            </div>
+
+                                            <div class="card__post__author-info">
+                                                <ul class="list-inline">
+                                                    <li class="list-inline-item">
+                                                        <span class="text-primary">
+                                                            by <?= htmlspecialchars($highlight2['author_name']) ?>
+                                                        </span>
+                                                    </li>
+
+                                                    <li class="list-inline-item">
+                                                        <span>
+                                                            <?= tanggalIndonesia($highlight2['created_at']) ?>
+                                                        </span>
+                                                    </li>
+                                                </ul>
+                                            </div>
+
                                         </div>
+
                                     </div>
                                 </div>
-
-                            </div>
+                            <?php endif; ?>
                             <!-- Post Article Third Highlight -->
-                            <div class="card__post ">
-                                <div class="card__post__body card__post__transition">
-                                    <a href="./card-article-detail-v1.html">
-                                        <img src="images/placeholder/600x400.jpg" class="img-fluid" alt="">
-                                    </a>
-                                    <div class="card__post__content bg__post-cover">
-                                        <div class="card__post__category">
-                                            politics
-                                        </div>
-                                        <div class="card__post__title">
-                                            <h5>
-                                                <a href="./card-article-detail-v1.html">
-                                                    Barack Obama and Family Visit borobudur temple enjoy holiday indonesia.</a>
-                                            </h5>
-                                        </div>
-                                        <div class="card__post__author-info">
-                                            <ul class="list-inline">
-                                                <li class="list-inline-item">
-                                                    <a href="./card-article-detail-v1.html">
-                                                        by david hall
+                            <?php if ($highlight3): ?>
+                                <div class="card__post">
+                                    <div class="card__post__body card__post__transition">
+
+                                        <a href="<?= urlencode($highlight3['slug']) ?>">
+                                            <img
+                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($highlight3['post_image']) ?>"
+                                                class="img-fluid"
+                                                alt="<?= htmlspecialchars($highlight3['post_title']) ?>">
+                                        </a>
+
+                                        <div class="card__post__content bg__post-cover">
+                                            <div class="card__post__category">
+                                                <a href="kategori=<?= urlencode($highlight3['category_slug']) ?>" class="text-white">
+                                                    <?= htmlspecialchars($highlight3['name_category']) ?>
+                                                </a>
+                                            </div>
+                                            <div class="card__post__title">
+                                                <h5>
+                                                    <a href="<?= urlencode($highlight3['slug']) ?>">
+                                                        <?= htmlspecialchars($highlight3['post_title']) ?>
                                                     </a>
-                                                </li>
-                                                <li class="list-inline-item">
-                                                    <span>
-                                                        Descember 09, 2016
-                                                    </span>
-                                                </li>
-                                            </ul>
+                                                </h5>
+                                            </div>
+
+                                            <div class="card__post__author-info">
+                                                <ul class="list-inline">
+                                                    <li class="list-inline-item">
+                                                        <span class="text-primary">
+                                                            by <?= htmlspecialchars($highlight3['author_name']) ?>
+                                                        </span>
+                                                    </li>
+
+                                                    <li class="list-inline-item">
+                                                        <span>
+                                                            <?= tanggalIndonesia($highlight3['created_at']) ?>
+                                                        </span>
+                                                    </li>
+                                                </ul>
+                                            </div>
+
                                         </div>
+
                                     </div>
                                 </div>
-
-                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <!-- End Popular news header-->
-        <!-- Popular news carousel -->
+        <!-- Random Post carousel -->
         <div class="popular__news-header-carousel">
             <div class="container">
                 <div class="row">
                     <div class="col-lg-12">
                         <div class="top__news__slider">
-                            <div class="item">
-                                <!-- Post Article -->
-                                <div class="article__entry">
-                                    <div class="article__image">
-                                        <a href="#">
-                                            <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                        </a>
-                                    </div>
-                                    <div class="article__content">
-                                        <ul class="list-inline">
-                                            <li class="list-inline-item">
-                                                <span class="text-primary">
-                                                    by david hall
-                                                </span>,
-                                            </li>
 
-                                            <li class="list-inline-item">
-                                                <span>
-                                                    descember 09, 2016
-                                                </span>
-                                            </li>
-                                        </ul>
-                                        <h5>
-                                            <a href="#">
-                                                Proin eu nisl et arcu iaculis placerat sollicitudin ut est.
-                                            </a>
-                                        </h5>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="item">
-                                <!-- Post Article -->
-                                <div class="article__entry">
-                                    <div class="article__image">
-                                        <a href="#">
-                                            <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                        </a>
-                                    </div>
-                                    <div class="article__content">
-                                        <ul class="list-inline">
-                                            <li class="list-inline-item">
-                                                <span class="text-primary">
-                                                    by david hall
-                                                </span>,
-                                            </li>
+                            <?php while ($post = mysqli_fetch_assoc($randomPostQuery)): ?>
 
-                                            <li class="list-inline-item">
-                                                <span>
-                                                    descember 09, 2016
-                                                </span>
-                                            </li>
-                                        </ul>
-                                        <h5>
-                                            <a href="#">
-                                                Proin eu nisl et arcu iaculis placerat sollicitudin ut est.
-                                            </a>
-                                        </h5>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="item">
-                                <!-- Post Article -->
-                                <div class="article__entry">
-                                    <div class="article__image">
-                                        <a href="#">
-                                            <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                        </a>
-                                    </div>
-                                    <div class="article__content">
-                                        <ul class="list-inline">
-                                            <li class="list-inline-item">
-                                                <span class="text-primary">
-                                                    by david hall
-                                                </span>,
-                                            </li>
+                                <div class="item">
 
-                                            <li class="list-inline-item">
-                                                <span>
-                                                    descember 09, 2016
-                                                </span>
-                                            </li>
-                                        </ul>
-                                        <h5>
-                                            <a href="#">
-                                                Proin eu nisl et arcu iaculis placerat sollicitudin ut est.
-                                            </a>
-                                        </h5>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="item">
-                                <!-- Post Article -->
-                                <div class="article__entry">
-                                    <div class="article__image">
-                                        <a href="#">
-                                            <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                        </a>
-                                    </div>
-                                    <div class="article__content">
-                                        <ul class="list-inline">
-                                            <li class="list-inline-item">
-                                                <span class="text-primary">
-                                                    by david hall
-                                                </span>,
-                                            </li>
+                                    <div class="article__entry">
 
-                                            <li class="list-inline-item">
-                                                <span>
-                                                    descember 09, 2016
-                                                </span>
-                                            </li>
-                                        </ul>
-                                        <h5>
-                                            <a href="#">
-                                                Proin eu nisl et arcu iaculis placerat sollicitudin ut est.
+                                        <div class="article__image">
+                                            <a href="<?= urlencode($post['slug']) ?>">
+                                                <img
+                                                    src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']) ?>"
+                                                    alt="<?= htmlspecialchars($post['post_title']) ?>"
+                                                    class="img-fluid">
                                             </a>
-                                        </h5>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="item">
-                                <!-- Post Article -->
-                                <div class="article__entry">
-                                    <div class="article__image">
-                                        <a href="#">
-                                            <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                        </a>
-                                    </div>
-                                    <div class="article__content">
-                                        <ul class="list-inline">
-                                            <li class="list-inline-item">
-                                                <span class="text-primary">
-                                                    by david hall
-                                                </span>,
-                                            </li>
+                                        </div>
 
-                                            <li class="list-inline-item">
-                                                <span>
-                                                    descember 09, 2016
-                                                </span>
-                                            </li>
-                                        </ul>
-                                        <h5>
-                                            <a href="#">
-                                                Proin eu nisl et arcu iaculis placerat sollicitudin ut est.
-                                            </a>
-                                        </h5>
+                                        <div class="article__content">
+
+                                            <ul class="list-inline">
+
+                                                <li class="list-inline-item">
+                                                    <span class="text-primary">
+                                                        by <?= htmlspecialchars($post['author_name']) ?>
+                                                    </span>
+                                                </li>
+
+                                                <li class="list-inline-item">
+                                                    <span>
+                                                        <?= tanggalIndonesia($post['created_at']) ?>
+                                                    </span>
+                                                </li>
+
+                                            </ul>
+
+                                            <h5>
+                                                <a href="<?= urlencode($post['slug']) ?>">
+                                                    <?= htmlspecialchars($post['post_title']) ?>
+                                                </a>
+                                            </h5>
+
+                                        </div>
+
                                     </div>
+
                                 </div>
-                            </div>
+
+                            <?php endwhile; ?>
+
                         </div>
 
                     </div>
@@ -544,283 +949,241 @@ if (!$trendingQuery) {
     </section>
     <!-- End Popular news -->
 
-    <!-- Popular news category -->
+    <!-- NEWS -->
     <section class="pt-0">
         <div class="popular__section-news">
             <div class="container">
                 <div class="row">
                     <div class="col-md-12 col-lg-8">
                         <div class="wrapper__list__article">
-                            <h4 class="border_section">recent post</h4>
+                            <h4 class="border_section">Paling Diminati</h4>
                         </div>
                         <div class="row ">
                             <div class="col-sm-12 col-md-6 mb-4">
-                                <!-- Post Article -->
-                                <div class="card__post ">
-                                    <div class="card__post__body card__post__transition">
-                                        <a href="./card-article-detail-v1.html">
-                                            <img src="images/placeholder/600x400.jpg" class="img-fluid" alt="">
-                                        </a>
-                                        <div class="card__post__content bg__post-cover">
-                                            <div class="card__post__category">
-                                                politics
-                                            </div>
-                                            <div class="card__post__title">
-                                                <h5>
-                                                    <a href="./card-article-detail-v1.html">
-                                                        Barack Obama and Family Visit borobudur temple enjoy holiday indonesia.</a>
-                                                </h5>
-                                            </div>
-                                            <div class="card__post__author-info">
-                                                <ul class="list-inline">
-                                                    <li class="list-inline-item">
-                                                        <a href="./card-article-detail-v1.html">
-                                                            by david hall
+                                <!-- Post Article Highlight Most Bookmark Left -->
+                                <?php if ($bookmarkHighlightLeft): ?>
+                                    <div class="card__post">
+                                        <div class="card__post__body card__post__transition">
+
+                                            <a href="<?= urlencode($bookmarkHighlightLeft['slug']) ?>">
+                                                <img
+                                                    src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($bookmarkHighlightLeft['post_image']) ?>"
+                                                    class="img-fluid"
+                                                    alt="<?= htmlspecialchars($bookmarkHighlightLeft['post_title']) ?>">
+                                            </a>
+
+                                            <div class="card__post__content bg__post-cover">
+                                                <div class="card__post__category">
+                                                    <a href="kategori=<?= urlencode($bookmarkHighlightLeft['category_slug']) ?>" class="text-white">
+                                                        <?= htmlspecialchars($bookmarkHighlightLeft['name_category']) ?>
+                                                    </a>
+                                                </div>
+                                                <div class="card__post__title">
+                                                    <h5>
+                                                        <a href="<?= urlencode($bookmarkHighlightLeft['slug']) ?>">
+                                                            <?= htmlspecialchars($bookmarkHighlightLeft['post_title']) ?>
                                                         </a>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <span>
-                                                            Descember 09, 2016
-                                                        </span>
-                                                    </li>
-                                                </ul>
+                                                    </h5>
+                                                </div>
+
+                                                <div class="card__post__author-info">
+                                                    <ul class="list-inline">
+                                                        <li class="list-inline-item">
+                                                            <span>
+                                                                by <?= htmlspecialchars($bookmarkHighlightLeft['author_name']) ?>
+                                                            </span>
+                                                        </li>
+
+                                                        <li class="list-inline-item">
+                                                            <span>
+                                                                <?= tanggalIndonesia($bookmarkHighlightLeft['created_at']) ?>
+                                                            </span>
+                                                        </li>
+
+                                                        <li class="list-inline-item">
+                                                            <span class="fa fa-bookmark">
+                                                                <?= number_format($bookmarkHighlightLeft['total_bookmarks']) ?>
+                                                            </span>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+
                                             </div>
                                         </div>
                                     </div>
-
-                                </div>
+                                <?php endif; ?>
                             </div>
                             <div class="col-sm-12 col-md-6 mb-4">
-                                <!-- Post Article -->
-                                <div class="card__post ">
-                                    <div class="card__post__body card__post__transition">
-                                        <a href="./card-article-detail-v1.html">
-                                            <img src="images/placeholder/600x400.jpg" class="img-fluid" alt="">
-                                        </a>
-                                        <div class="card__post__content bg__post-cover">
-                                            <div class="card__post__category">
-                                                politics
-                                            </div>
-                                            <div class="card__post__title">
-                                                <h5>
-                                                    <a href="./card-article-detail-v1.html">
-                                                        Barack Obama and Family Visit borobudur temple enjoy holiday indonesia.</a>
-                                                </h5>
-                                            </div>
-                                            <div class="card__post__author-info">
-                                                <ul class="list-inline">
-                                                    <li class="list-inline-item">
-                                                        <a href="./card-article-detail-v1.html">
-                                                            by david hall
+                                <!-- Post Article Highlight Most Bookmark Right -->
+                                <?php if ($bookmarkHighlightRight): ?>
+                                    <div class="card__post">
+                                        <div class="card__post__body card__post__transition">
+
+                                            <a href="<?= urlencode($bookmarkHighlightRight['slug']) ?>">
+                                                <img
+                                                    src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($bookmarkHighlightRight['post_image']) ?>"
+                                                    class="img-fluid"
+                                                    alt="<?= htmlspecialchars($bookmarkHighlightRight['post_title']) ?>">
+                                            </a>
+
+                                            <div class="card__post__content bg__post-cover">
+                                                <div class="card__post__category">
+                                                    <a href="kategori=<?= urlencode($bookmarkHighlightRight['category_slug']) ?>" class="text-white">
+                                                        <?= htmlspecialchars($bookmarkHighlightRight['name_category']) ?>
+                                                    </a>
+                                                </div>
+                                                <div class="card__post__title">
+                                                    <h5>
+                                                        <a href="<?= urlencode($bookmarkHighlightRight['slug']) ?>">
+                                                            <?= htmlspecialchars($bookmarkHighlightRight['post_title']) ?>
                                                         </a>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <span>
-                                                            Descember 09, 2016
-                                                        </span>
-                                                    </li>
-                                                </ul>
+                                                    </h5>
+                                                </div>
+
+                                                <div class="card__post__author-info">
+                                                    <ul class="list-inline">
+                                                        <li class="list-inline-item">
+                                                            <span>
+                                                                by <?= htmlspecialchars($bookmarkHighlightRight['author_name']) ?>
+                                                            </span>
+                                                        </li>
+
+                                                        <li class="list-inline-item">
+                                                            <span>
+                                                                <?= tanggalIndonesia($bookmarkHighlightRight['created_at']) ?>
+                                                            </span>
+                                                        </li>
+
+                                                        <li class="list-inline-item">
+                                                            <span class="fa fa-bookmark">
+                                                                <?= number_format($bookmarkHighlightRight['total_bookmarks']) ?>
+                                                            </span>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+
                                             </div>
                                         </div>
                                     </div>
-
-                                </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="row ">
                             <div class="col-sm-12 col-md-6">
                                 <div class="wrapp__list__article-responsive">
                                     <div class="mb-3">
-                                        <!-- Post Article -->
-                                        <div class="card__post card__post-list">
-                                            <div class="image-sm">
-                                                <a href="./card-article-detail-v1.html">
-                                                    <img src="images/placeholder/500x400.jpg" class="img-fluid" alt="">
-                                                </a>
-                                            </div>
+                                        <!-- Post Article Bookmark Left -->
+                                        <?php foreach ($bookmarkLeftPosts as $post): ?>
 
+                                            <div class="mb-3">
 
-                                            <div class="card__post__body ">
-                                                <div class="card__post__content">
+                                                <div class="card__post card__post-list">
 
-                                                    <div class="card__post__author-info mb-2">
-                                                        <ul class="list-inline">
-                                                            <li class="list-inline-item">
-                                                                <span class="text-primary">
-                                                                    by david hall
-                                                                </span>
-                                                            </li>
-                                                            <li class="list-inline-item">
-                                                                <span class="text-dark text-capitalize">
-                                                                    descember 09, 2016
-                                                                </span>
-                                                            </li>
-
-                                                        </ul>
-                                                    </div>
-                                                    <div class="card__post__title">
-                                                        <h6>
-                                                            <a href="./card-article-detail-v1.html">
-                                                                6 Best Tips for Building a Good Shipping Boat
-                                                            </a>
-                                                        </h6>
-                                                        <!-- <p class="d-none d-lg-block d-xl-block">
-                    Maecenas accumsan tortor ut velit pharetra mollis. Proin eu nisl et arcu iaculis placerat
-                    sollicitudin ut est. In fringilla dui dui.
-                </p> -->
-
+                                                    <div class="image-sm">
+                                                        <a href="<?= urlencode($post['slug']) ?>">
+                                                            <img
+                                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']) ?>"
+                                                                class="img-fluid"
+                                                                alt="<?= htmlspecialchars($post['post_title']) ?>">
+                                                        </a>
                                                     </div>
 
-                                                </div>
+                                                    <div class="card__post__body">
+                                                        <div class="card__post__content">
 
+                                                            <div class="card__post__author-info mb-2">
+                                                                <ul class="list-inline">
 
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <!-- Post Article -->
-                                        <div class="card__post card__post-list">
-                                            <div class="image-sm">
-                                                <a href="./card-article-detail-v1.html">
-                                                    <img src="images/placeholder/500x400.jpg" class="img-fluid" alt="">
-                                                </a>
-                                            </div>
+                                                                    <li class="list-inline-item">
+                                                                        <span class="text-primary">
+                                                                            by <?= htmlspecialchars($post['author_name']) ?>
+                                                                        </span>
+                                                                    </li>
 
+                                                                    <li class="list-inline-item">
+                                                                        <span class="text-dark">
+                                                                            <?= tanggalIndonesia($post['created_at']) ?>
+                                                                        </span>
+                                                                    </li>
 
-                                            <div class="card__post__body ">
-                                                <div class="card__post__content">
+                                                                </ul>
+                                                            </div>
 
-                                                    <div class="card__post__author-info mb-2">
-                                                        <ul class="list-inline">
-                                                            <li class="list-inline-item">
-                                                                <span class="text-primary">
-                                                                    by david hall
-                                                                </span>
-                                                            </li>
-                                                            <li class="list-inline-item">
-                                                                <span class="text-dark text-capitalize">
-                                                                    descember 09, 2016
-                                                                </span>
-                                                            </li>
+                                                            <div class="card__post__title">
+                                                                <h6>
+                                                                    <a href="<?= urlencode($post['slug']) ?>">
+                                                                        <?= htmlspecialchars($post['post_title']) ?>
+                                                                    </a>
+                                                                </h6>
+                                                            </div>
 
-                                                        </ul>
-                                                    </div>
-                                                    <div class="card__post__title">
-                                                        <h6>
-                                                            <a href="./card-article-detail-v1.html">
-                                                                6 Best Tips for Building a Good Shipping Boat
-                                                            </a>
-                                                        </h6>
-                                                        <!-- <p class="d-none d-lg-block d-xl-block">
-                    Maecenas accumsan tortor ut velit pharetra mollis. Proin eu nisl et arcu iaculis placerat
-                    sollicitudin ut est. In fringilla dui dui.
-                </p> -->
-
+                                                        </div>
                                                     </div>
 
                                                 </div>
 
-
                                             </div>
-                                        </div>
+
+                                        <?php endforeach; ?>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-sm-12 col-md-6 ">
                                 <div class="wrapp__list__article-responsive">
                                     <div class="mb-3">
-                                        <!-- Post Article -->
-                                        <div class="card__post card__post-list">
-                                            <div class="image-sm">
-                                                <a href="./card-article-detail-v1.html">
-                                                    <img src="images/placeholder/500x400.jpg" class="img-fluid" alt="">
-                                                </a>
-                                            </div>
+                                        <!-- Post Article Bookmark Right -->
+                                        <?php foreach ($bookmarkRightPosts as $post): ?>
 
+                                            <div class="mb-3">
 
-                                            <div class="card__post__body ">
-                                                <div class="card__post__content">
+                                                <div class="card__post card__post-list">
 
-                                                    <div class="card__post__author-info mb-2">
-                                                        <ul class="list-inline">
-                                                            <li class="list-inline-item">
-                                                                <span class="text-primary">
-                                                                    by david hall
-                                                                </span>
-                                                            </li>
-                                                            <li class="list-inline-item">
-                                                                <span class="text-dark text-capitalize">
-                                                                    descember 09, 2016
-                                                                </span>
-                                                            </li>
-
-                                                        </ul>
-                                                    </div>
-                                                    <div class="card__post__title">
-                                                        <h6>
-                                                            <a href="./card-article-detail-v1.html">
-                                                                6 Best Tips for Building a Good Shipping Boat
-                                                            </a>
-                                                        </h6>
-                                                        <!-- <p class="d-none d-lg-block d-xl-block">
-                    Maecenas accumsan tortor ut velit pharetra mollis. Proin eu nisl et arcu iaculis placerat
-                    sollicitudin ut est. In fringilla dui dui.
-                </p> -->
-
+                                                    <div class="image-sm">
+                                                        <a href="<?= urlencode($post['slug']) ?>">
+                                                            <img
+                                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']) ?>"
+                                                                class="img-fluid"
+                                                                alt="<?= htmlspecialchars($post['post_title']) ?>">
+                                                        </a>
                                                     </div>
 
-                                                </div>
+                                                    <div class="card__post__body">
+                                                        <div class="card__post__content">
 
+                                                            <div class="card__post__author-info mb-2">
+                                                                <ul class="list-inline">
 
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <!-- Post Article -->
-                                        <div class="card__post card__post-list">
-                                            <div class="image-sm">
-                                                <a href="./card-article-detail-v1.html">
-                                                    <img src="images/placeholder/500x400.jpg" class="img-fluid" alt="">
-                                                </a>
-                                            </div>
+                                                                    <li class="list-inline-item">
+                                                                        <span class="text-primary">
+                                                                            by <?= htmlspecialchars($post['author_name']) ?>
+                                                                        </span>
+                                                                    </li>
 
+                                                                    <li class="list-inline-item">
+                                                                        <span class="text-dark">
+                                                                            <?= tanggalIndonesia($post['created_at']) ?>
+                                                                        </span>
+                                                                    </li>
 
-                                            <div class="card__post__body ">
-                                                <div class="card__post__content">
+                                                                </ul>
+                                                            </div>
 
-                                                    <div class="card__post__author-info mb-2">
-                                                        <ul class="list-inline">
-                                                            <li class="list-inline-item">
-                                                                <span class="text-primary">
-                                                                    by david hall
-                                                                </span>
-                                                            </li>
-                                                            <li class="list-inline-item">
-                                                                <span class="text-dark text-capitalize">
-                                                                    descember 09, 2016
-                                                                </span>
-                                                            </li>
+                                                            <div class="card__post__title">
+                                                                <h6>
+                                                                    <a href="<?= urlencode($post['slug']) ?>">
+                                                                        <?= htmlspecialchars($post['post_title']) ?>
+                                                                    </a>
+                                                                </h6>
+                                                            </div>
 
-                                                        </ul>
-                                                    </div>
-                                                    <div class="card__post__title">
-                                                        <h6>
-                                                            <a href="./card-article-detail-v1.html">
-                                                                6 Best Tips for Building a Good Shipping Boat
-                                                            </a>
-                                                        </h6>
-                                                        <!-- <p class="d-none d-lg-block d-xl-block">
-                    Maecenas accumsan tortor ut velit pharetra mollis. Proin eu nisl et arcu iaculis placerat
-                    sollicitudin ut est. In fringilla dui dui.
-                </p> -->
-
+                                                        </div>
                                                     </div>
 
                                                 </div>
 
-
                                             </div>
-                                        </div>
+
+                                        <?php endforeach; ?>
                                     </div>
                                 </div>
                             </div>
@@ -829,126 +1192,52 @@ if (!$trendingQuery) {
 
 
                     <div class="col-md-12 col-lg-4">
+                        <!-- POST MOST LIKES -->
                         <aside class="wrapper__list__article">
-                            <h4 class="border_section">popular post</h4>
+                            <h4 class="border_section">Paling Disukai</h4>
                             <div class="wrapper__list-number">
 
-                                <!-- List Article -->
-                                <div class="card__post__list">
-                                    <div class="list-number">
-                                        <span>
-                                            1
-                                        </span>
+                                <?php
+                                $rank = 1;
+
+                                while ($like = mysqli_fetch_assoc($mostLikedQuery)):
+                                ?>
+
+                                    <div class="card__post__list">
+
+                                        <div class="list-number">
+                                            <span>
+                                                <?= number_format($like['total_likes']) ?>
+                                            </span>
+                                        </div>
+
+                                        <a
+                                            href="kategori=<?= urlencode($like['category_slug']) ?>"
+                                            class="category">
+
+                                            <?= htmlspecialchars($like['name_category']) ?>
+
+                                        </a>
+
+                                        <ul class="list-inline">
+                                            <li class="list-inline-item">
+
+                                                <h5>
+                                                    <a href="<?= urlencode($like['slug']) ?>">
+                                                        <?= htmlspecialchars($like['post_title']) ?>
+                                                    </a>
+                                                </h5>
+
+                                            </li>
+                                        </ul>
+
                                     </div>
-                                    <a href="#" class="category">
-                                        covid-19
-                                    </a>
-                                    <ul class="list-inline">
-                                        <li class="list-inline-item">
 
-                                            <h5>
-                                                <a href="#">
-                                                    Gegera Corona, Kekayaan Bos Zoom Nambah Rp 64 T dalam 3 Bulan - CNBC Indonesia
+                                <?php
+                                    $rank++;
+                                endwhile;
+                                ?>
 
-                                                </a>
-                                            </h5>
-                                        </li>
-                                    </ul>
-
-                                </div>
-
-
-                                <div class="card__post__list">
-                                    <div class="list-number">
-                                        <span>
-                                            2
-                                        </span>
-                                    </div>
-                                    <a href="#" class="category">
-                                        Startup
-                                    </a>
-                                    <ul class="list-inline">
-                                        <!-- <li class="list-inline-item">
-            <a href="#" class="author-info">
-                by david hall
-            </a>
-
-        </li>
-        <li class="list-inline-item">
-            <span>
-                <i class="fa fa-calendar"></i>
-                march 01, 2020
-            </span>
-
-        </li> -->
-                                        <li class="list-inline-item">
-                                            <h5>
-                                                <a href="#">
-                                                    Gegera Corona, Kekayaan Bos Zoom Nambah Rp 64 T dalam 3 Bulan - CNBC Indonesia
-
-                                                </a>
-                                            </h5>
-                                        </li>
-                                    </ul>
-                                </div>
-                                <!-- List Article -->
-                                <div class="card__post__list">
-                                    <div class="list-number">
-                                        <span>
-                                            1
-                                        </span>
-                                    </div>
-                                    <a href="#" class="category">
-                                        covid-19
-                                    </a>
-                                    <ul class="list-inline">
-                                        <li class="list-inline-item">
-
-                                            <h5>
-                                                <a href="#">
-                                                    Gegera Corona, Kekayaan Bos Zoom Nambah Rp 64 T dalam 3 Bulan - CNBC Indonesia
-
-                                                </a>
-                                            </h5>
-                                        </li>
-                                    </ul>
-
-                                </div>
-
-
-                                <div class="card__post__list">
-                                    <div class="list-number">
-                                        <span>
-                                            2
-                                        </span>
-                                    </div>
-                                    <a href="#" class="category">
-                                        Startup
-                                    </a>
-                                    <ul class="list-inline">
-                                        <!-- <li class="list-inline-item">
-            <a href="#" class="author-info">
-                by david hall
-            </a>
-
-        </li>
-        <li class="list-inline-item">
-            <span>
-                <i class="fa fa-calendar"></i>
-                march 01, 2020
-            </span>
-
-        </li> -->
-                                        <li class="list-inline-item">
-                                            <h5>
-                                                <a href="#">
-                                                    Gegera Corona, Kekayaan Bos Zoom Nambah Rp 64 T dalam 3 Bulan - CNBC Indonesia
-
-                                                </a>
-                                            </h5>
-                                        </li>
-                                    </ul>
-                                </div>
                             </div>
                         </aside>
                     </div>
@@ -956,915 +1245,578 @@ if (!$trendingQuery) {
             </div>
         </div>
 
-        <!-- Post news carousel -->
-        <div class="container">
-            <div class="row">
-                <div class="col-md-12">
-                    <aside class="wrapper__list__article">
-                        <h4 class="border_section">technology</h4>
-                    </aside>
-                </div>
-                <div class="col-md-12">
 
-                    <div class="article__entry-carousel">
-                        <div class="item">
-                            <!-- Post Article -->
-                            <div class="article__entry">
-                                <div class="article__image">
-                                    <a href="#">
-                                        <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                    </a>
-                                </div>
-                                <div class="article__content">
-                                    <ul class="list-inline">
-                                        <li class="list-inline-item">
-                                            <span class="text-primary">
-                                                by david hall
-                                            </span>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <span>
-                                                descember 09, 2016
-                                            </span>
-                                        </li>
-
-                                    </ul>
-                                    <h5>
-                                        <a href="#">
-                                            Maecenas accumsan tortor ut velit pharetra mollis.
-                                        </a>
-                                    </h5>
-
-                                </div>
-                            </div>
-                        </div>
-                        <div class="item">
-                            <!-- Post Article -->
-                            <div class="article__entry">
-                                <div class="article__image">
-                                    <a href="#">
-                                        <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                    </a>
-                                </div>
-                                <div class="article__content">
-                                    <ul class="list-inline">
-                                        <li class="list-inline-item">
-                                            <span class="text-primary">
-                                                by david hall
-                                            </span>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <span>
-                                                descember 09, 2016
-                                            </span>
-                                        </li>
-
-                                    </ul>
-                                    <h5>
-                                        <a href="#">
-                                            Maecenas accumsan tortor ut velit pharetra mollis.
-                                        </a>
-                                    </h5>
-
-                                </div>
-                            </div>
-                        </div>
-                        <div class="item">
-                            <!-- Post Article -->
-                            <div class="article__entry">
-                                <div class="article__image">
-                                    <a href="#">
-                                        <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                    </a>
-                                </div>
-                                <div class="article__content">
-                                    <ul class="list-inline">
-                                        <li class="list-inline-item">
-                                            <span class="text-primary">
-                                                by david hall
-                                            </span>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <span>
-                                                descember 09, 2016
-                                            </span>
-                                        </li>
-
-                                    </ul>
-                                    <h5>
-                                        <a href="#">
-                                            Maecenas accumsan tortor ut velit pharetra mollis.
-                                        </a>
-                                    </h5>
-
-                                </div>
-                            </div>
-                        </div>
-                        <div class="item">
-                            <!-- Post Article -->
-                            <div class="article__entry">
-                                <div class="article__image">
-                                    <a href="#">
-                                        <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                    </a>
-                                </div>
-                                <div class="article__content">
-                                    <ul class="list-inline">
-                                        <li class="list-inline-item">
-                                            <span class="text-primary">
-                                                by david hall
-                                            </span>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <span>
-                                                descember 09, 2016
-                                            </span>
-                                        </li>
-
-                                    </ul>
-                                    <h5>
-                                        <a href="#">
-                                            Maecenas accumsan tortor ut velit pharetra mollis.
-                                        </a>
-                                    </h5>
-
-                                </div>
-                            </div>
-                        </div>
-                        <div class="item">
-                            <!-- Post Article -->
-                            <div class="article__entry">
-                                <div class="article__image">
-                                    <a href="#">
-                                        <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                    </a>
-                                </div>
-                                <div class="article__content">
-                                    <ul class="list-inline">
-                                        <li class="list-inline-item">
-                                            <span class="text-primary">
-                                                by david hall
-                                            </span>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <span>
-                                                descember 09, 2016
-                                            </span>
-                                        </li>
-
-                                    </ul>
-                                    <h5>
-                                        <a href="#">
-                                            Maecenas accumsan tortor ut velit pharetra mollis.
-                                        </a>
-                                    </h5>
-
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- End Popular news category -->
-
-
-        <!-- Popular news category -->
+        <!-- Post Category Aside -->
         <div class="mt-4">
             <div class="container">
                 <div class="row">
                     <div class="col-md-8">
-                        <aside class="wrapper__list__article mb-0">
-                            <h4 class="border_section">lifestyle</h4>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-4">
-                                        <!-- Post Article -->
-                                        <div class="article__entry">
-                                            <div class="article__image">
-                                                <a href="#">
-                                                    <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                                </a>
-                                            </div>
-                                            <div class="article__content">
-                                                <ul class="list-inline">
-                                                    <li class="list-inline-item">
-                                                        <span class="text-primary">
-                                                            by david hall
-                                                        </span>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <span>
-                                                            descember 09, 2016
-                                                        </span>
-                                                    </li>
+                        <!-- Post Category Aside 1 -->
+                        <?php if ($categoryAside1): ?>
 
-                                                </ul>
-                                                <h5>
-                                                    <a href="#">
-                                                        Maecenas accumsan tortor ut velit pharetra mollis.
-                                                    </a>
-                                                </h5>
+                            <aside class="wrapper__list__article mb-0">
 
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-4">
-                                        <!-- Post Article -->
-                                        <div class="article__entry">
-                                            <div class="article__image">
-                                                <a href="#">
-                                                    <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                                </a>
-                                            </div>
-                                            <div class="article__content">
-                                                <ul class="list-inline">
-                                                    <li class="list-inline-item">
-                                                        <span class="text-primary">
-                                                            by david hall
-                                                        </span>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <span>
-                                                            descember 09, 2016
-                                                        </span>
-                                                    </li>
+                                <h4 class="border_section">
 
-                                                </ul>
-                                                <h5>
-                                                    <a href="#">
-                                                        Maecenas accumsan tortor ut velit pharetra mollis.
-                                                    </a>
-                                                </h5>
+                                    <a href="kategori=<?= urlencode($categoryAside1['slug']); ?>">
 
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-4">
-                                        <!-- Post Article -->
-                                        <div class="article__entry">
-                                            <div class="article__image">
-                                                <a href="#">
-                                                    <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                                </a>
-                                            </div>
-                                            <div class="article__content">
-                                                <ul class="list-inline">
-                                                    <li class="list-inline-item">
-                                                        <span class="text-primary">
-                                                            by david hall
-                                                        </span>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <span>
-                                                            descember 09, 2016
-                                                        </span>
-                                                    </li>
+                                        <?= htmlspecialchars($categoryAside1['name_category']); ?>
 
-                                                </ul>
-                                                <h5>
-                                                    <a href="#">
-                                                        Maecenas accumsan tortor ut velit pharetra mollis.
-                                                    </a>
-                                                </h5>
+                                    </a>
 
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-4">
-                                        <!-- Post Article -->
-                                        <div class="article__entry">
-                                            <div class="article__image">
-                                                <a href="#">
-                                                    <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                                </a>
-                                            </div>
-                                            <div class="article__content">
-                                                <ul class="list-inline">
-                                                    <li class="list-inline-item">
-                                                        <span class="text-primary">
-                                                            by david hall
-                                                        </span>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <span>
-                                                            descember 09, 2016
-                                                        </span>
-                                                    </li>
+                                </h4>
 
-                                                </ul>
-                                                <h5>
-                                                    <a href="#">
-                                                        Maecenas accumsan tortor ut velit pharetra mollis.
-                                                    </a>
-                                                </h5>
+                                <div class="row">
 
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-4">
-                                        <!-- Post Article -->
-                                        <div class="article__entry">
-                                            <div class="article__image">
-                                                <a href="#">
-                                                    <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                                </a>
-                                            </div>
-                                            <div class="article__content">
-                                                <ul class="list-inline">
-                                                    <li class="list-inline-item">
-                                                        <span class="text-primary">
-                                                            by david hall
-                                                        </span>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <span>
-                                                            descember 09, 2016
-                                                        </span>
-                                                    </li>
+                                    <?php foreach ($categoryAside1Posts as $post): ?>
 
-                                                </ul>
-                                                <h5>
-                                                    <a href="#">
-                                                        Maecenas accumsan tortor ut velit pharetra mollis.
-                                                    </a>
-                                                </h5>
+                                        <div class="col-md-6">
 
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-4">
-                                        <!-- Post Article -->
-                                        <div class="article__entry">
-                                            <div class="article__image">
-                                                <a href="#">
-                                                    <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                                </a>
-                                            </div>
-                                            <div class="article__content">
-                                                <ul class="list-inline">
-                                                    <li class="list-inline-item">
-                                                        <span class="text-primary">
-                                                            by david hall
-                                                        </span>
-                                                    </li>
-                                                    <li class="list-inline-item">
-                                                        <span>
-                                                            descember 09, 2016
-                                                        </span>
-                                                    </li>
+                                            <div class="mb-4">
 
-                                                </ul>
-                                                <h5>
-                                                    <a href="#">
-                                                        Maecenas accumsan tortor ut velit pharetra mollis.
-                                                    </a>
-                                                </h5>
+                                                <div class="article__entry">
 
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </aside>
-                        <aside class="wrapper__list__article">
-                            <h4 class="border_section">technology</h4>
+                                                    <div class="article__image">
 
-                            <div class="wrapp__list__article-responsive">
-                                <!-- Post Article List -->
-                                <div class="card__post card__post-list card__post__transition mt-30">
-                                    <div class="row ">
-                                        <div class="col-md-5">
-                                            <div class="card__post__transition">
-                                                <a href="#">
-                                                    <img src="images/placeholder/500x400.jpg" class="img-fluid w-100" alt="">
-                                                </a>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-7 my-auto pl-0">
-                                            <div class="card__post__body ">
-                                                <div class="card__post__content  ">
-                                                    <div class="card__post__category ">
-                                                        travel
+                                                        <a href="<?= urlencode($post['slug']); ?>">
+
+                                                            <img
+                                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']); ?>"
+                                                                class="img-fluid"
+                                                                alt="<?= htmlspecialchars($post['post_title']); ?>">
+
+                                                        </a>
+
                                                     </div>
-                                                    <div class="card__post__author-info mb-2">
+
+                                                    <div class="article__content">
+
                                                         <ul class="list-inline">
+
                                                             <li class="list-inline-item">
                                                                 <span class="text-primary">
-                                                                    by david hall
+                                                                    by <?= htmlspecialchars($post['author_name']); ?>
                                                                 </span>
                                                             </li>
+
                                                             <li class="list-inline-item">
-                                                                <span class="text-dark text-capitalize">
-                                                                    descember 09, 2016
+                                                                <span>
+                                                                    <?= tanggalIndonesia($post['created_at']); ?>
                                                                 </span>
                                                             </li>
 
                                                         </ul>
-                                                    </div>
-                                                    <div class="card__post__title">
+
                                                         <h5>
-                                                            <a href="#">
-                                                                Exercitation Ullamco Laboris Nisi Ut Aliquip
+
+                                                            <a href="<?= urlencode($post['slug']); ?>">
+
+                                                                <?= htmlspecialchars($post['post_title']); ?>
+
                                                             </a>
+
                                                         </h5>
-                                                        <p class="d-none d-lg-block d-xl-block mb-0">
-                                                            Maecenas accumsan tortor ut velit pharetra mollis. Proin eu nisl et arcu iaculis placerat
-                                                            sollicitudin ut est. In fringilla dui dui.
-                                                        </p>
 
                                                     </div>
 
                                                 </div>
+
                                             </div>
+
                                         </div>
 
-                                    </div>
+                                    <?php endforeach; ?>
+
                                 </div>
-                                <!-- Post Article List -->
-                                <div class="card__post card__post-list card__post__transition mt-30">
-                                    <div class="row ">
-                                        <div class="col-md-5">
-                                            <div class="card__post__transition">
-                                                <a href="#">
-                                                    <img src="images/placeholder/500x400.jpg" class="img-fluid w-100" alt="">
-                                                </a>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-7 my-auto pl-0">
-                                            <div class="card__post__body ">
-                                                <div class="card__post__content  ">
-                                                    <div class="card__post__category ">
-                                                        travel
-                                                    </div>
-                                                    <div class="card__post__author-info mb-2">
-                                                        <ul class="list-inline">
-                                                            <li class="list-inline-item">
-                                                                <span class="text-primary">
-                                                                    by david hall
-                                                                </span>
-                                                            </li>
-                                                            <li class="list-inline-item">
-                                                                <span class="text-dark text-capitalize">
-                                                                    descember 09, 2016
-                                                                </span>
-                                                            </li>
 
-                                                        </ul>
-                                                    </div>
-                                                    <div class="card__post__title">
-                                                        <h5>
-                                                            <a href="#">
-                                                                Exercitation Ullamco Laboris Nisi Ut Aliquip
-                                                            </a>
-                                                        </h5>
-                                                        <p class="d-none d-lg-block d-xl-block mb-0">
-                                                            Maecenas accumsan tortor ut velit pharetra mollis. Proin eu nisl et arcu iaculis placerat
-                                                            sollicitudin ut est. In fringilla dui dui.
-                                                        </p>
+                            </aside>
+
+                        <?php endif; ?>
+
+                        <!-- Post Category Aside 2 -->
+                        <?php if ($categoryAside2): ?>
+
+                            <aside class="wrapper__list__article">
+
+                                <h4 class="border_section">
+
+                                    <a href="kategori=<?= urlencode($categoryAside2['slug']); ?>">
+
+                                        <?= htmlspecialchars($categoryAside2['name_category']); ?>
+
+                                    </a>
+
+                                </h4>
+
+                                <div class="wrapp__list__article-responsive">
+
+                                    <?php foreach ($categoryAside2Posts as $post): ?>
+
+                                        <div class="card__post card__post-list card__post__transition mt-30">
+
+                                            <div class="row">
+
+                                                <div class="col-md-5">
+
+                                                    <div class="card__post__transition">
+
+                                                        <a href="<?= urlencode($post['slug']); ?>">
+
+                                                            <img
+                                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']); ?>"
+                                                                class="img-fluid w-100"
+                                                                alt="<?= htmlspecialchars($post['post_title']); ?>">
+
+                                                        </a>
 
                                                     </div>
 
                                                 </div>
-                                            </div>
-                                        </div>
 
-                                    </div>
-                                </div>
-                                <!-- Post Article List -->
-                                <div class="card__post card__post-list card__post__transition mt-30">
-                                    <div class="row ">
-                                        <div class="col-md-5">
-                                            <div class="card__post__transition">
-                                                <a href="#">
-                                                    <img src="images/placeholder/500x400.jpg" class="img-fluid w-100" alt="">
-                                                </a>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-7 my-auto pl-0">
-                                            <div class="card__post__body ">
-                                                <div class="card__post__content  ">
-                                                    <div class="card__post__category ">
-                                                        travel
-                                                    </div>
-                                                    <div class="card__post__author-info mb-2">
-                                                        <ul class="list-inline">
-                                                            <li class="list-inline-item">
-                                                                <span class="text-primary">
-                                                                    by david hall
-                                                                </span>
-                                                            </li>
-                                                            <li class="list-inline-item">
-                                                                <span class="text-dark text-capitalize">
-                                                                    descember 09, 2016
-                                                                </span>
-                                                            </li>
+                                                <div class="col-md-7 my-auto pl-0">
 
-                                                        </ul>
-                                                    </div>
-                                                    <div class="card__post__title">
-                                                        <h5>
-                                                            <a href="#">
-                                                                Exercitation Ullamco Laboris Nisi Ut Aliquip
-                                                            </a>
-                                                        </h5>
-                                                        <p class="d-none d-lg-block d-xl-block mb-0">
-                                                            Maecenas accumsan tortor ut velit pharetra mollis. Proin eu nisl et arcu iaculis placerat
-                                                            sollicitudin ut est. In fringilla dui dui.
-                                                        </p>
+                                                    <div class="card__post__body">
 
-                                                    </div>
+                                                        <div class="card__post__content">
 
-                                                </div>
-                                            </div>
-                                        </div>
+                                                            <div class="card__post__author-info mb-2">
 
-                                    </div>
-                                </div>
-                                <!-- Post Article List -->
-                                <div class="card__post card__post-list card__post__transition mt-30">
-                                    <div class="row ">
-                                        <div class="col-md-5">
-                                            <div class="card__post__transition">
-                                                <a href="#">
-                                                    <img src="images/placeholder/500x400.jpg" class="img-fluid w-100" alt="">
-                                                </a>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-7 my-auto pl-0">
-                                            <div class="card__post__body ">
-                                                <div class="card__post__content  ">
-                                                    <div class="card__post__category ">
-                                                        travel
-                                                    </div>
-                                                    <div class="card__post__author-info mb-2">
-                                                        <ul class="list-inline">
-                                                            <li class="list-inline-item">
-                                                                <span class="text-primary">
-                                                                    by david hall
-                                                                </span>
-                                                            </li>
-                                                            <li class="list-inline-item">
-                                                                <span class="text-dark text-capitalize">
-                                                                    descember 09, 2016
-                                                                </span>
-                                                            </li>
+                                                                <ul class="list-inline">
 
-                                                        </ul>
-                                                    </div>
-                                                    <div class="card__post__title">
-                                                        <h5>
-                                                            <a href="#">
-                                                                Exercitation Ullamco Laboris Nisi Ut Aliquip
-                                                            </a>
-                                                        </h5>
-                                                        <p class="d-none d-lg-block d-xl-block mb-0">
-                                                            Maecenas accumsan tortor ut velit pharetra mollis. Proin eu nisl et arcu iaculis placerat
-                                                            sollicitudin ut est. In fringilla dui dui.
-                                                        </p>
+                                                                    <li class="list-inline-item">
+                                                                        <span class="text-primary">
+                                                                            by <?= htmlspecialchars($post['author_name']); ?>
+                                                                        </span>
+                                                                    </li>
+
+                                                                    <li class="list-inline-item">
+                                                                        <span class="text-dark text-capitalize">
+                                                                            <?= tanggalIndonesia($post['created_at']); ?>
+                                                                        </span>
+                                                                    </li>
+
+                                                                </ul>
+
+                                                            </div>
+
+                                                            <div class="card__post__title">
+
+                                                                <h5>
+
+                                                                    <a href="<?= urlencode($post['slug']); ?>">
+
+                                                                        <?= htmlspecialchars($post['post_title']); ?>
+
+                                                                    </a>
+
+                                                                </h5>
+
+                                                                <p class="d-none d-lg-block d-xl-block mb-0">
+
+                                                                    <?= mb_substr(strip_tags($post['post_desc']), 0, 120); ?>...
+
+                                                                </p>
+
+                                                            </div>
+
+                                                        </div>
 
                                                     </div>
 
                                                 </div>
+
                                             </div>
+
                                         </div>
 
-                                    </div>
+                                    <?php endforeach; ?>
+
                                 </div>
-                            </div>
-                        </aside>
+
+                            </aside>
+
+                        <?php endif; ?>
                     </div>
+                    <!-- END ARTIKEL ALL -->
 
+                    <!-- SIDEBAR -->
                     <div class="col-md-4">
                         <div class="sticky-top">
+                            <!-- ARTIKEL BARU -->
                             <aside class="wrapper__list__article">
                                 <h4 class="border_section">
-                                    Latest post</h4>
+                                    Artikel Terbaru</h4>
                                 <div class="wrapper__list__article-small">
 
-                                    <!-- Post Article -->
-                                    <div class="article__entry">
-                                        <div class="article__image">
-                                            <a href="#">
-                                                <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                            </a>
-                                        </div>
-                                        <div class="article__content">
-                                            <div class="article__category">
-                                                travel
-                                            </div>
-                                            <ul class="list-inline">
-                                                <li class="list-inline-item">
-                                                    <span class="text-primary">
-                                                        by david hall
-                                                    </span>
-                                                </li>
-                                                <li class="list-inline-item">
-                                                    <span class="text-dark text-capitalize">
-                                                        descember 09, 2016
-                                                    </span>
-                                                </li>
+                                    <!-- Post New Big -->
+                                    <?php if ($latestBig): ?>
 
-                                            </ul>
-                                            <h5>
-                                                <a href="#">
-                                                    Proin eu nisl et arcu iaculis placerat sollicitudin ut est
+                                        <div class="article__entry">
+
+                                            <div class="article__image">
+                                                <a href="<?= urlencode($latestBig['slug']) ?>">
+                                                    <img
+                                                        src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($latestBig['post_image']) ?>"
+                                                        alt="<?= htmlspecialchars($latestBig['post_title']) ?>"
+                                                        class="img-fluid">
                                                 </a>
-                                            </h5>
-                                            <p>
-                                                Maecenas accumsan tortor ut velit pharetra mollis. Proin eu nisl et arcu iaculis placerat sollicitudin ut
-                                                est. In fringilla dui dui.
-                                            </p>
-                                            <a href="#" class="btn btn-outline-primary mb-4 text-capitalize"> read more</a>
+                                            </div>
+
+                                            <div class="article__content">
+
+                                                <div class="article__category">
+                                                    <a href="kategori=<?= urlencode($latestBig['category_slug']) ?>" class="text-white">
+                                                        <?= htmlspecialchars($latestBig['name_category']) ?>
+                                                    </a>
+                                                </div>
+
+                                                <ul class="list-inline">
+
+                                                    <li class="list-inline-item">
+                                                        <span class="text-primary">
+                                                            by <?= htmlspecialchars($latestBig['author_name']) ?>
+                                                        </span>
+                                                    </li>
+
+                                                    <li class="list-inline-item">
+                                                        <span>
+                                                            <?= tanggalIndonesia($latestBig['created_at']) ?>
+                                                        </span>
+                                                    </li>
+
+                                                </ul>
+
+                                                <h5>
+                                                    <a href="<?= urlencode($latestBig['slug']) ?>">
+                                                        <?= htmlspecialchars($latestBig['post_title']) ?>
+                                                    </a>
+                                                </h5>
+
+                                                <p>
+                                                    <?= mb_substr(strip_tags($latestBig['post_desc']), 0, 120) ?>...
+                                                </p>
+
+                                            </div>
+
                                         </div>
-                                    </div>
+
+                                    <?php endif; ?>
+
+
+                                    <!-- POST New Small 2 List Only -->
                                     <div class="mb-3">
-                                        <!-- Post Article -->
-                                        <div class="card__post card__post-list">
-                                            <div class="image-sm">
-                                                <a href="./card-article-detail-v1.html">
-                                                    <img src="images/placeholder/500x400.jpg" class="img-fluid" alt="">
-                                                </a>
-                                            </div>
+                                        <?php foreach ($latestSmallPosts as $post): ?>
 
+                                            <div class="mb-3">
 
-                                            <div class="card__post__body ">
-                                                <div class="card__post__content">
+                                                <div class="card__post card__post-list">
 
-                                                    <div class="card__post__author-info mb-2">
-                                                        <ul class="list-inline">
-                                                            <li class="list-inline-item">
-                                                                <span class="text-primary">
-                                                                    by david hall
-                                                                </span>
-                                                            </li>
-                                                            <li class="list-inline-item">
-                                                                <span class="text-dark text-capitalize">
-                                                                    descember 09, 2016
-                                                                </span>
-                                                            </li>
+                                                    <div class="image-sm">
 
-                                                        </ul>
+                                                        <a href="<?= urlencode($post['slug']) ?>">
+
+                                                            <img
+                                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']) ?>"
+                                                                class="img-fluid"
+                                                                alt="<?= htmlspecialchars($post['post_title']) ?>">
+
+                                                        </a>
+
                                                     </div>
-                                                    <div class="card__post__title">
-                                                        <h6>
-                                                            <a href="./card-article-detail-v1.html">
-                                                                6 Best Tips for Building a Good Shipping Boat
-                                                            </a>
-                                                        </h6>
-                                                        <!-- <p class="d-none d-lg-block d-xl-block">
-                    Maecenas accumsan tortor ut velit pharetra mollis. Proin eu nisl et arcu iaculis placerat
-                    sollicitudin ut est. In fringilla dui dui.
-                </p> -->
+
+                                                    <div class="card__post__body">
+
+                                                        <div class="card__post__content">
+
+                                                            <div class="card__post__author-info mb-2">
+
+                                                                <ul class="list-inline">
+
+                                                                    <li class="list-inline-item">
+                                                                        <span class="text-primary">
+                                                                            by <?= htmlspecialchars($post['author_name']) ?>
+                                                                        </span>
+                                                                    </li>
+
+                                                                    <li class="list-inline-item">
+                                                                        <span>
+                                                                            <?= tanggalIndonesia($post['created_at']) ?>
+                                                                        </span>
+                                                                    </li>
+
+                                                                </ul>
+
+                                                            </div>
+
+                                                            <div class="card__post__title">
+
+                                                                <h6>
+
+                                                                    <a href="<?= urlencode($post['slug']) ?>">
+
+                                                                        <?= htmlspecialchars($post['post_title']) ?>
+
+                                                                    </a>
+
+                                                                </h6>
+
+                                                            </div>
+
+                                                        </div>
 
                                                     </div>
 
                                                 </div>
 
-
                                             </div>
-                                        </div>
+
+                                        <?php endforeach; ?>
                                     </div>
-                                    <div class="mb-3">
-                                        <!-- Post Article -->
-                                        <div class="card__post card__post-list">
-                                            <div class="image-sm">
-                                                <a href="./card-article-detail-v1.html">
-                                                    <img src="images/placeholder/500x400.jpg" class="img-fluid" alt="">
-                                                </a>
-                                            </div>
-
-
-                                            <div class="card__post__body ">
-                                                <div class="card__post__content">
-
-                                                    <div class="card__post__author-info mb-2">
-                                                        <ul class="list-inline">
-                                                            <li class="list-inline-item">
-                                                                <span class="text-primary">
-                                                                    by david hall
-                                                                </span>
-                                                            </li>
-                                                            <li class="list-inline-item">
-                                                                <span class="text-dark text-capitalize">
-                                                                    descember 09, 2016
-                                                                </span>
-                                                            </li>
-
-                                                        </ul>
-                                                    </div>
-                                                    <div class="card__post__title">
-                                                        <h6>
-                                                            <a href="./card-article-detail-v1.html">
-                                                                6 Best Tips for Building a Good Shipping Boat
-                                                            </a>
-                                                        </h6>
-                                                        <!-- <p class="d-none d-lg-block d-xl-block">
-                    Maecenas accumsan tortor ut velit pharetra mollis. Proin eu nisl et arcu iaculis placerat
-                    sollicitudin ut est. In fringilla dui dui.
-                </p> -->
-
-                                                    </div>
-
-                                                </div>
-
-
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             </aside>
 
+                            <!-- SOCIAL MEDIA SIDEBAR -->
                             <aside class="wrapper__list__article">
-                                <h4 class="border_section">stay conected</h4>
-                                <!-- widget Social media -->
+                                <h4 class="border_section">Follow Akun Kami</h4>
+
                                 <div class="wrap__social__media">
-                                    <a href="#" target="_blank">
-                                        <div class="social__media__widget facebook">
-                                            <span class="social__media__widget-icon">
-                                                <i class="fa fa-facebook"></i>
-                                            </span>
-                                            <span class="social__media__widget-counter">
-                                                Hukuminfo
-                                            </span>
-                                            <span class="social__media__widget-name">
-                                                like
-                                            </span>
-                                        </div>
-                                    </a>
-                                    <a href="#" target="_blank">
-                                        <div class="social__media__widget twitter">
-                                            <span class="social__media__widget-icon">
-                                                <i class="fa fa-twitter"></i>
-                                            </span>
-                                            <span class="social__media__widget-counter">
-                                                @hukuminfo
-                                            </span>
-                                            <span class="social__media__widget-name">
-                                                follow
-                                            </span>
-                                        </div>
-                                    </a>
-                                    <a href="#" target="_blank">
-                                        <div class="social__media__widget youtube">
-                                            <span class="social__media__widget-icon">
-                                                <i class="fa fa-youtube"></i>
-                                            </span>
-                                            <span class="social__media__widget-counter">
-                                                Hukum Info News
-                                            </span>
-                                            <span class="social__media__widget-name">
-                                                subscribe
-                                            </span>
-                                        </div>
-                                    </a>
+
+                                    <?php while ($socmed = mysqli_fetch_assoc($socialMediaQuery)): ?>
+
+                                        <?php
+
+                                        $platform = strtolower(trim($socmed['name_platform']));
+
+                                        switch ($platform) {
+
+                                            case 'facebook':
+                                                $class  = 'facebook';
+                                                $icon   = 'fa-facebook';
+                                                $action = 'like';
+                                                break;
+
+                                            case 'twitter':
+                                            case 'x':
+                                                $class  = 'twitter';
+                                                $icon   = 'fa-x-twitter';
+                                                $action = 'follow';
+                                                break;
+
+                                            case 'youtube':
+                                                $class  = 'youtube';
+                                                $icon   = 'fa-youtube';
+                                                $action = 'subscribe';
+                                                break;
+
+                                            case 'instagram':
+                                                $class  = 'instagram';
+                                                $icon   = 'fa-instagram';
+                                                $action = 'follow';
+                                                break;
+
+                                            case 'linkedin':
+                                                $class  = 'linkedin';
+                                                $icon   = 'fa-linkedin';
+                                                $action = 'follow';
+                                                break;
+
+                                            case 'tiktok':
+                                                $class  = 'tiktok';
+                                                $icon   = 'fa-tiktok';
+                                                $action = 'follow';
+                                                break;
+
+                                            default:
+                                                $class  = 'facebook';
+                                                $icon   = 'fa-globe';
+                                                $action = 'visit';
+                                        }
+
+                                        ?>
+
+                                        <a
+                                            href="<?= htmlspecialchars($socmed['link_platform']); ?>"
+                                            target="_blank">
+
+                                            <div class="social__media__widget <?= $class; ?>">
+
+                                                <span class="social__media__widget-icon">
+                                                    <i class="fab <?= $icon; ?>"></i>
+                                                </span>
+
+                                                <span class="social__media__widget-counter">
+                                                    <?= htmlspecialchars($socmed['account_name']); ?>
+                                                </span>
+
+                                                <span class="social__media__widget-name">
+                                                    <?= ucfirst($action); ?>
+                                                </span>
+
+                                            </div>
+
+                                        </a>
+
+                                    <?php endwhile; ?>
 
                                 </div>
                             </aside>
 
+                            <!-- TAGS SIDEBAR -->
                             <aside class="wrapper__list__article">
-                                <h4 class="border_section">tags</h4>
+
+                                <h4 class="border_section">
+                                    Tags
+                                </h4>
+
                                 <div class="blog-tags p-0">
+
                                     <ul class="list-inline">
 
-                                        <li class="list-inline-item">
-                                            <a href="#">
-                                                #property
-                                            </a>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <a href="#">
-                                                #sea
-                                            </a>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <a href="#">
-                                                #programming
-                                            </a>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <a href="#">
-                                                #sea
-                                            </a>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <a href="#">
-                                                #property
-                                            </a>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <a href="#">
-                                                #life style
-                                            </a>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <a href="#">
-                                                #technology
-                                            </a>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <a href="#">
-                                                #framework
-                                            </a>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <a href="#">
-                                                #sport
-                                            </a>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <a href="#">
-                                                #game
-                                            </a>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <a href="#">
-                                                #wfh
-                                            </a>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <a href="#">
-                                                #sport
-                                            </a>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <a href="#">
-                                                #game
-                                            </a>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <a href="#">
-                                                #wfh
-                                            </a>
-                                        </li>
-                                        <li class="list-inline-item">
-                                            <a href="#">
-                                                + 9 Lainnya...
-                                            </a>
-                                        </li>
+                                        <?php
+
+                                        $maxTags = 15;
+
+                                        foreach (array_slice($sidebarTags, 0, $maxTags) as $tag):
+
+                                        ?>
+
+                                            <li class="list-inline-item">
+
+                                                <a href="tags.php?slug=<?= urlencode($tag['tag_slug']); ?>">
+
+                                                    #<?= htmlspecialchars($tag['tag_name']); ?>
+
+                                                </a>
+
+                                            </li>
+
+                                        <?php endforeach; ?>
+
+                                        <?php if ($totalTagsSidebar > $maxTags): ?>
+
+                                            <li class="list-inline-item">
+
+                                                <a href="tags.php">
+
+                                                    +<?= $totalTagsSidebar - $maxTags; ?> Lainnya
+
+                                                </a>
+
+                                            </li>
+
+                                        <?php endif; ?>
 
                                     </ul>
+
                                 </div>
+
                             </aside>
 
-                            <aside class="wrapper__list__article">
-                                <h4 class="border_section">Advertise</h4>
-                                <a href="#">
-                                    <figure>
-                                        <img src="images/placeholder/600x400.jpg" alt="" class="img-fluid">
-                                    </figure>
-                                </a>
-                            </aside>
 
-                            <aside class="wrapper__list__article">
-                                <h4 class="border_section">newsletter</h4>
-                                <!-- Form Subscribe -->
-                                <div class="widget__form-subscribe bg__card-shadow">
-                                    <h6>
-                                        The most important world news and events of the day.
-                                    </h6>
-                                    <p><small>Get magzrenvi daily newsletter on your inbox.</small></p>
-                                    <div class="input-group ">
-                                        <input type="text" class="form-control" placeholder="Your email address">
-                                        <div class="input-group-append">
-                                            <button class="btn btn-primary" type="button">sign up</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </aside>
+                            <!-- IKLAN -->
+                            <?php if ($adsData): ?>
+
+                                <aside class="wrapper__list__article">
+
+                                    <h4 class="border_section">
+                                        Iklan
+                                    </h4>
+
+                                    <a
+                                        href="<?= htmlspecialchars($adsData['ad_link']); ?>"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title="<?= htmlspecialchars($adsData['ad_title']); ?>">
+
+                                        <figure class="mb-0">
+
+                                            <img
+                                                src="dashboard/assets/images/uploads/ads/<?= htmlspecialchars($adsData['ad_img']); ?>"
+                                                alt="<?= htmlspecialchars($adsData['ad_title']); ?>"
+                                                title="<?= htmlspecialchars($adsData['ad_title']); ?>"
+                                                class="img-fluid w-100">
+
+                                        </figure>
+
+                                    </a>
+
+                                </aside>
+
+                            <?php endif; ?>
                         </div>
                     </div>
-                    <div class="mx-auto">
-                        <!-- Pagination -->
-                        <div class="pagination-area">
-                            <div class="pagination wow fadeIn animated" data-wow-duration="2s" data-wow-delay="0.5s"
-                                style="visibility: visible; animation-duration: 2s; animation-delay: 0.5s; animation-name: fadeIn;">
-                                <a href="#">
-                                    «
-                                </a>
-                                <a href="#">
-                                    1
-                                </a>
-                                <a class="active" href="#">
-                                    2
-                                </a>
-                                <a href="#">
-                                    3
-                                </a>
-                                <a href="#">
-                                    4
-                                </a>
-                                <a href="#">
-                                    5
-                                </a>
 
-                                <a href="#">
-                                    »
-                                </a>
+                    <!-- Pagination -->
+                    <div class="mx-auto">
+
+                        <div class="pagination-area">
+
+                            <div class="pagination">
+
+                                <!-- PREV -->
+
+                                <?php if ($currentPage > 1): ?>
+
+                                    <a href="?page=<?= $currentPage - 1 ?>">
+                                        &laquo;
+                                    </a>
+
+                                <?php endif; ?>
+
+                                <?php
+
+                                $start = max(1, $currentPage - 2);
+                                $end   = min($totalPages, $currentPage + 2);
+
+                                if ($start > 1) {
+
+                                    echo '<a href="?page=1">1</a>';
+
+                                    if ($start > 2) {
+                                        echo '<span class="px-2">...</span>';
+                                    }
+                                }
+
+                                for ($i = $start; $i <= $end; $i++):
+
+                                ?>
+
+                                    <a
+                                        href="?page=<?= $i ?>"
+                                        class="<?= ($i == $currentPage) ? 'active' : '' ?>">
+
+                                        <?= $i ?>
+
+                                    </a>
+
+                                <?php endfor; ?>
+
+                                <?php
+
+                                if ($end < $totalPages) {
+
+                                    if ($end < ($totalPages - 1)) {
+                                        echo '<span class="px-2">...</span>';
+                                    }
+
+                                    echo '<a href="?page=' . $totalPages . '">' . $totalPages . '</a>';
+                                }
+
+                                ?>
+
+                                <!-- NEXT -->
+
+                                <?php if ($currentPage < $totalPages): ?>
+
+                                    <a href="?page=<?= $currentPage + 1 ?>">
+                                        &raquo;
+                                    </a>
+
+                                <?php endif; ?>
+
                             </div>
+
                         </div>
+
                     </div>
 
                     <div class="clearfix"></div>
@@ -1885,6 +1837,18 @@ if (!$trendingQuery) {
     <a href="javascript:" id="return-to-top"><i class="fa fa-chevron-up"></i></a>
 
     <script type="text/javascript" src="./js/index.bundle.js?537a1bbd0e5129401d28"></script>
+    <script type="text/javascript" src="js/navbar-search.js"></script>
+
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "NewsMediaOrganization",
+            "name": "Hukuminfo.id",
+            "url": "https://hukuminfo.id",
+            "logo": "https://hukuminfo.id/favicon.png",
+            "description": "Media informasi dan edukasi hukum Indonesia."
+        }
+    </script>
 </body>
 
 </html>

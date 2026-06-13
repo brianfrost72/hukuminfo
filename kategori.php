@@ -34,11 +34,12 @@ function tanggalIndonesia($datetime)
 |--------------------------------------------------------------------------
 */
 
-$selectedCategory = isset($_GET['category'])
-    ? (int) $_GET['category']
-    : 0;
+$selectedSlug = mysqli_real_escape_string(
+    $conn,
+    $_GET['slug'] ?? ''
+);
 
-$categoriesPerPage = 20;
+$categoriesPerPage = 10;
 $categoryPage = isset($_GET['category_page'])
     ? max(1, (int) $_GET['category_page'])
     : 1;
@@ -47,14 +48,7 @@ $categoryOffset = ($categoryPage - 1) * $categoriesPerPage;
 
 $totalCategoriesQuery = mysqli_query($conn, "
     SELECT COUNT(*) total
-    FROM (
-        SELECT pc.id
-        FROM post_category pc
-        INNER JOIN post p
-            ON p.post_category_id = pc.id
-        WHERE p.status='publish'
-        GROUP BY pc.id
-    ) x
+FROM post_category
 ");
 
 $totalCategories = mysqli_fetch_assoc($totalCategoriesQuery)['total'];
@@ -66,15 +60,19 @@ $totalCategoryPages = ceil(
 $categoriesQuery = mysqli_query($conn, "
     SELECT
         pc.id,
+        pc.slug,
         pc.name_category,
         pc.desc_category,
         COUNT(DISTINCT p.id) total_posts
     FROM post_category pc
-    INNER JOIN post p
+    LEFT JOIN post p
         ON p.post_category_id = pc.id
-    WHERE p.status='publish'
+        AND p.status='publish'
     GROUP BY pc.id
-    ORDER BY total_posts DESC, pc.name_category ASC
+    ORDER BY
+        (pc.slug = '" . mysqli_real_escape_string($conn, $selectedSlug) . "') DESC,
+        total_posts DESC,
+        pc.name_category ASC
     LIMIT $categoryOffset,$categoriesPerPage
 ");
 
@@ -84,7 +82,7 @@ $categoriesQuery = mysqli_query($conn, "
 |--------------------------------------------------------------------------
 */
 
-$postsPerPage = 6;
+$postsPerPage = 10;
 
 $postPage = isset($_GET['page'])
     ? max(1, (int)$_GET['page'])
@@ -95,13 +93,14 @@ $postOffset = ($postPage - 1) * $postsPerPage;
 $selectedCategoryData = null;
 $categoryPosts = [];
 $totalPostPages = 0;
+$selectedCategory = 0;
 
-if ($selectedCategory > 0) {
+if (!empty($selectedSlug)) {
 
     $categoryQuery = mysqli_query($conn, "
         SELECT *
         FROM post_category
-        WHERE id='$selectedCategory'
+        WHERE slug='$selectedSlug'
         LIMIT 1
     ");
 
@@ -109,12 +108,14 @@ if ($selectedCategory > 0) {
 
     if ($selectedCategoryData) {
 
+        $selectedCategory = (int)$selectedCategoryData['id'];
+
         $countPostQuery = mysqli_query($conn, "
-            SELECT COUNT(*) total
-            FROM post
-            WHERE post_category_id='$selectedCategory'
-            AND status='publish'
-        ");
+        SELECT COUNT(*) total
+        FROM post
+        WHERE post_category_id='$selectedCategory'
+        AND status='publish'
+    ");
 
         $totalPosts = mysqli_fetch_assoc(
             $countPostQuery
@@ -123,7 +124,6 @@ if ($selectedCategory > 0) {
         $totalPostPages = ceil(
             $totalPosts / $postsPerPage
         );
-
         $postQuery = mysqli_query($conn, "
             SELECT
                 p.*,
@@ -155,7 +155,8 @@ if ($selectedCategory > 0) {
 $sidebarTagsQuery = mysqli_query($conn, "
     SELECT
         id,
-        tag_name
+        tag_name,
+        tag_slug
     FROM tags
     ORDER BY RAND()
 ");
@@ -256,8 +257,8 @@ if (!empty($selectedCategoryData)) {
     <meta charset="utf-8">
     <title><?= htmlspecialchars($metaTitle); ?></title>
     <meta
-    name="description"
-    content="<?= htmlspecialchars($metaDescription); ?>">
+        name="description"
+        content="<?= htmlspecialchars($metaDescription); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
@@ -266,7 +267,7 @@ if (!empty($selectedCategoryData)) {
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,500;0,700;1,300;1,500&family=Poppins:ital,wght@0,300;0,500;0,700;1,300;1,400&display=swap"
         rel="stylesheet">
-    <link href="./css/styles.css?537a1bbd0e5129401d28" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -344,7 +345,7 @@ if (!empty($selectedCategoryData)) {
                                         ?>
 
                                         <a
-                                            href="?category=<?= $category['id']; ?>&category_page=<?= $categoryPage; ?>"
+                                            href="kategori=<?= urlencode($category['slug']); ?>?category_page=<?= $categoryPage; ?>"
                                             class="btn <?= $isActive ? 'btn-primary' : 'btn-outline-primary'; ?> rounded-pill mb-2">
 
                                             <?= htmlspecialchars($category['name_category']); ?>
@@ -362,7 +363,7 @@ if (!empty($selectedCategoryData)) {
 
                             <!-- Pagination -->
                             <nav class="mt-4">
-                                <ul class="pagination justify-content-center" id="postPagination"></ul>
+                                <ul class="pagination justify-content-center" id="categoryPagination"></ul>
                             </nav>
 
                             <aside class="wrapper__list__article mb-0">
@@ -389,7 +390,7 @@ if (!empty($selectedCategoryData)) {
                                                     <div class="article__entry">
 
                                                         <div class="article__image">
-                                                            <a href="detail.php?slug=<?= $post['slug']; ?>">
+                                                            <a href="<?= $post['slug']; ?>">
 
                                                                 <img
                                                                     src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']); ?>"
@@ -419,7 +420,7 @@ if (!empty($selectedCategoryData)) {
 
                                                             <h5>
 
-                                                                <a href="detail.php?slug=<?= $post['slug']; ?>">
+                                                                <a href="<?= $post['slug']; ?>">
 
                                                                     <?= htmlspecialchars($post['post_title']); ?>
 
@@ -564,7 +565,7 @@ if (!empty($selectedCategoryData)) {
 
                                                 <li class="list-inline-item">
 
-                                                    <a href="tags.php?tags=<?= $tags['id']; ?>">
+                                                    <a href="tags=<?= urlencode($tags['tag_slug']); ?>">
 
                                                         #<?= htmlspecialchars($tags['tag_name']); ?>
 
@@ -578,7 +579,7 @@ if (!empty($selectedCategoryData)) {
 
                                                 <li class="list-inline-item">
 
-                                                    <a href="kategori.php">
+                                                    <a href="tags.php">
 
                                                         +<?= $totalTagsSidebar - $maxTags; ?> Lainnya
 
@@ -683,6 +684,7 @@ if (!empty($selectedCategoryData)) {
         const totalPostPages = <?= $totalPostPages ?>;
 
         function renderDetailPagination() {
+
             const ul = document.getElementById('detailCategoryPagination');
 
             if (!ul || totalPostPages <= 1) return;
@@ -690,64 +692,28 @@ if (!empty($selectedCategoryData)) {
             let html = '';
 
             html += `
-    <li class="page-item ${currentPostPage == 1 ? 'disabled':''}">
+    <li class="page-item ${currentPostPage == 1 ? 'disabled' : ''}">
         <a class="page-link"
-           href="?category=<?= urlencode($selectedCategory) ?>&category_page=<?= $categoryPage ?>&page=${currentPostPage-1}">
+           href="kategori=<?= urlencode($selectedSlug) ?>?category_page=<?= $categoryPage ?>&page=${currentPostPage-1}">
             <i class="fa fa-angle-left"></i>
         </a>
     </li>`;
 
-            let start = Math.max(1, currentPostPage - 2);
-            let end = Math.min(totalPostPages, currentPostPage + 2);
+            for (let i = 1; i <= totalPostPages; i++) {
 
-            if (start > 1) {
                 html += `
-        <li class="page-item">
+        <li class="page-item ${i == currentPostPage ? 'active' : ''}">
             <a class="page-link"
-               href="?category=<?= urlencode($selectedCategory) ?>&category_page=<?= $categoryPage ?>&page=1">
-               1
-            </a>
-        </li>`;
-
-                if (start > 2) {
-                    html += `
-            <li class="page-item disabled">
-                <span class="page-link">...</span>
-            </li>`;
-                }
-            }
-
-            for (let i = start; i <= end; i++) {
-                html += `
-        <li class="page-item ${i==currentPostPage?'active':''}">
-            <a class="page-link"
-               href="?category=<?= urlencode($selectedCategory) ?>&category_page=<?= $categoryPage ?>&page=${i}">
+               href="kategori=<?= urlencode($selectedSlug) ?>?category_page=<?= $categoryPage ?>&page=${i}">
                 ${i}
             </a>
         </li>`;
             }
 
-            if (end < totalPostPages) {
-                if (end < totalPostPages - 1) {
-                    html += `
-            <li class="page-item disabled">
-                <span class="page-link">...</span>
-            </li>`;
-                }
-
-                html += `
-        <li class="page-item">
-            <a class="page-link"
-               href="?category=<?= urlencode($selectedCategory) ?>&category_page=<?= $categoryPage ?>&page=${totalPostPages}">
-                ${totalPostPages}
-            </a>
-        </li>`;
-            }
-
             html += `
-    <li class="page-item ${currentPostPage == totalPostPages ? 'disabled':''}">
+    <li class="page-item ${currentPostPage == totalPostPages ? 'disabled' : ''}">
         <a class="page-link"
-           href="?category=<?= urlencode($selectedCategory) ?>&category_page=<?= $categoryPage ?>&page=${currentPostPage+1}">
+           href="kategori=<?= urlencode($selectedSlug) ?>?category_page=<?= $categoryPage ?>&page=${currentPostPage+1}">
             <i class="fa fa-angle-right"></i>
         </a>
     </li>`;
@@ -761,9 +727,10 @@ if (!empty($selectedCategoryData)) {
     <script>
         const currentCategoryPage = <?= $categoryPage ?>;
         const totalCategoryPages = <?= $totalCategoryPages ?>;
-        const selectedCategory = "<?= urlencode($selectedCategory) ?>";
+        const selectedSlug = "<?= urlencode($selectedSlug) ?>";
 
         function renderCategoryPagination() {
+
             const ul = document.getElementById('categoryPagination');
 
             if (!ul || totalCategoryPages <= 1) return;
@@ -771,9 +738,9 @@ if (!empty($selectedCategoryData)) {
             let html = '';
 
             html += `
-    <li class="page-item ${currentCategoryPage == 1 ? 'disabled':''}">
+    <li class="page-item ${currentCategoryPage == 1 ? 'disabled' : ''}">
         <a class="page-link"
-           href="?category=${selectedCategory}&category_page=${currentCategoryPage-1}">
+           href="kategori=${selectedSlug}?category_page=${currentCategoryPage-1}">
             <i class="fa fa-angle-left"></i>
         </a>
     </li>`;
@@ -781,54 +748,21 @@ if (!empty($selectedCategoryData)) {
             let start = Math.max(1, currentCategoryPage - 2);
             let end = Math.min(totalCategoryPages, currentCategoryPage + 2);
 
-            if (start > 1) {
-                html += `
-        <li class="page-item">
-            <a class="page-link"
-               href="?category=${selectedCategory}&category_page=1">
-               1
-            </a>
-        </li>`;
-
-                if (start > 2) {
-                    html += `
-            <li class="page-item disabled">
-                <span class="page-link">...</span>
-            </li>`;
-                }
-            }
-
             for (let i = start; i <= end; i++) {
+
                 html += `
-        <li class="page-item ${i==currentCategoryPage?'active':''}">
+        <li class="page-item ${i == currentCategoryPage ? 'active' : ''}">
             <a class="page-link"
-               href="?category=${selectedCategory}&category_page=${i}">
+               href="kategori=${selectedSlug}?category_page=${i}">
                 ${i}
             </a>
         </li>`;
             }
 
-            if (end < totalCategoryPages) {
-                if (end < totalCategoryPages - 1) {
-                    html += `
-            <li class="page-item disabled">
-                <span class="page-link">...</span>
-            </li>`;
-                }
-
-                html += `
-        <li class="page-item">
-            <a class="page-link"
-               href="?category=${selectedCategory}&category_page=${totalCategoryPages}">
-                ${totalCategoryPages}
-            </a>
-        </li>`;
-            }
-
             html += `
-    <li class="page-item ${currentCategoryPage == totalCategoryPages ? 'disabled':''}">
+    <li class="page-item ${currentCategoryPage == totalCategoryPages ? 'disabled' : ''}">
         <a class="page-link"
-           href="?category=${selectedCategory}&category_page=${currentCategoryPage+1}">
+           href="kategori=${selectedSlug}?category_page=${currentCategoryPage+1}">
             <i class="fa fa-angle-right"></i>
         </a>
     </li>`;

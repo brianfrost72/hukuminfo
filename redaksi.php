@@ -225,7 +225,7 @@ while ($row = mysqli_fetch_assoc($queryRedaksi)) {
 
                                     <div class="mt-3">
 
-                                        <a href="redaksi-detail.php?slug=<?= urlencode($member['slug']); ?>"
+                                        <a href="redaksi/<?= urlencode($member['slug']); ?>"
                                             class="text-dark text-decoration-none">
 
 
@@ -264,7 +264,7 @@ while ($row = mysqli_fetch_assoc($queryRedaksi)) {
 
                                             <div class="col-lg-4 col-md-4 col-6 mb-3">
 
-                                                <a href="redaksi-detail.php?slug=<?= urlencode($member['slug']); ?>"
+                                                <a href="redaksi=<?= urlencode($member['slug']); ?>"
                                                     class="text-decoration-none text-dark">
 
                                                     <div class="text-center">
