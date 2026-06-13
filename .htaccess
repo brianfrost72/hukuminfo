@@ -4,6 +4,13 @@ RewriteEngine On
 RewriteBase /hukuminfo/
 
 # =========================
+# HILANGKAN .PHP
+# =========================
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.+)$ $1.php [L]
+
+# =========================
 # KATEGORI
 # =========================
 RewriteRule ^kategori=([^/]+)/?$ kategori.php?slug=$1 [L,QSA]
@@ -22,12 +29,5 @@ RewriteRule ^redaksi=([^/]+)/?$ redaksi-detail.php?slug=$1 [L,QSA]
 # ARTIKEL
 # =========================
 RewriteRule ^([a-zA-Z0-9-]+)/?$ artikel-detail.php?slug=$1 [L,QSA]
-
-# =========================
-# HILANGKAN .PHP
-# =========================
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME}.php -f
-RewriteRule ^(.+)$ $1.php [L]
 
 </IfModule>

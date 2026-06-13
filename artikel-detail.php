@@ -991,7 +991,7 @@ $shareTitle = urlencode($post['post_title']);
 
                                                     <?php else : ?>
 
-                                                        <a href="redaksi-detail.php?slug=<?= $comment['admin_slug']; ?>">
+                                                        <a href="redaksi=<?= $comment['admin_slug']; ?>">
                                                             <?= htmlspecialchars($commentName); ?>
                                                         </a>
 
@@ -1127,7 +1127,7 @@ $shareTitle = urlencode($post['post_title']);
 
                                                                     <?php else : ?>
 
-                                                                        <a href="redaksi-detail.php?slug=<?= $reply['admin_slug']; ?>">
+                                                                        <a href="redaksi=<?= $reply['admin_slug']; ?>">
                                                                             <?= htmlspecialchars($replyName); ?>
                                                                         </a>
 
@@ -1252,7 +1252,7 @@ $shareTitle = urlencode($post['post_title']);
 
                                 <br><br>
 
-                                <a href="login.php"
+                                <a href="login"
                                     class="btn btn-primary btn-sm">
                                     Login
                                 </a>
@@ -1707,7 +1707,7 @@ $shareTitle = urlencode($post['post_title']);
 
                                         <li class="list-inline-item">
 
-                                            <a href="tags.php">
+                                            <a href="tags">
 
                                                 +<?= $totalTagsSidebar - $maxTags; ?> Lainnya
 
@@ -1762,7 +1762,7 @@ $shareTitle = urlencode($post['post_title']);
 
                                         <li class="list-inline-item">
 
-                                            <a href="kategori.php">
+                                            <a href="kategori">
 
                                                 +<?= $totalCategoriesSidebar - $maxCategories; ?> Lainnya
 
@@ -1933,7 +1933,7 @@ $shareTitle = urlencode($post['post_title']);
                     .then(data => {
 
                         if (data.status === 'login') {
-                            window.location = 'login.php';
+                            window.location = 'login';
                             return;
                         }
 
@@ -1973,7 +1973,7 @@ $shareTitle = urlencode($post['post_title']);
                     .then(data => {
 
                         if (data.status === 'login') {
-                            window.location = 'login.php';
+                            window.location = 'login';
                             return;
                         }
 
@@ -2054,7 +2054,7 @@ $shareTitle = urlencode($post['post_title']);
             }
 
             window.location =
-                'pencarian.php?q=' +
+                'pencarian?q=' +
                 encodeURIComponent(keyword);
         }
 

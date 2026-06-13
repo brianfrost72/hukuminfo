@@ -345,7 +345,7 @@ if (!empty($selectedCategoryData)) {
                                         ?>
 
                                         <a
-                                            href="kategori=<?= urlencode($category['slug']); ?>?category_page=<?= $categoryPage; ?>"
+                                            href="kategori=<?= urlencode($category['slug']); ?>&category_page=<?= $categoryPage; ?>"
                                             class="btn <?= $isActive ? 'btn-primary' : 'btn-outline-primary'; ?> rounded-pill mb-2">
 
                                             <?= htmlspecialchars($category['name_category']); ?>
@@ -440,8 +440,8 @@ if (!empty($selectedCategoryData)) {
                                     </div>
 
                                 <?php endif; ?>
-                                <!-- Pagination Detail Tags -->
-                                <nav aria-label="tags pagination" class="mt-4">
+                                <!-- Pagination Detail Category -->
+                                <nav aria-label="category pagination" class="mt-4">
 
                                     <ul
                                         class="pagination justify-content-center d-flex flex-row"
@@ -579,7 +579,7 @@ if (!empty($selectedCategoryData)) {
 
                                                 <li class="list-inline-item">
 
-                                                    <a href="tags.php">
+                                                    <a href="tags">
 
                                                         +<?= $totalTagsSidebar - $maxTags; ?> Lainnya
 
@@ -694,7 +694,7 @@ if (!empty($selectedCategoryData)) {
             html += `
     <li class="page-item ${currentPostPage == 1 ? 'disabled' : ''}">
         <a class="page-link"
-           href="kategori=<?= urlencode($selectedSlug) ?>?category_page=<?= $categoryPage ?>&page=${currentPostPage-1}">
+           href="kategori=<?= urlencode($selectedSlug) ?>&category_page=<?= $categoryPage ?>&page=${currentPostPage-1}">
             <i class="fa fa-angle-left"></i>
         </a>
     </li>`;
@@ -704,7 +704,7 @@ if (!empty($selectedCategoryData)) {
                 html += `
         <li class="page-item ${i == currentPostPage ? 'active' : ''}">
             <a class="page-link"
-               href="kategori=<?= urlencode($selectedSlug) ?>?category_page=<?= $categoryPage ?>&page=${i}">
+               href="kategori=<?= urlencode($selectedSlug) ?>&category_page=<?= $categoryPage ?>&page=${i}">
                 ${i}
             </a>
         </li>`;
@@ -713,7 +713,7 @@ if (!empty($selectedCategoryData)) {
             html += `
     <li class="page-item ${currentPostPage == totalPostPages ? 'disabled' : ''}">
         <a class="page-link"
-           href="kategori=<?= urlencode($selectedSlug) ?>?category_page=<?= $categoryPage ?>&page=${currentPostPage+1}">
+           href="kategori=<?= urlencode($selectedSlug) ?>&category_page=<?= $categoryPage ?>&page=${currentPostPage+1}">
             <i class="fa fa-angle-right"></i>
         </a>
     </li>`;
@@ -740,7 +740,7 @@ if (!empty($selectedCategoryData)) {
             html += `
     <li class="page-item ${currentCategoryPage == 1 ? 'disabled' : ''}">
         <a class="page-link"
-           href="kategori=${selectedSlug}?category_page=${currentCategoryPage-1}">
+           href="kategori=${selectedSlug}&category_page=${currentCategoryPage-1}">
             <i class="fa fa-angle-left"></i>
         </a>
     </li>`;
@@ -753,7 +753,7 @@ if (!empty($selectedCategoryData)) {
                 html += `
         <li class="page-item ${i == currentCategoryPage ? 'active' : ''}">
             <a class="page-link"
-               href="kategori=${selectedSlug}?category_page=${i}">
+               href="kategori=${selectedSlug}&category_page=${i}">
                 ${i}
             </a>
         </li>`;
@@ -762,7 +762,7 @@ if (!empty($selectedCategoryData)) {
             html += `
     <li class="page-item ${currentCategoryPage == totalCategoryPages ? 'disabled' : ''}">
         <a class="page-link"
-           href="kategori=${selectedSlug}?category_page=${currentCategoryPage+1}">
+           href="kategori=${selectedSlug}&category_page=${currentCategoryPage+1}">
             <i class="fa fa-angle-right"></i>
         </a>
     </li>`;

@@ -30,124 +30,75 @@ function tanggalIndonesia($datetime)
 
 /*
 |--------------------------------------------------------------------------
-| TAGS
+| ARTIKEL POPULER
 |--------------------------------------------------------------------------
 */
 
-$selectedTag = '';
+$limit = 10;
 
-if (isset($_GET['tag'])) {
-    $selectedTag = trim($_GET['tag']);
-} elseif (isset($_GET['slug'])) {
-    $selectedTag = trim($_GET['slug']);
-}
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$offset = ($page - 1) * $limit;
 
-$tagsPerPage = 10;
-$tagPage = isset($_GET['tag_page']) ? max(1, (int)$_GET['tag_page']) : 1;
-$tagOffset = ($tagPage - 1) * $tagsPerPage;
+/*
+|--------------------------------------------------------------------------
+| TOTAL DATA
+|--------------------------------------------------------------------------
+*/
 
-$totalTagsQuery = mysqli_query($conn, "
+$totalQuery = mysqli_query($conn, "
     SELECT COUNT(*) AS total
-    FROM tags
+    FROM post p
+    WHERE p.status = 'publish'
 ");
 
-if (!$totalTagsQuery) {
+$totalData = mysqli_fetch_assoc($totalQuery)['total'];
 
-    error_log(
-        'Tags Query Error: ' .
-            mysqli_error($conn)
-    );
+$totalPages = ceil($totalData / $limit);
 
-    $totalTags = 0;
-} else {
+/*
+|--------------------------------------------------------------------------
+| POPULAR POSTS
+|--------------------------------------------------------------------------
+*/
 
-    $row = mysqli_fetch_assoc($totalTagsQuery);
-
-    $totalTags = (int)$row['total'];
-}
-
-$totalTagPages = ceil($totalTags / $tagsPerPage);
-
-$tagsQuery = mysqli_query($conn, "
+$popularQuery = mysqli_query($conn, "
     SELECT
-        t.id,
-        t.tag_name,
-        t.tag_slug,
-        COUNT(DISTINCT p.id) total_posts
-    FROM tags t
-    LEFT JOIN post_tags pt
-        ON pt.tag_id = t.id
-    LEFT JOIN post p
-        ON p.id = pt.post_id
-        AND p.status='publish'
-    GROUP BY t.id
-    ORDER BY
-        (t.tag_slug = '" . mysqli_real_escape_string($conn, $selectedTag) . "') DESC,
-        total_posts DESC,
-        t.tag_name ASC
-    LIMIT $tagOffset,$tagsPerPage
+        p.id,
+        p.post_title,
+        p.slug,
+        p.post_image,
+        p.created_at,
+
+        up.full_name,
+        up.slug AS author_slug,
+
+        COUNT(pv.id) AS total_views
+
+    FROM post p
+
+    LEFT JOIN post_views pv
+        ON pv.post_id = p.id
+
+    LEFT JOIN users u
+        ON u.id = p.user_id
+
+    LEFT JOIN user_profile up
+        ON up.user_id = u.id
+
+    WHERE p.status = 'publish'
+
+    GROUP BY p.id
+
+    ORDER BY total_views DESC,
+             p.created_at DESC
+
+    LIMIT $offset, $limit
 ");
 
-// QUERY TAG 
-$postsPerPage = 10;
+$popularPosts = [];
 
-$postPage = isset($_GET['page'])
-    ? max(1, (int)$_GET['page'])
-    : 1;
-
-$postOffset = ($postPage - 1) * $postsPerPage;
-
-$selectedTagData = null;
-$tagPosts = [];
-$totalPostPages = 0;
-
-// TAG AKTIF SETELAH DIPILIH
-if (!empty($selectedTag)) {
-    $tagInfoQuery = mysqli_query($conn, "
-        SELECT *
-        FROM tags
-        WHERE tag_slug='" . mysqli_real_escape_string($conn, $selectedTag) . "'
-        LIMIT 1
-    ");
-
-    $selectedTagData = mysqli_fetch_assoc($tagInfoQuery);
-
-    if ($selectedTagData) {
-        $tagId = (int)$selectedTagData['id'];
-
-        $countPostQuery = mysqli_query($conn, "
-            SELECT COUNT(DISTINCT p.id) total
-            FROM post p
-            INNER JOIN post_tags pt
-                ON pt.post_id = p.id
-            WHERE pt.tag_id='$tagId'
-            AND p.status='publish'
-        ");
-
-        $totalPosts = mysqli_fetch_assoc($countPostQuery)['total'];
-
-        $totalPostPages = ceil($totalPosts / $postsPerPage);
-
-        $postQuery = mysqli_query($conn, "
-            SELECT
-                p.*,
-                COALESCE(up.full_name,'Administrator') author_name
-            FROM post p
-            INNER JOIN post_tags pt
-                ON pt.post_id = p.id
-            LEFT JOIN user_profile up
-                ON up.user_id = p.user_id
-            WHERE pt.tag_id='$tagId'
-            AND p.status='publish'
-            GROUP BY p.id
-            ORDER BY p.created_at DESC
-            LIMIT $postOffset,$postsPerPage
-        ");
-
-        while ($row = mysqli_fetch_assoc($postQuery)) {
-            $tagPosts[] = $row;
-        }
-    }
+while ($row = mysqli_fetch_assoc($popularQuery)) {
+    $popularPosts[] = $row;
 }
 
 
@@ -173,6 +124,29 @@ while ($row = mysqli_fetch_assoc($sidebarCategoryQuery)) {
 }
 
 $totalCategoriesSidebar = count($sidebarCategories);
+
+/*
+|--------------------------------------------------------------------------
+| TAGS SIDEBAR
+|--------------------------------------------------------------------------
+*/
+
+$sidebarTagsQuery = mysqli_query($conn, "
+    SELECT
+        id,
+        tag_name,
+        tag_slug
+    FROM tags
+    ORDER BY created_at DESC
+");
+
+$sidebarTags = [];
+
+while ($row = mysqli_fetch_assoc($sidebarTagsQuery)) {
+    $sidebarTags[] = $row;
+}
+
+$totalTagsSidebar = count($sidebarTags);
 
 /*
 |--------------------------------------------------------------------------
@@ -214,26 +188,6 @@ $adsQuery = mysqli_query($conn, "
 
 $adsData = mysqli_fetch_assoc($adsQuery);
 
-/*
-|--------------------------------------------------------------------------
-| SEO OPTIMIZE
-|--------------------------------------------------------------------------
-*/
-$metaTitle = 'Tags - Hukuminfo.id';
-$metaDescription = 'Jelajahi berbagai topik hukum, berita terbaru, edukasi hukum, dan artikel informatif di Hukuminfo.id.';
-
-if (!empty($selectedTagData)) {
-
-    $metaTitle = 'Tag: ' . $selectedTagData['tag_name'] . ' - Hukuminfo.id';
-
-    $totalArtikel = count($tagPosts);
-
-    $metaDescription =
-        'Kumpulan artikel dengan tag ' .
-        $selectedTagData['tag_name'] .
-        ' di Hukuminfo.id. Temukan berita, analisis, dan informasi hukum terbaru terkait ' .
-        $selectedTagData['tag_name'] . '.';
-}
 ?>
 
 <!DOCTYPE html>
@@ -241,39 +195,31 @@ if (!empty($selectedTagData)) {
 
 <head>
     <meta charset="utf-8">
-    <title>
-        <?php if (!empty($selectedTagData)): ?>
-            Tags: <?= htmlspecialchars($selectedTagData['tag_name']); ?>
-        <?php else: ?>
-            Tags
-        <?php endif; ?>
-        &ndash; Hukuminfo.id
-    </title>
-    <meta
-        name="keywords"
-        content="<?= !empty($selectedTagData)
-                        ? htmlspecialchars($selectedTagData['tag_name']) . ', hukum, berita hukum, hukuminfo'
-                        : 'hukum, berita hukum, edukasi hukum, hukuminfo'; ?>">
+    <title>Artikel Populer Hari Ini - Berita dan Informasi Hukum Terpopuler | Hukuminfo.id</title>
 
-    <meta name="robots" content="index,follow">
+    <meta name="description"
+        content="Kumpulan artikel hukum paling populer dan paling banyak dibaca di Hukuminfo.id. Temukan berita hukum terbaru, regulasi, analisis, dan edukasi hukum yang sedang menjadi perhatian masyarakat Indonesia.">
+
+    <meta name="keywords"
+        content="artikel populer hukum, berita hukum populer, artikel hukum terpopuler, hukum indonesia, berita hukum terbaru, edukasi hukum, regulasi indonesia, analisis hukum, artikel paling banyak dibaca">
+
+    <meta name="robots" content="index, follow">
+
+    <link rel="canonical" href="https://hukuminfo.id/artikel-populer">
 
     <meta property="og:type" content="website">
+    <meta property="og:title" content="Artikel Populer Hari Ini | Hukuminfo.id">
+    <meta property="og:description"
+        content="Daftar artikel hukum paling banyak dibaca dan paling populer di Hukuminfo.id.">
+    <meta property="og:url" content="https://hukuminfo.id/artikel-populer">
+    <meta property="og:site_name" content="Hukuminfo.id">
+    <meta property="og:image" content="https://hukuminfo.id/images/og-hukuminfo.jpg">
 
-    <meta
-        property="og:title"
-        content="<?= htmlspecialchars($metaTitle); ?>">
-
-    <meta
-        property="og:description"
-        content="<?= htmlspecialchars($metaDescription); ?>">
-
-    <meta
-        property="og:url"
-        content="https://hukuminfo.id/tags.php<?= !empty($selectedTagData) ? '?tag=' . urlencode($selectedTagData['tag_slug']) : ''; ?>">
-
-    <meta
-        property="og:site_name"
-        content="Hukuminfo.id">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Artikel Populer Hari Ini | Hukuminfo.id">
+    <meta name="twitter:description"
+        content="Artikel hukum paling banyak dibaca, berita hukum terbaru, dan analisis hukum terpercaya.">
+    <meta name="twitter:image" content="https://hukuminfo.id/images/og-hukuminfo.jpg">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
@@ -344,120 +290,100 @@ if (!empty($selectedTagData)) {
                     <div class="row">
                         <div class="col-md-8">
 
-                            <!-- Tags -->
-                            <div class="mb-4">
-                                <h3 class="border_section mb-4">Tags</h3>
-
-                                <div class="d-flex flex-wrap gap-2">
-
-                                    <?php while ($tag = mysqli_fetch_assoc($tagsQuery)): ?>
-
-                                        <?php
-                                        $isActive = ($selectedTag == $tag['tag_slug']);
-                                        ?>
-
-                                        <a
-                                            href="tags=<?= urlencode($tag['tag_slug']); ?>&tag_page=<?= $tagPage; ?>"
-                                            class="btn <?= $isActive ? 'btn-primary' : 'btn-outline-primary'; ?> rounded-pill mb-2">
-
-                                            #<?= htmlspecialchars($tag['tag_name']); ?>
-
-                                            <span class="badge badge-light ml-1">
-                                                <?= number_format($tag['total_posts']); ?>
-                                            </span>
-
-                                        </a>
-
-                                    <?php endwhile; ?>
-
-                                </div>
-                            </div>
-
-                            <!-- Pagination -->
-                            <nav class="mt-4">
-                                <ul class="pagination justify-content-center" id="tagPagination"></ul>
-                            </nav>
-
                             <aside class="wrapper__list__article mb-0">
 
-                                <?php if (empty($selectedTagData)): ?>
+                                <h4 class="border_section">
+                                    ARTIKEL POPULER
+                                </h4>
 
-                                    <div class="alert alert-info mb-0">
-                                        Silakan pilih tag terlebih dahulu untuk melihat daftar artikel.
-                                    </div>
+                                <div class="row">
 
-                                <?php else: ?>
+                                    <?php foreach ($popularPosts as $post): ?>
 
-                                    <h4 class="border_section">
-                                        #<?= htmlspecialchars($selectedTagData['tag_name']); ?>
-                                    </h4>
+                                        <div class="col-md-6">
 
-                                    <div class="row">
+                                            <div class="mb-4">
 
-                                        <?php foreach ($tagPosts as $post): ?>
+                                                <div class="article__entry">
 
-                                            <div class="col-md-6">
+                                                    <div class="article__image">
 
-                                                <div class="mb-4">
-                                                    <div class="article__entry">
+                                                        <a href="<?= htmlspecialchars($post['slug']); ?>">
 
-                                                        <div class="article__image">
-                                                            <a href="<?= $post['slug']; ?>">
+                                                            <img
+                                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']); ?>"
+                                                                class="img-fluid"
+                                                                alt="<?= htmlspecialchars($post['post_title']); ?>">
 
-                                                                <img
-                                                                    src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']); ?>"
-                                                                    class="img-fluid"
-                                                                    alt="<?= htmlspecialchars($post['post_title']); ?>">
-
-                                                            </a>
-                                                        </div>
-
-                                                        <div class="article__content">
-
-                                                            <ul class="list-inline">
-
-                                                                <li class="list-inline-item">
-                                                                    <span class="text-primary">
-                                                                        <?= htmlspecialchars($post['author_name']); ?>
-                                                                    </span>
-                                                                </li>
-
-                                                                <li class="list-inline-item">
-                                                                    <span>
-                                                                        <?= tanggalIndonesia($post['created_at']); ?>
-                                                                    </span>
-                                                                </li>
-
-                                                            </ul>
-
-                                                            <h5>
-
-                                                                <a href="<?= $post['slug']; ?>">
-
-                                                                    <?= htmlspecialchars($post['post_title']); ?>
-
-                                                                </a>
-
-                                                            </h5>
-
-                                                        </div>
+                                                        </a>
 
                                                     </div>
+
+                                                    <div class="article__content">
+
+                                                        <ul class="list-inline">
+
+                                                            <li class="list-inline-item">
+
+                                                                <span class="text-primary">
+
+                                                                    <?= htmlspecialchars($post['full_name']); ?>
+
+                                                                </span>
+
+                                                            </li>
+
+                                                            <li class="list-inline-item">
+
+                                                                <span>
+
+                                                                    <?= tanggalIndonesia($post['created_at']); ?>
+
+                                                                </span>
+
+                                                            </li>
+
+                                                        </ul>
+
+                                                        <div class="mb-2">
+
+                                                            <span class="text-muted">
+
+                                                                <i class="fa fa-eye"></i>
+
+                                                                <?= number_format($post['total_views']); ?>
+
+                                                            </span>
+
+                                                        </div>
+
+                                                        <h5>
+
+                                                            <a href="<?= htmlspecialchars($post['slug']); ?>">
+
+                                                                <?= htmlspecialchars($post['post_title']); ?>
+
+                                                            </a>
+
+                                                        </h5>
+
+                                                    </div>
+
                                                 </div>
 
                                             </div>
 
-                                        <?php endforeach; ?>
+                                        </div>
 
-                                    </div>
+                                    <?php endforeach; ?>
 
-                                <?php endif; ?>
-                                <!-- Pagination Detail Tags -->
-                                <nav aria-label="tags pagination" class="mt-4">
+                                </div>
+                                <!-- Pagination -->
+                                <nav aria-label="viewed pagination" class="mt-4">
 
                                     <ul
                                         class="pagination justify-content-center d-flex flex-row"
-                                        id="detailTagPagination">
+                                        id="mostViewedPagination">
 
                                     </ul>
 
@@ -592,9 +518,60 @@ if (!empty($selectedTagData)) {
 
                                                 <li class="list-inline-item">
 
-                                                    <a href="kategori.php">
+                                                    <a href="kategori">
 
                                                         +<?= $totalCategoriesSidebar - $maxCategories; ?> Lainnya
+
+                                                    </a>
+
+                                                </li>
+
+                                            <?php endif; ?>
+
+                                        </ul>
+
+                                    </div>
+
+                                </aside>
+
+                                <!-- TAGS SIDEBAR -->
+                                <aside class="wrapper__list__article">
+
+                                    <h4 class="border_section">
+                                        Tags
+                                    </h4>
+
+                                    <div class="blog-tags p-0">
+
+                                        <ul class="list-inline">
+
+                                            <?php
+
+                                            $maxTags = 15;
+
+                                            foreach (array_slice($sidebarTags, 0, $maxTags) as $tag):
+
+                                            ?>
+
+                                                <li class="list-inline-item">
+
+                                                    <a href="tags=<?= urlencode($tag['tag_slug']); ?>">
+
+                                                        #<?= htmlspecialchars($tag['tag_name']); ?>
+
+                                                    </a>
+
+                                                </li>
+
+                                            <?php endforeach; ?>
+
+                                            <?php if ($totalTagsSidebar > $maxTags): ?>
+
+                                                <li class="list-inline-item">
+
+                                                    <a href="tags">
+
+                                                        +<?= $totalTagsSidebar - $maxTags; ?> Lainnya
 
                                                     </a>
 
@@ -692,170 +669,94 @@ if (!empty($selectedTagData)) {
     <script type="text/javascript" src="js/navbar-search.js"></script>
 
     <script>
-        const currentPostPage = <?= $postPage ?>;
-        const totalPostPages = <?= $totalPostPages ?>;
+        const currentPage = <?= $page ?>;
+        const totalPages = <?= $totalPages ?>;
 
-        function renderDetailPagination() {
-            const ul = document.getElementById('detailTagPagination');
+        function renderPagination() {
 
-            if (!ul || totalPostPages <= 1) return;
+            const ul = document.getElementById('mostViewedPagination');
+
+            if (!ul || totalPages <= 1) return;
 
             let html = '';
 
+            // Prev
             html += `
-    <li class="page-item ${currentPostPage == 1 ? 'disabled':''}">
-        <a class="page-link"
-           href="tags=<?= urlencode($selectedTag) ?>&page=${currentPostPage-1}">
-            <i class="fa fa-angle-left"></i>
-        </a>
-    </li>`;
-
-            let start = 1;
-            let end = totalPostPages;
-
-            if (start > 1) {
-                html += `
-        <li class="page-item">
+        <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
             <a class="page-link"
-               href="tags=<?= urlencode($selectedTag) ?>&page=1">
-               1
+               href="?page=${currentPage - 1}">
+                <i class="fa fa-chevron-left"></i>
             </a>
-        </li>`;
+        </li>
+    `;
 
-                if (start > 2) {
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+
+            if (startPage > 1) {
+
+                html += `
+            <li class="page-item">
+                <a class="page-link" href="?page=1">1</a>
+            </li>
+        `;
+
+                if (startPage > 2) {
                     html += `
-            <li class="page-item disabled">
-                <span class="page-link">...</span>
-            </li>`;
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            `;
                 }
             }
 
-            for (let i = start; i <= end; i++) {
+            for (let i = startPage; i <= endPage; i++) {
+
                 html += `
-        <li class="page-item ${i==currentPostPage?'active':''}">
-            <a class="page-link"
-               href="tags=<?= urlencode($selectedTag) ?>&tag_page=<?= $tagPage ?>&page=${i}">
-                ${i}
-            </a>
-        </li>`;
+            <li class="page-item ${i == currentPage ? 'active' : ''}">
+                <a class="page-link"
+                   href="?page=${i}">
+                    ${i}
+                </a>
+            </li>
+        `;
             }
 
-            if (end < totalPostPages) {
-                if (end < totalPostPages - 1) {
+            if (endPage < totalPages) {
+
+                if (endPage < totalPages - 1) {
                     html += `
-            <li class="page-item disabled">
-                <span class="page-link">...</span>
-            </li>`;
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            `;
                 }
 
                 html += `
-        <li class="page-item">
-            <a class="page-link"
-               href="tags=<?= urlencode($selectedTag) ?>&page=${totalPostPages}">
-                ${totalPostPages}
-            </a>
-        </li>`;
+            <li class="page-item">
+                <a class="page-link"
+                   href="?page=${totalPages}">
+                    ${totalPages}
+                </a>
+            </li>
+        `;
             }
 
+            // Next
             html += `
-    <li class="page-item ${currentPostPage == totalPostPages ? 'disabled':''}">
-        <a class="page-link"
-           href="tags=<?= urlencode($selectedTag) ?>&page=${currentPostPage+1}">
-            <i class="fa fa-angle-right"></i>
-        </a>
-    </li>`;
+        <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
+            <a class="page-link"
+               href="?page=${currentPage + 1}">
+                <i class="fa fa-chevron-right"></i>
+            </a>
+        </li>
+    `;
 
             ul.innerHTML = html;
         }
 
-        renderDetailPagination();
+        renderPagination();
     </script>
-
-    <script>
-        const currentTagPage = <?= $tagPage ?>;
-        const totalTagPages = <?= $totalTagPages ?>;
-        const selectedTag = "<?= urlencode($selectedTag) ?>";
-
-        const baseTagUrl = selectedTag ?
-            `tags=${selectedTag}` :
-            'tags.php';
-
-        function renderTagPagination() {
-            const ul = document.getElementById('tagPagination');
-
-            if (!ul || totalTagPages <= 1) return;
-
-            let html = '';
-
-            html += `
-    <li class="page-item ${currentTagPage == 1 ? 'disabled':''}">
-        <a class="page-link"
-           href="tags=${selectedTag}&tag_page=${currentTagPage-1}">
-            <i class="fa fa-angle-left"></i>
-        </a>
-    </li>`;
-
-            let start = Math.max(1, currentTagPage - 2);
-            let end = Math.min(totalTagPages, currentTagPage + 2);
-
-            if (start > 1) {
-                html += `
-        <li class="page-item">
-            <a class="page-link"
-               href="tags=${selectedTag}?tag_page=1">
-               1
-            </a>
-        </li>`;
-
-                if (start > 2) {
-                    html += `
-            <li class="page-item disabled">
-                <span class="page-link">...</span>
-            </li>`;
-                }
-            }
-
-            for (let i = start; i <= end; i++) {
-                html += `
-        <li class="page-item ${i==currentTagPage?'active':''}">
-            <a class="page-link"
-               href="tags=${selectedTag}&tag_page=${i}">
-                ${i}
-            </a>
-        </li>`;
-            }
-
-            if (end < totalTagPages) {
-                if (end < totalTagPages - 1) {
-                    html += `
-            <li class="page-item disabled">
-                <span class="page-link">...</span>
-            </li>`;
-                }
-
-                html += `
-        <li class="page-item">
-            <a class="page-link"
-               href="tags=${selectedTag}&tag_page=${totalTagPages}">
-                ${totalTagPages}
-            </a>
-        </li>`;
-            }
-
-            html += `
-    <li class="page-item ${currentTagPage == totalTagPages ? 'disabled':''}">
-        <a class="page-link"
-           href="tags=${selectedTag}&tag_page=${currentTagPage+1}">
-            <i class="fa fa-angle-right"></i>
-        </a>
-    </li>`;
-
-            ul.innerHTML = html;
-        }
-
-        renderTagPagination();
-    </script>
-
 </body>
 
 </html>

@@ -9356,6 +9356,10 @@ blockquote footer {
 .btn-social.titled i {
   margin-right: 5px;
 }
+.tiktok{
+    background:linear-gradient(45deg,#25F4EE,#FE2C55);
+    color:#fff;
+}
 .btn-social.facebook {
   background-color: #3b5999;
 }
@@ -13594,6 +13598,119 @@ input[type="number"] {
 .search-dot {
   color: #ccc;
 }
+
+/* MOBILE SEARCH RESULT */
+#mobileSearchResult{
+    position:absolute;
+    top:100%;
+    left:0;
+    right:0;
+
+    background:#fff;
+    border:1px solid #e5e5e5;
+
+    display:none;
+
+    z-index:999999;
+
+    /* maksimal setengah layar hp */
+    max-height:50vh;
+
+    overflow-x:hidden;
+    overflow-y:auto;
+
+    -webkit-overflow-scrolling:touch;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.10);
+}
+
+/* scrollbar */
+#mobileSearchResult::-webkit-scrollbar{
+    width:6px;
+}
+
+#mobileSearchResult::-webkit-scrollbar-thumb{
+    background:#ccc;
+    border-radius:20px;
+}
+
+/* item */
+#mobileSearchResult .nav-search-item{
+    display:flex;
+    align-items:flex-start;
+
+    gap:10px;
+
+    padding:10px;
+
+    text-decoration:none !important;
+
+    color:#333 !important;
+
+    border-bottom:1px solid #f1f1f1;
+}
+
+#mobileSearchResult .nav-search-item:last-child{
+    border-bottom:none;
+}
+
+/* thumbnail */
+#mobileSearchResult .nav-search-item img{
+    width:75px;
+    height:55px;
+
+    object-fit:cover;
+
+    border-radius:4px;
+
+    flex-shrink:0;
+}
+
+/* wrapper text */
+#mobileSearchResult .search-content{
+    flex:1;
+    min-width:0;
+}
+
+/* judul */
+#mobileSearchResult .nav-search-title{
+    font-size:13px;
+    font-weight:600;
+    line-height:1.4;
+
+    color:#222;
+
+    margin-bottom:5px;
+
+    word-break:break-word;
+
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+}
+
+/* meta */
+#mobileSearchResult .nav-search-meta{
+    display:flex;
+    flex-direction:column;
+
+    gap:2px;
+
+    font-size:11px;
+
+    color:#888;
+}
+
+#mobileSearchResult .search-author,
+#mobileSearchResult .search-category{
+    display:block;
+}
+
+#mobileSearchResult .search-dot{
+    display:none;
+}
+/* ------------------------ */
 @media screen and (min-width: 320px) and (max-width: 575px) {
   .wrap__mobile-megamenu {
     padding: 0;
@@ -15521,4 +15638,22 @@ body.offcanvas-active {
 
 .redaksi-card h5 {
     margin-top: 8px;
+}
+
+/* mobile_menu */
+.mobile-socmed a{
+    width:40px;
+    height:40px;
+    line-height:40px;
+    display:inline-block;
+    border-radius:50%;
+    background:#dc3545;
+    color:#fff !important;
+    text-align:center;
+    margin:0 4px;
+    transition:.3s;
+}
+
+.mobile-socmed a:hover{
+    transform:translateY(-3px);
 }

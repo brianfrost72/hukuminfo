@@ -297,7 +297,7 @@ $queryOthers = mysqli_query($conn, "
 
             <!-- Breadcrumb -->
             <div class="mb-4">
-                <a href="redaksi.php">Redaksi</a>
+                <a href="redaksi">Redaksi</a>
                 <span class="mx-2">›</span>
                 <strong>Detail</strong>
             </div>

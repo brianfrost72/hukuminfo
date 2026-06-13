@@ -1,3 +1,39 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . '/../koneksi.php';
+
+$popularQuery = mysqli_query($conn, "
+    SELECT
+        p.id,
+        p.post_title,
+        p.post_image,
+        p.slug,
+        p.created_at,
+        p.total_views,
+        p.total_likes,
+        p.total_bookmarks,
+        up.full_name
+    FROM post p
+    LEFT JOIN user_profile up
+        ON up.user_id = p.user_id
+    WHERE p.status = 'publish'
+    ORDER BY
+        (
+            (p.total_views * 1)
+            +
+            (p.total_likes * 3)
+            +
+            (p.total_bookmarks * 5)
+        ) DESC,
+        p.created_at DESC
+    LIMIT 10
+");
+
+$basePostImage = 'dashboard/assets/images/uploads/posts/';
+?>
 <nav class="navbar navbar-hover navbar-expand-lg navbar-soft">
     <div class="container">
         <div class="offcanvas-header">
@@ -26,11 +62,24 @@
                     </a>
 
                     <div class="dropdown-menu">
-                        <a class="dropdown-item" href="kategori.php">
+
+                        <a class="dropdown-item" href="artikel-populer">
+                            <i class="fa fa-star mr-2"></i> Artikel Populer
+                        </a>
+
+                        <a class="dropdown-item" href="artikel-disukai">
+                            <i class="fa fa-heart mr-2"></i> Paling Disukai
+                        </a>
+
+                        <a class="dropdown-item" href="artikel-dibookmark">
+                            <i class="fa fa-bookmark mr-2"></i> Paling Diminati
+                        </a>
+
+                        <a class="dropdown-item" href="kategori">
                             <i class="fa fa-folder-open mr-2"></i> Kategori
                         </a>
 
-                        <a class="dropdown-item" href="tags.php">
+                        <a class="dropdown-item" href="tags">
                             <i class="fa fa-tags mr-2"></i> Tags
                         </a>
                     </div>
@@ -41,162 +90,85 @@
                     <div class="dropdown-menu animate fade-down megamenu mx-auto" role="menu">
                         <div class="container wrap__mobile-megamenu">
                             <div class="col-megamenu">
-                                <h5 class="title">Recent news</h5>
+                                <h5 class="title">Trending Topik</h5>
                                 <hr>
                                 <!-- Popular news carousel -->
                                 <div class="popular__news-header-carousel">
 
                                     <div class="top__news__slider">
-                                        <div class="item">
-                                            <!-- Post Article -->
-                                            <div class="article__entry">
-                                                <div class="article__image">
-                                                    <a href="#">
-                                                        <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                                    </a>
-                                                </div>
-                                                <div class="article__content">
-                                                    <ul class="list-inline">
-                                                        <li class="list-inline-item">
-                                                            <span class="text-primary">
-                                                                by david hall
-                                                            </span>,
-                                                        </li>
 
-                                                        <li class="list-inline-item">
-                                                            <span>
-                                                                descember 09, 2016
-                                                            </span>
-                                                        </li>
-                                                    </ul>
-                                                    <h5>
-                                                        <a href="#">
-                                                            Proin eu nisl et arcu iaculis placerat sollicitudin ut est.
-                                                        </a>
-                                                    </h5>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="item">
-                                            <!-- Post Article -->
-                                            <div class="article__entry">
-                                                <div class="article__image">
-                                                    <a href="#">
-                                                        <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                                    </a>
-                                                </div>
-                                                <div class="article__content">
-                                                    <ul class="list-inline">
-                                                        <li class="list-inline-item">
-                                                            <span class="text-primary">
-                                                                by david hall
-                                                            </span>,
-                                                        </li>
+                                        <?php while ($popular = mysqli_fetch_assoc($popularQuery)): ?>
 
-                                                        <li class="list-inline-item">
-                                                            <span>
-                                                                descember 09, 2016
-                                                            </span>
-                                                        </li>
-                                                    </ul>
-                                                    <h5>
-                                                        <a href="#">
-                                                            Proin eu nisl et arcu iaculis placerat sollicitudin ut est.
-                                                        </a>
-                                                    </h5>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="item">
-                                            <!-- Post Article -->
-                                            <div class="article__entry">
-                                                <div class="article__image">
-                                                    <a href="#">
-                                                        <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                                    </a>
-                                                </div>
-                                                <div class="article__content">
-                                                    <ul class="list-inline">
-                                                        <li class="list-inline-item">
-                                                            <span class="text-primary">
-                                                                by david hall
-                                                            </span>,
-                                                        </li>
+                                            <div class="item">
 
-                                                        <li class="list-inline-item">
-                                                            <span>
-                                                                descember 09, 2016
-                                                            </span>
-                                                        </li>
-                                                    </ul>
-                                                    <h5>
-                                                        <a href="#">
-                                                            Proin eu nisl et arcu iaculis placerat sollicitudin ut est.
-                                                        </a>
-                                                    </h5>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="item">
-                                            <!-- Post Article -->
-                                            <div class="article__entry">
-                                                <div class="article__image">
-                                                    <a href="#">
-                                                        <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                                    </a>
-                                                </div>
-                                                <div class="article__content">
-                                                    <ul class="list-inline">
-                                                        <li class="list-inline-item">
-                                                            <span class="text-primary">
-                                                                by david hall
-                                                            </span>,
-                                                        </li>
+                                                <div class="article__entry">
 
-                                                        <li class="list-inline-item">
-                                                            <span>
-                                                                descember 09, 2016
-                                                            </span>
-                                                        </li>
-                                                    </ul>
-                                                    <h5>
-                                                        <a href="#">
-                                                            Proin eu nisl et arcu iaculis placerat sollicitudin ut est.
-                                                        </a>
-                                                    </h5>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="item">
-                                            <!-- Post Article -->
-                                            <div class="article__entry">
-                                                <div class="article__image">
-                                                    <a href="#">
-                                                        <img src="images/placeholder/500x400.jpg" alt="" class="img-fluid">
-                                                    </a>
-                                                </div>
-                                                <div class="article__content">
-                                                    <ul class="list-inline">
-                                                        <li class="list-inline-item">
-                                                            <span class="text-primary">
-                                                                by david hall
-                                                            </span>,
-                                                        </li>
+                                                    <div class="article__image">
 
-                                                        <li class="list-inline-item">
-                                                            <span>
-                                                                descember 09, 2016
-                                                            </span>
-                                                        </li>
-                                                    </ul>
-                                                    <h5>
-                                                        <a href="#">
-                                                            Proin eu nisl et arcu iaculis placerat sollicitudin ut est.
+                                                        <a href="<?= htmlspecialchars($popular['slug']) ?>">
+
+                                                            <img
+                                                                src="<?= $basePostImage . htmlspecialchars($popular['post_image']) ?>"
+                                                                alt="<?= htmlspecialchars($popular['post_title']) ?>"
+                                                                class="img-fluid">
+
                                                         </a>
-                                                    </h5>
+
+                                                    </div>
+
+                                                    <div class="article__content">
+
+                                                        <ul class="list-inline mb-2">
+
+                                                            <li class="list-inline-item">
+                                                                <span class="text-primary">
+                                                                    <?= htmlspecialchars($popular['full_name'] ?? 'Administrator') ?>
+                                                                </span>
+                                                            </li>
+
+                                                            <li class="list-inline-item">
+                                                                <?= date('d M Y', strtotime($popular['created_at'])) ?>
+                                                            </li>
+
+                                                        </ul>
+
+                                                        <h5>
+
+                                                            <a href="<?= htmlspecialchars($popular['slug']) ?>">
+
+                                                                <?= htmlspecialchars($popular['post_title']) ?>
+
+                                                            </a>
+
+                                                        </h5>
+
+                                                        <div class="mt-2 small text-muted">
+
+                                                            <span class="mr-3">
+                                                                <i class="fa fa-eye"></i>
+                                                                <?= number_format($popular['total_views']) ?>
+                                                            </span>
+
+                                                            <span class="mr-3">
+                                                                <i class="fa fa-heart"></i>
+                                                                <?= number_format($popular['total_likes']) ?>
+                                                            </span>
+
+                                                            <span>
+                                                                <i class="fa fa-bookmark"></i>
+                                                                <?= number_format($popular['total_bookmarks']) ?>
+                                                            </span>
+
+                                                        </div>
+
+                                                    </div>
+
                                                 </div>
+
                                             </div>
-                                        </div>
+
+                                        <?php endwhile; ?>
+
                                     </div>
 
                                 </div>
@@ -205,7 +177,7 @@
                     </div> <!-- dropdown-mega-menu.// -->
                 </li>
                 <!-- <li class="nav-item"><a class="nav-link" href="#"> Kategori </a></li> -->
-                <li class="nav-item"><a class="nav-link" href="kontak-kami.php"> Kontak Kami </a></li>
+                <li class="nav-item"><a class="nav-link" href="kontak-kami"> Kontak Kami </a></li>
             </ul>
 
             <ul class="navbar-actions d-none d-xl-flex align-items-center list-unstyled mb-0 mr-2">

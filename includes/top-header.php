@@ -76,6 +76,26 @@ if (!empty($_SESSION['logged_in']) && !empty($_SESSION['user_id'])) {
         }
     }
 }
+
+// SOCIAL MEDIA
+$socialMedia = [];
+
+$qSocmed = mysqli_query($conn, "
+    SELECT
+        sm.account_name,
+        sm.link_platform,
+        ls.name_platform
+    FROM social_media sm
+    INNER JOIN list_socmed ls
+        ON ls.id = sm.platform_id
+    ORDER BY sm.id ASC
+");
+
+if ($qSocmed && mysqli_num_rows($qSocmed) > 0) {
+    while ($row = mysqli_fetch_assoc($qSocmed)) {
+        $socialMedia[] = $row;
+    }
+}
 ?>
 
 <div class="container ">
@@ -135,14 +155,14 @@ if (!empty($_SESSION['logged_in']) && !empty($_SESSION['user_id'])) {
                             <ul class="user-dropdown">
 
                                 <li>
-                                    <a href="dashboard/">
+                                    <a href="dashboard/index">
                                         <i class="fa fa-address-card"></i>
                                         Dashboard
                                     </a>
                                 </li>
 
                                 <li>
-                                    <a href="logout.php">
+                                    <a href="logout">
                                         <i class="fa fa-sign-out-alt"></i>
                                         Logout
                                     </a>
@@ -154,7 +174,7 @@ if (!empty($_SESSION['logged_in']) && !empty($_SESSION['user_id'])) {
                     <?php else: ?>
 
                         <li>
-                            <a href="login.php">
+                            <a href="login">
                                 Login / Register
                             </a>
                         </li>
@@ -163,15 +183,40 @@ if (!empty($_SESSION['logged_in']) && !empty($_SESSION['user_id'])) {
 
                 </ul>
                 <ul class="topbar-sosmed">
-                    <li>
-                        <a href="#"><i class="fa fa-facebook"></i></a>
-                    </li>
-                    <li>
-                        <a href="#"><i class="fa fa-twitter"></i></a>
-                    </li>
-                    <li>
-                        <a href="#"><i class="fa fa-instagram"></i></a>
-                    </li>
+
+                    <?php foreach ($socialMedia as $socmed): ?>
+
+                        <?php
+
+                        $platform = strtolower(trim($socmed['name_platform']));
+
+                        $icons = [
+                            'facebook'  => 'fab fa-facebook-f',
+                            'twitter'   => 'fab fa-twitter',
+                            'x'         => 'fab fa-x-twitter',
+                            'instagram' => 'fab fa-instagram',
+                            'youtube'   => 'fab fa-youtube',
+                            'linkedin'  => 'fab fa-linkedin-in',
+                            'tiktok'    => 'fab fa-tiktok',
+                            'telegram'  => 'fab fa-telegram-plane',
+                            'whatsapp'  => 'fab fa-whatsapp'
+                        ];
+
+                        $icon = $icons[$platform] ?? 'fas fa-globe';
+
+                        ?>
+
+                        <li>
+                            <a href="<?= htmlspecialchars($socmed['link_platform']); ?>"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="<?= htmlspecialchars($socmed['account_name']); ?>">
+                                <i class="<?= $icon; ?>"></i>
+                            </a>
+                        </li>
+
+                    <?php endforeach; ?>
+
                 </ul>
             </div>
         </div>

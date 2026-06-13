@@ -342,8 +342,8 @@ while ($row = mysqli_fetch_assoc($queryRedaksi)) {
                                 <ul class="list-group">
 
                                     <li class="list-group-item">
-                                        <a href="tentang-kami.php">
-                                            <?php if ($current_page == 'tentang-kami.php'): ?>
+                                        <a href="tentang-kami">
+                                            <?php if ($current_page == 'tentang-kami'): ?>
                                                 <i class="fa fa-angle-right mr-2"></i>
                                             <?php endif; ?>
                                             Tentang Kami
@@ -351,8 +351,8 @@ while ($row = mysqli_fetch_assoc($queryRedaksi)) {
                                     </li>
 
                                     <li class="list-group-item">
-                                        <a href="redaksi.php">
-                                            <?php if ($current_page == 'redaksi.php'): ?>
+                                        <a href="redaksi">
+                                            <?php if ($current_page == 'redaksi'): ?>
                                                 <i class="fa fa-angle-right mr-2"></i>
                                             <?php endif; ?>
                                             Redaksi
@@ -360,8 +360,8 @@ while ($row = mysqli_fetch_assoc($queryRedaksi)) {
                                     </li>
 
                                     <li class="list-group-item">
-                                        <a href="pedoman-media-siber.php">
-                                            <?php if ($current_page == 'pedoman-media-siber.php'): ?>
+                                        <a href="pedoman-media-siber">
+                                            <?php if ($current_page == 'pedoman-media-siber'): ?>
                                                 <i class="fa fa-angle-right mr-2"></i>
                                             <?php endif; ?>
                                             Pedoman Media Siber
@@ -369,8 +369,8 @@ while ($row = mysqli_fetch_assoc($queryRedaksi)) {
                                     </li>
 
                                     <li class="list-group-item">
-                                        <a href="disclaimer.php">
-                                            <?php if ($current_page == 'disclaimer.php'): ?>
+                                        <a href="disclaimer">
+                                            <?php if ($current_page == 'disclaimer'): ?>
                                                 <i class="fa fa-angle-right mr-2"></i>
                                             <?php endif; ?>
                                             Disclaimer
@@ -378,8 +378,8 @@ while ($row = mysqli_fetch_assoc($queryRedaksi)) {
                                     </li>
 
                                     <li class="list-group-item">
-                                        <a href="terms-of-service.php">
-                                            <?php if ($current_page == 'terms-of-service.php'): ?>
+                                        <a href="terms-of-service">
+                                            <?php if ($current_page == 'terms-of-service'): ?>
                                                 <i class="fa fa-angle-right mr-2"></i>
                                             <?php endif; ?>
                                             Terms of Service
@@ -387,8 +387,8 @@ while ($row = mysqli_fetch_assoc($queryRedaksi)) {
                                     </li>
 
                                     <li class="list-group-item">
-                                        <a href="privacy-policy.php">
-                                            <?php if ($current_page == 'privacy-policy.php'): ?>
+                                        <a href="privacy-policy">
+                                            <?php if ($current_page == 'privacy-policy'): ?>
                                                 <i class="fa fa-angle-right mr-2"></i>
                                             <?php endif; ?>
                                             Kebijakan Privasi

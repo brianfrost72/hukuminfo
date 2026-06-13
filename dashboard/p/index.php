@@ -1,3 +1,140 @@
+<?php
+session_start();
+
+$tab = $_GET['tab'] ?? 'terbaru';
+
+$userId = $_SESSION['user_id'] ?? 0;
+
+if (!$userId) {
+    die('Silakan login terlebih dahulu');
+}
+
+require_once __DIR__ . '/../koneksi.php';
+
+
+/*
+|--------------------------------------------------------------------------
+| GET USER DATA
+|--------------------------------------------------------------------------
+*/
+$profileQuery = mysqli_query($conn, "
+    SELECT
+        pp.*,
+        u.email
+    FROM public_profile pp
+    INNER JOIN users u
+        ON u.id = pp.user_id
+    WHERE pp.user_id = {$userId}
+    LIMIT 1
+");
+
+$userPublic = mysqli_fetch_assoc($profileQuery);
+
+if (!$userPublic) {
+    die('Profil tidak ditemukan');
+}
+
+/*
+|--------------------------------------------------------------------------
+| GET ARTICLES
+|--------------------------------------------------------------------------
+*/
+$userPublicPhoto = '';
+
+if (
+    !empty($userPublic['photo_profile']) &&
+    file_exists(
+        __DIR__ . '/../assets/images/uploads/public_photos/' .
+            $userPublic['photo_profile']
+    )
+) {
+
+    $userPublicPhoto =
+        '../assets/images/uploads/public_photos/' .
+        $userPublic['photo_profile'];
+} else {
+
+    if ($userPublic['gender'] == 'Perempuan') {
+
+        $userPublicPhoto =
+            '../assets/images/avatar/avatar-women.png';
+    } else {
+
+        $userPublicPhoto =
+            '../assets/images/avatar/avatar-men.png';
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| GET NEW ARTICLES
+|--------------------------------------------------------------------------
+*/
+if ($tab == 'terbaru') {
+
+    $queryNews = mysqli_query($conn, "
+    SELECT
+        p.*,
+        pc.name_category,
+        pc.slug AS category_slug
+    FROM post p
+
+    LEFT JOIN post_category pc
+        ON pc.id = p.post_category_id
+
+    WHERE p.status='publish'
+
+    ORDER BY p.id DESC
+
+    LIMIT 10
+");
+
+    if (!$queryNews) {
+        die(mysqli_error($conn));
+    }
+} else {
+
+    $queryNews = mysqli_query($conn, "
+    SELECT
+        p.*,
+        pc.name_category,
+        pc.slug AS category_slug,
+
+        COUNT(DISTINCT pl.id) AS total_like,
+        COUNT(DISTINCT pv.id) AS total_view
+
+    FROM post p
+
+    LEFT JOIN post_category pc
+        ON pc.id = p.post_category_id
+
+    LEFT JOIN post_likes pl
+        ON pl.post_id = p.id
+
+    LEFT JOIN post_views pv
+        ON pv.post_id = p.id
+
+    WHERE p.status='publish'
+
+    GROUP BY p.id
+
+    ORDER BY
+        total_like DESC,
+        total_view DESC,
+        p.id DESC
+
+    LIMIT 10
+");
+
+    if (!$queryNews) {
+        die(mysqli_error($conn));
+    }
+}
+
+
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 
@@ -18,6 +155,7 @@
     <link type="text/css"
         href="../assets/css/app.css"
         rel="stylesheet">
+    <link rel="stylesheet" href="../../css/styles.css">
 
     <!-- Material Design Icons -->
     <link type="text/css"
@@ -115,7 +253,7 @@
     </style>
 </head>
 
-<body>
+<body class="layout-fixed">
 
     <div class="preloader"></div>
 
@@ -157,63 +295,204 @@
             <div class="container page__container">
                 <div class="row">
 
-                    <!-- Berita Terpopuler -->
-                    <div class="col-lg-6 mb-4">
-                        <div class="news-card">
-                            <div class="news-card-header">
-                                Berita Terpopuler
+                    <!-- PROFIL PUBLIC -->
+                    <div class="col-lg-3 mb-4">
+
+                        <div class="redaksi-profile">
+
+                            <div class="redaksi-cover"></div>
+
+                            <div class="text-center redaksi-content">
+
+                                <img src="<?= $userPublicPhoto; ?>"
+                                    class="redaksi-avatar"
+                                    alt="<?= htmlspecialchars($userPublic['full_name']); ?>">
+
+                                <h4 class="redaksi-name">
+                                    <?= htmlspecialchars($userPublic['full_name']); ?>
+                                </h4>
+
+                                <p class="redaksi-company">
+                                    <?= htmlspecialchars($userPublic['email']); ?>
+                                </p>
+
                             </div>
 
-                            <ul class="news-list">
-
-                                <?php for ($i = 1; $i <= 7; $i++): ?>
-                                    <li class="news-item">
-                                        <a href="#" class="news-link">
-                                            <div class="news-number">
-                                                <?= $i ?>
-                                            </div>
-
-                                            <img src="https://picsum.photos/120/80?random=<?= $i ?>"
-                                                class="news-thumb"
-                                                alt="">
-
-                                            <div class="news-title">
-                                                Judul Berita Terpopuler <?= $i ?> yang sedang ramai dibaca masyarakat Indonesia
-                                            </div>
-                                        </a>
-                                    </li>
-                                <?php endfor; ?>
-
-                            </ul>
                         </div>
+
                     </div>
 
-                    <!-- Berita Terbaru -->
-                    <div class="col-lg-6 mb-4">
-                        <div class="news-card">
-                            <div class="news-card-header">
-                                Berita Terbaru
-                            </div>
+                    <!-- BERITA REDAKSI -->
+                    <div class="col-lg-9">
 
-                            <ul class="news-list">
+                        <!-- Tab -->
+                        <div class="mb-4">
 
-                                <?php for ($i = 1; $i <= 7; $i++): ?>
-                                    <li class="news-item">
-                                        <a href="#" class="news-link">
+                            <a href="?tab=terbaru"
+                                class="btn-redaksi <?= $tab == 'terbaru' ? 'active' : ''; ?>">
+                                Terbaru
+                            </a>
 
-                                            <img src="https://picsum.photos/120/80?random=<?= $i + 10 ?>"
-                                                class="news-thumb"
-                                                alt="">
+                            <a href="?tab=terpopuler"
+                                class="btn-redaksi <?= $tab == 'terpopuler' ? 'active' : ''; ?>">
+                                Terpopuler
+                            </a>
 
-                                            <div class="news-title">
-                                                Judul Berita Terbaru <?= $i ?> yang baru saja dipublikasikan hari ini
-                                            </div>
-                                        </a>
-                                    </li>
-                                <?php endfor; ?>
-
-                            </ul>
                         </div>
+
+                        <!-- Item Berita -->
+                        <aside class="wrapper__list__article">
+
+                            <div class="wrapp__list__article-responsive">
+
+                                <?php if (mysqli_num_rows($queryNews) > 0): ?>
+
+                                    <?php while ($news = mysqli_fetch_assoc($queryNews)): ?>
+
+                                        <?php
+
+                                        $postImage = 'images/placeholder/500x400.jpg';
+
+                                        if (
+                                            !empty($news['post_image']) &&
+                                            file_exists(
+                                                __DIR__ .
+                                                    '/../assets/images/uploads/posts/' .
+                                                    $news['post_image']
+                                            )
+                                        ) {
+
+                                            $postImage =
+                                                '../assets/images/uploads/posts/' .
+                                                $news['post_image'];
+                                        }
+
+                                        $excerpt = strip_tags($news['post_desc']);
+
+                                        if (strlen($excerpt) > 180) {
+                                            $excerpt = substr($excerpt, 0, 180) . '...';
+                                        }
+
+                                        ?>
+
+                                        <div class="card__post card__post-list card__post__transition mt-30">
+
+                                            <div class="row">
+
+                                                <div class="col-md-5">
+
+                                                    <div class="card__post__transition">
+
+                                                        <a href="<?= urlencode($news['slug']); ?>">
+
+                                                            <img src="<?= $postImage; ?>"
+                                                                class="img-fluid w-100"
+                                                                alt="<?= htmlspecialchars($news['post_title']); ?>">
+
+                                                        </a>
+
+                                                    </div>
+
+                                                </div>
+
+                                                <div class="col-md-7 my-auto pl-0">
+
+                                                    <div class="card__post__body">
+
+                                                        <div class="card__post__content">
+
+                                                            <div class="card__post__category">
+
+                                                                <a href="kategori=<?= urlencode($news['category_slug']); ?>" class="text-white">
+
+                                                                    <?= htmlspecialchars($news['name_category']); ?>
+
+                                                                </a>
+
+                                                            </div>
+
+                                                            <div class="card__post__author-info mb-2">
+
+                                                                <ul class="list-inline">
+
+                                                                    <li class="list-inline-item">
+
+                                                                        <span class="text-primary">
+
+                                                                            <?= htmlspecialchars($userPublic['full_name']); ?>
+
+                                                                        </span>
+
+                                                                    </li>
+
+                                                                    <li class="list-inline-item">
+
+                                                                        <span class="text-dark text-capitalize">
+                                                                            <?= date('d M Y', strtotime($news['created_at'])); ?>
+
+                                                                        </span>
+
+                                                                    </li>
+
+                                                                </ul>
+
+                                                            </div>
+
+                                                            <div class="card__post__title">
+
+                                                                <h5>
+
+                                                                    <a href="<?= urlencode($news['slug']); ?>">
+
+                                                                        <?= htmlspecialchars($news['post_title']); ?>
+
+                                                                    </a>
+
+                                                                </h5>
+
+                                                                <p class="d-none d-lg-block d-xl-block mb-0">
+
+                                                                    <?= htmlspecialchars($excerpt); ?>
+
+                                                                </p>
+
+                                                            </div>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    <?php endwhile; ?>
+
+                                <?php else: ?>
+
+                                    <div class="alert alert-warning mt-3">
+                                        Artikel Belum ada.
+                                    </div>
+
+                                <?php endif; ?>
+
+                            </div>
+                            <div class="mx-auto">
+                                <!-- Pagination -->
+
+                                <div class="pagination-area">
+
+                                    <div class="pagination">
+
+
+
+                                    </div>
+
+                                </div>
+                            </div>
+                        </aside>
                     </div>
 
                 </div>
@@ -229,6 +508,8 @@
     <div id="app-settings" style="display: none;">
         <app-settings layout-active="fixed"></app-settings>
     </div>
+
+    <?php include 'includes/mobile_menu.php'; ?>
 
     <footer class="dashboard-footer mt-4">
         <div class="container-fluid">
@@ -296,6 +577,7 @@
 
     <!-- App Settings (safe to remove) -->
     <script src="../assets/js/app-settings.js"></script>
+
 
 </body>
 

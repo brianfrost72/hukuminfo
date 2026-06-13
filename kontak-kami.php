@@ -71,6 +71,29 @@ if (isset($_POST['send_message'])) {
         $error = "Pesan gagal dikirim. Error: " . $mail->ErrorInfo;
     }
 }
+
+// SOCIAL MEDIA
+require_once __DIR__ . '/koneksi.php';
+
+$socialMedia = [];
+
+$qSocmed = mysqli_query($conn, "
+    SELECT
+        sm.account_name,
+        sm.link_platform,
+        ls.name_platform
+    FROM social_media sm
+    INNER JOIN list_socmed ls
+        ON ls.id = sm.platform_id
+    ORDER BY sm.id ASC
+");
+
+if ($qSocmed && mysqli_num_rows($qSocmed) > 0) {
+
+    while ($row = mysqli_fetch_assoc($qSocmed)) {
+        $socialMedia[] = $row;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -235,7 +258,7 @@ if (isset($_POST['send_message'])) {
                 </div>
 
                 <div class="col-md-4">
-                    <h5>Info location</h5>
+                    <h5>Alamat Kami</h5>
                     <div class="wrap__contact-form-office">
                         <ul class="list-unstyled">
                             <li>
@@ -270,34 +293,65 @@ if (isset($_POST['send_message'])) {
                         </ul>
 
                         <div class="social__media">
-                            <h5>find us</h5>
+                            <h5>Temukan Kami Di :</h5>
+
                             <ul class="list-inline">
 
-                                <li class="list-inline-item">
-                                    <a href="#" class="btn btn-social rounded text-white facebook">
-                                        <i class="fa fa-facebook"></i>
-                                    </a>
-                                </li>
-                                <li class="list-inline-item">
-                                    <a href="#" class="btn btn-social rounded text-white twitter">
-                                        <i class="fa fa-twitter"></i>
-                                    </a>
-                                </li>
-                                <li class="list-inline-item">
-                                    <a href="#" class="btn btn-social rounded text-white whatsapp">
-                                        <i class="fa fa-whatsapp"></i>
-                                    </a>
-                                </li>
-                                <li class="list-inline-item">
-                                    <a href="#" class="btn btn-social rounded text-white telegram">
-                                        <i class="fa fa-telegram"></i>
-                                    </a>
-                                </li>
-                                <li class="list-inline-item">
-                                    <a href="#" class="btn btn-social rounded text-white linkedin">
-                                        <i class="fa fa-linkedin"></i>
-                                    </a>
-                                </li>
+                                <?php foreach ($socialMedia as $socmed): ?>
+
+                                    <?php
+
+                                    $platform = strtolower(trim($socmed['name_platform'] ?? ''));
+
+                                    $icons = [
+                                        'facebook'  => 'fa-brands fa-facebook-f',
+                                        'twitter'   => 'fa-brands fa-twitter',
+                                        'x'         => 'fa-brands fa-x-twitter',
+                                        'instagram' => 'fa-brands fa-instagram',
+                                        'youtube'   => 'fa-brands fa-youtube',
+                                        'linkedin'  => 'fa-brands fa-linkedin-in',
+                                        'tiktok'    => 'fa-brands fa-tiktok',
+                                        'telegram'  => 'fa-brands fa-telegram',
+                                        'whatsapp'  => 'fa-brands fa-whatsapp'
+                                    ];
+
+                                    $btnClass = [
+                                        'facebook'  => 'facebook',
+                                        'twitter'   => 'twitter',
+                                        'x'         => 'twitter',
+                                        'instagram' => 'instagram',
+                                        'youtube'   => 'youtube',
+                                        'linkedin'  => 'linkedin',
+                                        'telegram'  => 'telegram',
+                                        'whatsapp'  => 'whatsapp',
+                                        'tiktok'    => 'tiktok'
+                                    ];
+
+                                    $icon  = $icons[$platform] ?? 'fas fa-globe';
+                                    $class = $btnClass[$platform] ?? 'secondary';
+
+                                    $link  = htmlspecialchars($socmed['link_platform'] ?? '#');
+                                    $title = htmlspecialchars($socmed['account_name'] ?? 'Social Media');
+
+                                    ?>
+
+                                    <li class="list-inline-item">
+
+                                        <a
+                                            href="<?= htmlspecialchars($socmed['link_platform'] ?? '#'); ?>"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            title="<?= htmlspecialchars($socmed['account_name'] ?? 'Social Media'); ?>"
+                                            class="btn btn-social rounded text-white <?= $class; ?>">
+
+                                            <i class="<?= $icon; ?>"></i>
+
+                                        </a>
+
+                                    </li>
+
+                                <?php endforeach; ?>
+
                             </ul>
                         </div>
                     </div>

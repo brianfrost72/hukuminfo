@@ -673,7 +673,8 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                                                     <li class="list-inline-item">
                                                         <span class="text-primary">
-                                                            by <?= htmlspecialchars($trending['author_name']) ?>
+                                                            <i class="fa fa-pen me-1"></i>
+                                                            : <?= htmlspecialchars($trending['author_name']) ?>
                                                         </span>
                                                     </li>
 
@@ -753,7 +754,8 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                                                         <li class="list-inline-item">
                                                             <span class="text-primary">
-                                                                by <?= htmlspecialchars($highlight['author_name']) ?>
+                                                                <i class="fa fa-pen me-1"></i>
+                                                                : <?= htmlspecialchars($highlight['author_name']) ?>
                                                             </span>
                                                         </li>
 
@@ -815,7 +817,8 @@ $adsData = mysqli_fetch_assoc($adsQuery);
                                                 <ul class="list-inline">
                                                     <li class="list-inline-item">
                                                         <span class="text-primary">
-                                                            by <?= htmlspecialchars($highlight2['author_name']) ?>
+                                                            <i class="fa fa-pen me-1"></i>
+                                                            : <?= htmlspecialchars($highlight2['author_name']) ?>
                                                         </span>
                                                     </li>
 
@@ -862,7 +865,8 @@ $adsData = mysqli_fetch_assoc($adsQuery);
                                                 <ul class="list-inline">
                                                     <li class="list-inline-item">
                                                         <span class="text-primary">
-                                                            by <?= htmlspecialchars($highlight3['author_name']) ?>
+                                                            <i class="fa fa-pen me-1"></i>
+                                                            : <?= htmlspecialchars($highlight3['author_name']) ?>
                                                         </span>
                                                     </li>
 
@@ -913,7 +917,8 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                                                 <li class="list-inline-item">
                                                     <span class="text-primary">
-                                                        by <?= htmlspecialchars($post['author_name']) ?>
+                                                        <i class="fa fa-pen me-1"></i>
+                                                        : <?= htmlspecialchars($post['author_name']) ?>
                                                     </span>
                                                 </li>
 
@@ -990,7 +995,8 @@ $adsData = mysqli_fetch_assoc($adsQuery);
                                                     <ul class="list-inline">
                                                         <li class="list-inline-item">
                                                             <span>
-                                                                by <?= htmlspecialchars($bookmarkHighlightLeft['author_name']) ?>
+                                                                <i class="fa fa-pen me-1"></i>
+                                                                : <?= htmlspecialchars($bookmarkHighlightLeft['author_name']) ?>
                                                             </span>
                                                         </li>
 
@@ -1044,7 +1050,8 @@ $adsData = mysqli_fetch_assoc($adsQuery);
                                                     <ul class="list-inline">
                                                         <li class="list-inline-item">
                                                             <span>
-                                                                by <?= htmlspecialchars($bookmarkHighlightRight['author_name']) ?>
+                                                                <i class="fa fa-pen me-1"></i>
+                                                                : <?= htmlspecialchars($bookmarkHighlightRight['author_name']) ?>
                                                             </span>
                                                         </li>
 
@@ -1096,7 +1103,8 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                                                                     <li class="list-inline-item">
                                                                         <span class="text-primary">
-                                                                            by <?= htmlspecialchars($post['author_name']) ?>
+                                                                            <i class="fa fa-pen me-1"></i>
+                                                                            : <?= htmlspecialchars($post['author_name']) ?>
                                                                         </span>
                                                                     </li>
 
@@ -1155,7 +1163,8 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                                                                     <li class="list-inline-item">
                                                                         <span class="text-primary">
-                                                                            by <?= htmlspecialchars($post['author_name']) ?>
+                                                                            <i class="fa fa-pen me-1"></i>
+                                                                            : <?= htmlspecialchars($post['author_name']) ?>
                                                                         </span>
                                                                     </li>
 
@@ -1295,7 +1304,8 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                                                             <li class="list-inline-item">
                                                                 <span class="text-primary">
-                                                                    by <?= htmlspecialchars($post['author_name']); ?>
+                                                                    <i class="fa fa-pen me-1"></i>
+                                                                    : <?= htmlspecialchars($post['author_name']); ?>
                                                                 </span>
                                                             </li>
 
@@ -1385,7 +1395,8 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                                                                     <li class="list-inline-item">
                                                                         <span class="text-primary">
-                                                                            by <?= htmlspecialchars($post['author_name']); ?>
+                                                                            <i class="fa fa-pen me-1"></i>
+                                                                            : <?= htmlspecialchars($post['author_name']); ?>
                                                                         </span>
                                                                     </li>
 
@@ -1413,7 +1424,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                                                                 <p class="d-none d-lg-block d-xl-block mb-0">
 
-                                                                    <?= mb_substr(strip_tags($post['post_desc']), 0, 120); ?>...
+                                                                    <?= mb_substr(strip_tags($post['post_desc']), 0, 120); ?>
 
                                                                 </p>
 
@@ -1474,7 +1485,8 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                                                     <li class="list-inline-item">
                                                         <span class="text-primary">
-                                                            by <?= htmlspecialchars($latestBig['author_name']) ?>
+                                                            <i class="fa fa-pen me-1"></i>
+                                                            : <?= htmlspecialchars($latestBig['author_name']) ?>
                                                         </span>
                                                     </li>
 
@@ -1493,7 +1505,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
                                                 </h5>
 
                                                 <p>
-                                                    <?= mb_substr(strip_tags($latestBig['post_desc']), 0, 120) ?>...
+                                                    <?= mb_substr(strip_tags($latestBig['post_desc']), 0, 120) ?>
                                                 </p>
 
                                             </div>
@@ -1534,7 +1546,8 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                                                                     <li class="list-inline-item">
                                                                         <span class="text-primary">
-                                                                            by <?= htmlspecialchars($post['author_name']) ?>
+                                                                            <i class="fa fa-pen me-1"></i>
+                                                                            : <?= htmlspecialchars($post['author_name']) ?>
                                                                         </span>
                                                                     </li>
 
@@ -1681,7 +1694,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                                             <li class="list-inline-item">
 
-                                                <a href="tags.php?slug=<?= urlencode($tag['tag_slug']); ?>">
+                                                <a href="tags=<?= urlencode($tag['tag_slug']); ?>">
 
                                                     #<?= htmlspecialchars($tag['tag_name']); ?>
 
@@ -1695,7 +1708,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                                             <li class="list-inline-item">
 
-                                                <a href="tags.php">
+                                                <a href="tags">
 
                                                     +<?= $totalTagsSidebar - $maxTags; ?> Lainnya
 
@@ -1750,70 +1763,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                         <div class="pagination-area">
 
-                            <div class="pagination">
-
-                                <!-- PREV -->
-
-                                <?php if ($currentPage > 1): ?>
-
-                                    <a href="?page=<?= $currentPage - 1 ?>">
-                                        &laquo;
-                                    </a>
-
-                                <?php endif; ?>
-
-                                <?php
-
-                                $start = max(1, $currentPage - 2);
-                                $end   = min($totalPages, $currentPage + 2);
-
-                                if ($start > 1) {
-
-                                    echo '<a href="?page=1">1</a>';
-
-                                    if ($start > 2) {
-                                        echo '<span class="px-2">...</span>';
-                                    }
-                                }
-
-                                for ($i = $start; $i <= $end; $i++):
-
-                                ?>
-
-                                    <a
-                                        href="?page=<?= $i ?>"
-                                        class="<?= ($i == $currentPage) ? 'active' : '' ?>">
-
-                                        <?= $i ?>
-
-                                    </a>
-
-                                <?php endfor; ?>
-
-                                <?php
-
-                                if ($end < $totalPages) {
-
-                                    if ($end < ($totalPages - 1)) {
-                                        echo '<span class="px-2">...</span>';
-                                    }
-
-                                    echo '<a href="?page=' . $totalPages . '">' . $totalPages . '</a>';
-                                }
-
-                                ?>
-
-                                <!-- NEXT -->
-
-                                <?php if ($currentPage < $totalPages): ?>
-
-                                    <a href="?page=<?= $currentPage + 1 ?>">
-                                        &raquo;
-                                    </a>
-
-                                <?php endif; ?>
-
-                            </div>
+                            <ul class="pagination justify-content-center" id="homePagination"></ul>
 
                         </div>
 
@@ -1848,6 +1798,86 @@ $adsData = mysqli_fetch_assoc($adsQuery);
             "logo": "https://hukuminfo.id/favicon.png",
             "description": "Media informasi dan edukasi hukum Indonesia."
         }
+    </script>
+
+    <script>
+        const currentPage = <?= $currentPage ?>;
+        const totalPages = <?= $totalPages ?>;
+
+        function buildPagination(current, total) {
+            const pagination = document.getElementById('homePagination');
+
+            if (!pagination || total <= 1) return;
+
+            let html = '';
+
+            // PREV
+            html += `
+        <li class="page-item ${current === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="?page=${current - 1}">
+                <i class="fa fa-angle-left"></i>
+            </a>
+        </li>
+    `;
+
+            const pages = [];
+
+            // awal
+            for (let i = 1; i <= Math.min(5, total); i++) {
+                pages.push(i);
+            }
+
+            // sekitar current
+            for (let i = current - 1; i <= current + 1; i++) {
+                if (i > 1 && i < total) {
+                    pages.push(i);
+                }
+            }
+
+            // akhir
+            for (let i = Math.max(total - 2, 1); i <= total; i++) {
+                pages.push(i);
+            }
+
+            // hapus duplikat
+            const uniquePages = [...new Set(pages)].sort((a, b) => a - b);
+
+            let prevPage = 0;
+
+            uniquePages.forEach(page => {
+
+                if (prevPage && page - prevPage > 1) {
+                    html += `
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            `;
+                }
+
+                html += `
+            <li class="page-item ${page === current ? 'active' : ''}">
+                <a class="page-link" href="?page=${page}">
+                    ${page}
+                </a>
+            </li>
+        `;
+
+                prevPage = page;
+            });
+
+            // NEXT
+            html += `
+        <li class="page-item ${current === total ? 'disabled' : ''}">
+            <a class="page-link" href="?page=${current + 1}">
+                <i class="fa fa-angle-right"></i>
+            </a>
+        </li>
+    `;
+
+            pagination.innerHTML = html;
+        }
+
+        buildPagination(currentPage, totalPages);
     </script>
 </body>
 
