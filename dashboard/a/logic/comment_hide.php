@@ -3,32 +3,21 @@ session_start();
 
 require_once __DIR__ . '/../../../PHPMailer/comment_hidden_email.php';
 
-if (!function_exists('sendCommentHiddenEmail')) {
-    function sendCommentHiddenEmail(
-        string $email,
-        ?string $fullName,
-        ?string $comment,
-        ?string $reasonStatus,
-        ?string $hideDescription
-    ) {
-        $subject = 'Komentar Anda Disembunyikan';
-        $body = 'Halo ' . ($fullName ?: 'Pengguna') . ",\n\n";
-        $body .= "Komentar Anda:\n" . ($comment ?? '') . "\n\n";
-        $body .= "Alasan: " . ($reasonStatus ?? '') . "\n";
-        $body .= "Keterangan tambahan: " . ($hideDescription ?? '') . "\n\n";
-        $body .= 'Terima kasih.';
-
-        if (!empty($email)) {
-            @mail($email, $subject, $body);
-        }
-
-        return true;
-    }
-}
-
 require_once __DIR__ . '/../../../koneksi.php';
 
-$commentId = intval($_POST['comment_id']);
+if (
+    !isset($_POST['comment_id']) ||
+    !is_numeric($_POST['comment_id'])
+) {
+
+    header(
+        "Location: ../manage_comments.php?hidden=failed"
+    );
+
+    exit;
+}
+
+$commentId = (int) $_POST['comment_id'];
 
 $reasonStatus =
     trim($_POST['reason_status']);
@@ -83,16 +72,24 @@ mysqli_query(
     "
 );
 
-sendCommentHiddenEmail(
-    $email,
-    $fullName,
-    $comment,
-    $reasonStatus,
-    $hideDescription
-);
+if (
+    sendCommentHiddenEmail(
+        $email,
+        $fullName,
+        $comment,
+        $reasonStatus,
+        $hideDescription
+    )
+) {
 
-header(
-    "Location: ../manage_comments.php?hidden=success"
-);
+    header(
+        "Location: ../manage_comments.php?hidden=success"
+    );
+} else {
+
+    header(
+        "Location: ../manage_comments.php?hidden=failed"
+    );
+}
 
 exit;

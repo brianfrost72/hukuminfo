@@ -766,8 +766,56 @@ $totalMasuk = $countMasuk['total'];
     <script src="../assets/js/flatpickr.js"></script>
 
     <!-- Toastr -->
-    <script src="assets/vendor/toastr.min.js"></script>
-    <script src="assets/js/toastr.js"></script>
+    <script src="../assets/vendor/toastr.min.js"></script>
+    <script src="../assets/js/toastr.js"></script>
+
+    <?php if (isset($_GET['hidden']) && $_GET['hidden'] == 'success') : ?>
+
+        <script>
+            $(function() {
+
+                toastr.success(
+                    'Komentar berhasil disembunyikan dan notifikasi email berhasil dikirim.',
+                    'Berhasil', {
+                        closeButton: true,
+                        progressBar: true,
+                        timeOut: 5000
+                    }
+                );
+
+            });
+        </script>
+
+    <?php endif; ?>
+
+
+    <?php if (isset($_GET['hidden']) && $_GET['hidden'] == 'failed') : ?>
+
+        <script>
+            $(function() {
+
+                toastr.error(
+                    'Komentar berhasil disembunyikan tetapi email gagal dikirim.',
+                    'Gagal', {
+                        closeButton: true,
+                        progressBar: true,
+                        timeOut: 7000
+                    }
+                );
+
+            });
+        </script>
+
+    <?php endif; ?>
+
+    <script>
+        if (window.history.replaceState) {
+            window.history.replaceState({},
+                document.title,
+                window.location.pathname
+            );
+        }
+    </script>
 
     <script>
         function initTable(

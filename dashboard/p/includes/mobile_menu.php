@@ -83,6 +83,28 @@ if (!empty($userData['photo_profile'])) {
     }
 }
 
+// =========================
+// SOCIAL MEDIA
+// =========================
+
+$socialMedia = [];
+
+$qSocmed = mysqli_query($conn, "
+    SELECT
+        sm.account_name,
+        sm.link_platform,
+        ls.name_platform
+    FROM social_media sm
+    INNER JOIN list_socmed ls
+        ON ls.id = sm.platform_id
+    ORDER BY ls.name_platform ASC
+");
+
+if ($qSocmed && mysqli_num_rows($qSocmed) > 0) {
+    while ($row = mysqli_fetch_assoc($qSocmed)) {
+        $socialMedia[] = $row;
+    }
+}
 ?>
 
 <div class="mdk-drawer  js-mdk-drawer"
@@ -180,38 +202,74 @@ if (!empty($userData['photo_profile'])) {
                     dan informasi terpercaya hanya di Hukuminfo.
                 </p>
 
-                <div class="d-flex justify-content-center align-items-center"
+                <div class="d-flex justify-content-center align-items-center flex-wrap"
                     style="gap:15px;font-size:22px;">
 
-                    <a href="https://facebook.com"
-                        target="_blank"
-                        style="color:#1877F2;">
-                        <i class="fab fa-facebook"></i>
-                    </a>
+                    <?php foreach ($socialMedia as $socmed): ?>
 
-                    <a href="https://instagram.com"
-                        target="_blank"
-                        style="color:#E4405F;">
-                        <i class="fab fa-instagram"></i>
-                    </a>
+                        <?php
+                        $platform = strtolower(trim($socmed['name_platform']));
 
-                    <a href="https://x.com"
-                        target="_blank"
-                        style="color:#000;">
-                        <i class="fab fa-x-twitter"></i>
-                    </a>
+                        $icon = 'fa-link';
+                        $color = '#6c757d';
 
-                    <a href="https://youtube.com"
-                        target="_blank"
-                        style="color:#FF0000;">
-                        <i class="fab fa-youtube"></i>
-                    </a>
+                        switch ($platform) {
 
-                    <a href="https://tiktok.com"
-                        target="_blank"
-                        style="color:#111;">
-                        <i class="fab fa-tiktok"></i>
-                    </a>
+                            case 'facebook':
+                                $icon = 'fa-facebook';
+                                $color = '#1877F2';
+                                break;
+
+                            case 'instagram':
+                                $icon = 'fa-instagram';
+                                $color = '#E4405F';
+                                break;
+
+                            case 'twitter':
+                            case 'x':
+                            case 'x twitter':
+                                $icon = 'fa-x-twitter';
+                                $color = '#000';
+                                break;
+
+                            case 'youtube':
+                                $icon = 'fa-youtube';
+                                $color = '#FF0000';
+                                break;
+
+                            case 'tiktok':
+                                $icon = 'fa-tiktok';
+                                $color = '#111';
+                                break;
+
+                            case 'linkedin':
+                                $icon = 'fa-linkedin';
+                                $color = '#0A66C2';
+                                break;
+
+                            case 'telegram':
+                                $icon = 'fa-telegram';
+                                $color = '#229ED9';
+                                break;
+
+                            case 'whatsapp':
+                                $icon = 'fa-whatsapp';
+                                $color = '#25D366';
+                                break;
+                        }
+                        ?>
+
+                        <a href="<?= htmlspecialchars($socmed['link_platform']); ?>"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="<?= htmlspecialchars($socmed['account_name']); ?>"
+                            style="color:<?= $color; ?>;">
+
+                            <i class="fab <?= $icon; ?>"></i>
+                        </a>
+
+                    <?php endforeach; ?>
+
                 </div>
             </div>
         </div>
