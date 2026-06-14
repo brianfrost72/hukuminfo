@@ -7,7 +7,8 @@
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="apple-touch-icon" href="icon.png">
+    <!-- favicon.ico in the root directory -->
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
 
     <!-- google fonts -->
     <link
@@ -293,7 +294,7 @@
                         <div class="card">
                             <div class="card-body">
                                 <?php
-                                $current_page = basename($_SERVER['PHP_SELF']);
+                                $current_page = pathinfo($_SERVER['PHP_SELF'], PATHINFO_FILENAME);
                                 ?>
 
                                 <h4 class="mb-3">Informasi</h4>

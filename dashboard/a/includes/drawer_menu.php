@@ -88,6 +88,18 @@ if (!empty($userData['photo_profile'])) {
         <div
             class="sidebar sidebar-light sidebar-left sidebar-p-t"
             data-perfect-scrollbar>
+            <div class="text-center px-3 pb-3 border-bottom mb-3">
+                <a href="https://hukuminfo.id">
+                    <img src="/hukuminfo/dashboard/assets/images/logos/logo.png"
+                        alt="Hukuminfo"
+                        style="
+                max-width:180px;
+                width:100%;
+                height:auto;
+                margin-bottom:10px;
+            ">
+                </a>
+            </div>
             <!-- *********************************FIRST MENU********************************* -->
             <div class="sidebar-heading">Menu</div>
             <ul class="sidebar-menu">

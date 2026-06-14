@@ -56,6 +56,9 @@ while ($row = mysqli_fetch_assoc($result)) {
         content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Daftar Bookmark - Konig Guard Bureau</title>
 
+    <!-- favicon.ico in the root directory -->
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
+    
     <!-- Perfect Scrollbar -->
     <link type="text/css"
         href="../assets/vendor/perfect-scrollbar.css"

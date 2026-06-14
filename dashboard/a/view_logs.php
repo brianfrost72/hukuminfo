@@ -8,6 +8,9 @@
         name="viewport"
         content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>View Log - Dashboard | Hukuminfo.id</title>
+    
+    <!-- favicon.ico in the root directory -->
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
 
     <!-- Perfect Scrollbar -->
     <link

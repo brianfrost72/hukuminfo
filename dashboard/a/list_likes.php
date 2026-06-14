@@ -89,6 +89,8 @@ while ($row = mysqli_fetch_assoc($query)) {
         content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Daftar Like - Dashboard | Hukuminfo.id</title>
 
+    <!-- favicon.ico in the root directory -->
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
 
     <!-- Perfect Scrollbar -->
     <link

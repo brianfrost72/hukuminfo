@@ -156,6 +156,8 @@ $qCategory = mysqli_query($conn, "
         content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Manage Kategori Artikel - Dashboard | Hukuminfo.id</title>
 
+    <!-- favicon.ico in the root directory -->
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
 
     <!-- Perfect Scrollbar -->
     <link

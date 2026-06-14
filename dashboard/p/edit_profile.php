@@ -335,6 +335,8 @@ if (!empty($user['date_birth'])) {
         content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Edit Profil - Dashboard | Hukuminfo.id</title>
 
+    <!-- favicon.ico in the root directory -->
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
 
     <!-- Perfect Scrollbar -->
     <link

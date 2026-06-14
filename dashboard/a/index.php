@@ -306,6 +306,9 @@ $tablet_total  = $device_stat['Tablet'] ?? 0;
     content="width=device-width, initial-scale=1, shrink-to-fit=no" />
   <title>Dashboard | Hukuminfo.id</title>
 
+  <!-- favicon.ico in the root directory -->
+  <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
+
   <!-- Select2 -->
   <link
     rel="stylesheet"

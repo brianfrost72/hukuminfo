@@ -420,6 +420,9 @@ $totalRows = mysqli_num_rows($result);
         name="viewport"
         content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Manage User Role - Dashboard | Hukuminfo.id</title>
+    
+    <!-- favicon.ico in the root directory -->
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
 
     <!-- Perfect Scrollbar -->
     <link

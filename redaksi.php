@@ -119,6 +119,7 @@ while ($row = mysqli_fetch_assoc($queryRedaksi)) {
     <link rel="canonical" href="https://hukuminfo.id/redaksi">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <!-- favicon.ico in the root directory -->
     <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
 
     <!-- google fonts -->
@@ -334,7 +335,7 @@ while ($row = mysqli_fetch_assoc($queryRedaksi)) {
                         <div class="card">
                             <div class="card-body">
                                 <?php
-                                $current_page = basename($_SERVER['PHP_SELF']);
+                               $current_page = pathinfo($_SERVER['PHP_SELF'], PATHINFO_FILENAME);
                                 ?>
 
                                 <h4 class="mb-3">Informasi</h4>

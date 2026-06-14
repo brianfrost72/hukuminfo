@@ -148,6 +148,9 @@ $authors = mysqli_query($conn, "
         name="viewport"
         content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Daftar Postingan - Dashboard | Hukuminfo.id</title>
+    
+    <!-- favicon.ico in the root directory -->
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
 
     <!-- Select2 -->
     <link rel="stylesheet" href="../assets/vendor/select2/select2.min.css">

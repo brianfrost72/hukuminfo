@@ -170,6 +170,9 @@ if (isset($_GET['delete'])) {
         content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Manage Iklan Popup - Dashboard | Hukuminfo.id</title>
 
+    <!-- favicon.ico in the root directory -->
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
+
     <link
         type="text/css"
         href="../assets/vendor/perfect-scrollbar.css"

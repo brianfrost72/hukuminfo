@@ -223,8 +223,9 @@ $queryOthers = mysqli_query($conn, "
     <meta name="description"
         content="Profil <?= htmlspecialchars($author['full_name']); ?> sebagai <?= htmlspecialchars($author['role_name']); ?> di Hukuminfo.id.">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <link rel="apple-touch-icon" href="icon.png">
+    
+    <!-- favicon.ico in the root directory -->
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
 
     <!-- google fonts -->
     <link

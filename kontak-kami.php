@@ -106,8 +106,9 @@ if ($qSocmed && mysqli_num_rows($qSocmed) > 0) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link rel="manifest" href="site.webmanifest">
+    
     <!-- favicon.ico in the root directory -->
-    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
 
     <meta name="theme-color" content="#030303">
     <!-- google fonts -->

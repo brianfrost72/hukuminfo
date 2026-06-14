@@ -90,6 +90,8 @@ while ($row = mysqli_fetch_assoc($result)) {
         content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>List Bookmark - Dashboard | Hukuminfo.id</title>
 
+    <!-- favicon.ico in the root directory -->
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
 
     <!-- Perfect Scrollbar -->
     <link
