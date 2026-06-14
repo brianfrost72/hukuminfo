@@ -283,32 +283,32 @@ if (isset($_POST['remove_photo'])) {
 
 if (isset($_POST['delete_account'])) {
 
-    // cek cooldown 15 hari
+    // masih masa cooldown setelah membatalkan hapus akun
     if (
         !empty($user['delete_cancel_until']) &&
         strtotime($user['delete_cancel_until']) > time()
     ) {
 
-        die("Anda baru membatalkan penghapusan akun. Tunggu sampai " .
-            date(
-                'd F Y H:i',
-                strtotime($user['delete_cancel_until'])
-            ));
+        $toast_error =
+            'Anda baru membatalkan penghapusan akun. Silakan tunggu sampai ' .
+            date('d F Y H:i', strtotime($user['delete_cancel_until']));
+
+    } else {
+
+        mysqli_query($conn, "
+            UPDATE users
+            SET
+                pending_delete = 1,
+                delete_requested_at = NOW(),
+                delete_scheduled_at = DATE_ADD(NOW(), INTERVAL 30 DAY)
+            WHERE id = '$user_id'
+        ");
+
+        session_destroy();
+
+        header('Location: logout.php');
+        exit;
     }
-
-    mysqli_query($conn, "
-        UPDATE users
-        SET
-            pending_delete = 1,
-            delete_requested_at = NOW(),
-            delete_scheduled_at = DATE_ADD(NOW(), INTERVAL 30 DAY)
-        WHERE id = '$user_id'
-    ");
-
-    session_destroy();
-
-    header("Location: logout.php");
-    exit;
 }
 
 // Menghitung Umur
@@ -371,9 +371,12 @@ if (!empty($user['date_birth'])) {
     <link type="text/css"
         href="../assets/vendor/toastr.min.css"
         rel="stylesheet">
+        <!-- Font Awesome FREE Icons -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 </head>
 
-<body class="layout-fluid layout-sticky-subnav">
+<body class="layout-fixed layout-sticky-subnav">
     <div class="preloader"></div>
 
     <!-- Header Layout -->
@@ -696,35 +699,15 @@ if (!empty($user['date_birth'])) {
 
                                             <div class="mt-4 text-left">
 
-                                                <?php if ($user['pending_delete'] == 0): ?>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-danger"
+                                                    data-toggle="modal"
+                                                    data-target="#deleteAccountModal">
 
-                                                    <button
-                                                        type="button"
-                                                        class="btn btn-danger"
-                                                        data-toggle="modal"
-                                                        data-target="#deleteAccountModal">
+                                                    HAPUS AKUN
 
-                                                        HAPUS AKUN
-
-                                                    </button>
-
-                                                <?php else: ?>
-
-                                                    <div
-                                                        class="alert alert-warning mt-3 mb-0">
-
-                                                        Akun sedang menunggu penghapusan pada
-
-                                                        <strong>
-                                                            <?= date(
-                                                                'd F Y H:i',
-                                                                strtotime($user['delete_scheduled_at'])
-                                                            ) ?>
-                                                        </strong>
-
-                                                    </div>
-
-                                                <?php endif; ?>
+                                                </button>
 
                                             </div>
 
@@ -1083,42 +1066,12 @@ if (!empty($user['date_birth'])) {
 
     </div>
 
+    <!-- ********************************** // MENU-Drawer ********************************** -->
+    <?php include 'includes/mobile_menu.php'; ?>
+    <!-- ********************************** //END MENU-drawer ********************************** -->
+
     <footer class="dashboard-footer mt-4">
-        <div class="container-fluid">
-            <div class="row align-items-center">
-
-                <!-- LEFT -->
-                <div class="col-md-6 text-md-left text-center mb-2 mb-md-0">
-                    <span class="footer-text">
-                        © 2026 Hukuminfo.id. All rights reserved.
-                    </span>
-                </div>
-
-                <!-- RIGHT -->
-                <div class="col-md-6 text-md-right text-center">
-                    <a href="#" class="footer-social">
-                        <i class="fab fa-facebook-f"></i>
-                    </a>
-
-                    <a href="#" class="footer-social">
-                        <i class="fab fa-instagram"></i>
-                    </a>
-
-                    <a href="#" class="footer-social">
-                        <i class="fab fa-x-twitter"></i>
-                    </a>
-
-                    <a href="#" class="footer-social">
-                        <i class="fab fa-youtube"></i>
-                    </a>
-
-                    <a href="#" class="footer-social">
-                        <i class="fab fa-tiktok"></i>
-                    </a>
-                </div>
-
-            </div>
-        </div>
+        <?php include 'includes/footer.php'; ?>
     </footer>
 
     <!-- jQuery -->
@@ -1210,6 +1163,21 @@ if (!empty($user['date_birth'])) {
         </script>
 
         <?php unset($_SESSION['photo_error']); ?>
+    <?php endif; ?>
+
+    <?php if (!empty($toast_error)): ?>
+        <script>
+            toastr.options = {
+                "closeButton": true,
+                "progressBar": true,
+                "positionClass": "toast-top-right",
+                "timeOut": "8000"
+            };
+
+            toastr.warning(
+                <?= json_encode($toast_error) ?>
+            );
+        </script>
     <?php endif; ?>
 
     <script>

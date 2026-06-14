@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/../auth.php';
 require_once __DIR__ . "/../koneksi.php";
 
 
@@ -16,6 +16,7 @@ SELECT
     pl.created_at,
 
     p.post_title,
+    p.slug,
 
     u.email,
 
@@ -43,15 +44,24 @@ $listLikes = [];
 
 while ($row = mysqli_fetch_assoc($query)) {
 
-    if (!empty($row['photo_profile'])) {
+    $avatar = '';
 
-        $avatar = "../assets/images/uploads/public_photos/" . $row['photo_profile'];
+    if (
+        !empty($row['photo_profile']) &&
+        file_exists(
+            __DIR__ . '/../assets/images/uploads/public_photos/' . $row['photo_profile']
+        )
+    ) {
+
+        $avatar = '../assets/images/uploads/public_photos/' . $row['photo_profile'];
     } else {
 
-        if ($row['gender'] == 'Perempuan') {
-            $avatar = "../assets/images/avatar/avatar_women.png";
+        if (strtolower($row['gender']) == 'perempuan') {
+
+            $avatar = '../assets/images/avatar/avatar-women.png';
         } else {
-            $avatar = "../assets/images/avatar/avatar_men.png";
+
+            $avatar = '../assets/images/avatar/avatar-men.png';
         }
     }
 
@@ -60,6 +70,7 @@ while ($row = mysqli_fetch_assoc($query)) {
         'avatar'     => $avatar,
         'email'      => $row['email'],
         'postingan'  => $row['post_title'],
+        'slug'       => $row['slug'],
         'tanggal'    => date('d M Y H:i', strtotime($row['created_at'])),
         'timestamp'  => strtotime($row['created_at'])
     ];
@@ -174,8 +185,8 @@ while ($row = mysqli_fetch_assoc($query)) {
                             <div class="col-md-2 ml-auto">
                                 <label>Show Entries</label>
                                 <select class="form-control" id="showEntries">
-                                    <option value="5">5</option>
-                                    <option value="10" selected>10</option>
+                                    <option value="5" selected>5</option>
+                                    <option value="10">10</option>
                                     <option value="25">25</option>
                                 </select>
                             </div>
@@ -192,6 +203,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                                         <th>Email</th>
                                         <th>Postingan</th>
                                         <th>Tanggal Like</th>
+                                        <th width="130">Aksi</th>
                                     </tr>
                                 </thead>
 
@@ -281,7 +293,7 @@ while ($row = mysqli_fetch_assoc($query)) {
         const likesData = <?= json_encode($listLikes, JSON_UNESCAPED_UNICODE); ?>;
 
         let currentPage = 1;
-        let rowsPerPage = parseInt($('#showEntries').val());
+        let rowsPerPage = 5;
 
         function renderTable() {
 
@@ -316,7 +328,7 @@ while ($row = mysqli_fetch_assoc($query)) {
 
                 html = `
         <tr>
-            <td colspan="5" class="text-center">
+           <td colspan="6" class="text-center">
                 Tidak ada data
             </td>
         </tr>
@@ -348,6 +360,19 @@ while ($row = mysqli_fetch_assoc($query)) {
 
                 <td>${item.tanggal}</td>
 
+                <td class="text-center">
+
+    <a
+        href="https://hukuminfo.id/${item.slug}"
+        target="_blank"
+        class="btn btn-sm btn-info"
+        title="Lihat Artikel">
+
+        <i class="fa fa-eye"></i>
+
+    </a>
+
+</td>
             </tr>
             `;
                 });
@@ -371,17 +396,38 @@ while ($row = mysqli_fetch_assoc($query)) {
             let html = '';
 
             html += `
-    <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
+    <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
         <a class="page-link" href="#" data-page="prev">
-            Previous
+            <i class="fa fa-chevron-left"></i>
         </a>
     </li>
     `;
 
-            for (let i = 1; i <= totalPages; i++) {
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+
+            if (startPage > 1) {
 
                 html += `
-        <li class="page-item ${currentPage == i ? 'active' : ''}">
+        <li class="page-item">
+            <a class="page-link" href="#" data-page="1">1</a>
+        </li>
+        `;
+
+                if (startPage > 2) {
+
+                    html += `
+            <li class="page-item disabled">
+                <span class="page-link">...</span>
+            </li>
+            `;
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+
+                html += `
+        <li class="page-item ${currentPage === i ? 'active' : ''}">
             <a class="page-link" href="#" data-page="${i}">
                 ${i}
             </a>
@@ -389,10 +435,30 @@ while ($row = mysqli_fetch_assoc($query)) {
         `;
             }
 
+            if (endPage < totalPages) {
+
+                if (endPage < totalPages - 1) {
+
+                    html += `
+            <li class="page-item disabled">
+                <span class="page-link">...</span>
+            </li>
+            `;
+                }
+
+                html += `
+        <li class="page-item">
+            <a class="page-link" href="#" data-page="${totalPages}">
+                ${totalPages}
+            </a>
+        </li>
+        `;
+            }
+
             html += `
-    <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
+    <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
         <a class="page-link" href="#" data-page="next">
-            Next
+            <i class="fa fa-chevron-right"></i>
         </a>
     </li>
     `;

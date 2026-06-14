@@ -11,5 +11,5 @@ mysqli_query(
      WHERE id='$id'"
 );
 
-header("Location: manage_comments.php");
+header("Location: ../manage_comments.php");
 exit;

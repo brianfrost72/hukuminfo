@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/../auth.php';
 require_once __DIR__ . "/../koneksi.php";
 
 
@@ -21,6 +21,7 @@ SELECT
     u.email,
 
     pp.full_name,
+pp.gender,
     pp.photo_profile,
 
     (
@@ -65,6 +66,7 @@ SELECT
     u.email,
 
     pp.full_name,
+    pp.gender,
     pp.photo_profile,
 
     (
@@ -90,48 +92,6 @@ ORDER BY pc.created_at DESC
 ";
 
 $resultKomentarHidden = mysqli_query($conn, $sqlKomentarHidden);
-
-/*
-|--------------------------------------------------------------------------
-| AMBIL KOMENTAR REPLY
-|--------------------------------------------------------------------------
-*/
-$sqlKomentarMasuk = "
-SELECT
-    pc.id,
-    pc.comment,
-    pc.status,
-    pc.created_at,
-
-    p.post_title,
-
-    u.email,
-
-    pp.full_name,
-    pp.photo_profile,
-
-    COUNT(pr.id) AS total_reply
-
-FROM post_comments pc
-
-INNER JOIN post p
-    ON p.id = pc.post_id
-
-INNER JOIN users u
-    ON u.id = pc.user_id
-
-LEFT JOIN public_profile pp
-    ON pp.user_id = u.id
-
-LEFT JOIN post_comment_reply pr
-    ON pr.comment_id = pc.id
-
-WHERE pc.status='approved'
-
-GROUP BY pc.id
-
-ORDER BY pc.created_at DESC
-";
 
 /*
 |--------------------------------------------------------------------------
@@ -253,7 +213,7 @@ $totalMasuk = $countMasuk['total'];
                                 <label>Waktu</label>
                                 <select
                                     class="form-control"
-                                    id="filterWaktu">
+                                    id="filterWaktuMasuk">
 
                                     <option value="baru">
                                         Terbaru ke Terlama
@@ -270,7 +230,7 @@ $totalMasuk = $countMasuk['total'];
                                 <label>Show Entries</label>
                                 <select
                                     class="form-control"
-                                    id="showEntries">
+                                    id="showEntriesMasuk">
 
                                     <option value="5">5</option>
                                     <option value="10" selected>10</option>
@@ -311,17 +271,26 @@ $totalMasuk = $countMasuk['total'];
                                             <td>
                                                 <?php
 
-                                                if (!empty($row['photo_profile'])) {
+                                                $photoProfile = trim($row['photo_profile'] ?? '');
+
+                                                if (
+                                                    !empty($photoProfile) &&
+                                                    $photoProfile !== 'avatar-men.png' &&
+                                                    $photoProfile !== 'avatar-women.png' &&
+                                                    file_exists(
+                                                        __DIR__ . '/../assets/images/uploads/public_photos/' . $photoProfile
+                                                    )
+                                                ) {
+
                                                     $avatar =
-                                                        "../assets/images/uploads/public_photos/" .
-                                                        $row['photo_profile'];
+                                                        '../assets/images/uploads/public_photos/' .
+                                                        $photoProfile;
                                                 } else {
+
                                                     $avatar =
-                                                        $row['gender'] == 'Perempuan'
-
-                                                        ? "../assets/images/avatar/avatar_women.png"
-
-                                                        : "../assets/images/avatar/avatar_men.png";
+                                                        strtolower(trim($row['gender'] ?? '')) === 'perempuan'
+                                                        ? '../assets/images/avatar/avatar-women.png'
+                                                        : '../assets/images/avatar/avatar-men.png';
                                                 }
 
                                                 ?>
@@ -361,24 +330,30 @@ $totalMasuk = $countMasuk['total'];
                                                 <?= date('d F Y H:i', strtotime($row['created_at'])) ?>
                                             </td>
 
-                                            <td>
+                                            <td class="text-center">
 
-                                                <a
-                                                    href="comment_hide.php?id=<?= $row['id'] ?>"
-                                                    class="btn btn-sm btn-danger">
+                                                <div class="d-flex align-items-center justify-content-center">
 
-                                                    Sembunyikan
+                                                    <button
+                                                        class="btn btn-sm btn-danger btn-hide-comment mr-1"
+                                                        data-id="<?= $row['id'] ?>"
+                                                        data-toggle="modal"
+                                                        data-target="#hideCommentModal">
 
-                                                </a>
+                                                        Sembunyikan
 
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-sm btn-info btn-detail"
-                                                    data-id="<?= $row['id'] ?>">
+                                                    </button>
 
-                                                    Detail
+                                                    <button
+                                                        type="button"
+                                                        class="btn btn-sm btn-info btn-detail"
+                                                        data-id="<?= $row['id'] ?>">
 
-                                                </button>
+                                                        Detail
+
+                                                    </button>
+
+                                                </div>
 
                                             </td>
 
@@ -393,11 +368,11 @@ $totalMasuk = $countMasuk['total'];
                         <!-- PAGINATION -->
                         <div class="d-flex justify-content-between align-items-center mt-3">
 
-                            <div id="paginationInfo"></div>
+                            <div id="paginationInfoMasuk"></div>
 
                             <ul
                                 class="pagination mb-0"
-                                id="paginationKomentar">
+                                id="paginationKomentarMasuk">
                             </ul>
 
                         </div>
@@ -425,7 +400,7 @@ $totalMasuk = $countMasuk['total'];
                                 <label>Waktu</label>
                                 <select
                                     class="form-control"
-                                    id="filterWaktu">
+                                    id="filterWaktuHidden">
 
                                     <option value="baru">
                                         Terbaru ke Terlama
@@ -442,7 +417,7 @@ $totalMasuk = $countMasuk['total'];
                                 <label>Show Entries</label>
                                 <select
                                     class="form-control"
-                                    id="showEntries">
+                                    id="showEntriesHidden">
 
                                     <option value="5">5</option>
                                     <option value="10" selected>10</option>
@@ -483,17 +458,26 @@ $totalMasuk = $countMasuk['total'];
                                             <td>
                                                 <?php
 
-                                                if (!empty($row['photo_profile'])) {
+                                                $photoProfile = trim($row['photo_profile'] ?? '');
+
+                                                if (
+                                                    !empty($photoProfile) &&
+                                                    $photoProfile !== 'avatar-men.png' &&
+                                                    $photoProfile !== 'avatar-women.png' &&
+                                                    file_exists(
+                                                        __DIR__ . '/../assets/images/uploads/public_photos/' . $photoProfile
+                                                    )
+                                                ) {
+
                                                     $avatar =
-                                                        "../assets/images/uploads/public_photos/" .
-                                                        $row['photo_profile'];
+                                                        '../assets/images/uploads/public_photos/' .
+                                                        $photoProfile;
                                                 } else {
+
                                                     $avatar =
-                                                        $row['gender'] == 'Perempuan'
-
-                                                        ? "../assets/images/avatar/avatar_women.png"
-
-                                                        : "../assets/images/avatar/avatar_men.png";
+                                                        strtolower(trim($row['gender'] ?? '')) === 'perempuan'
+                                                        ? '../assets/images/avatar/avatar-women.png'
+                                                        : '../assets/images/avatar/avatar-men.png';
                                                 }
 
                                                 ?>
@@ -538,24 +522,28 @@ $totalMasuk = $countMasuk['total'];
                                                 <?= date('d F Y H:i', strtotime($row['created_at'])) ?>
                                             </td>
 
-                                            <td>
+                                            <td class="text-center">
 
-                                                <a
-                                                    href="comment_show.php?id=<?= $row['id'] ?>"
-                                                    class="btn btn-sm btn-success">
+                                                <div class="d-flex align-items-center justify-content-center">
 
-                                                    Tampilkan
+                                                    <a
+                                                        href="logic/comment_show.php?id=<?= $row['id'] ?>"
+                                                        class="btn btn-sm btn-success mr-1">
 
-                                                </a>
+                                                        Tampilkan
 
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-sm btn-info btn-detail"
-                                                    data-id="<?= $row['id'] ?>">
+                                                    </a>
 
-                                                    Detail
+                                                    <button
+                                                        type="button"
+                                                        class="btn btn-sm btn-info btn-detail"
+                                                        data-id="<?= $row['id'] ?>">
 
-                                                </button>
+                                                        Detail
+
+                                                    </button>
+
+                                                </div>
 
                                             </td>
 
@@ -570,11 +558,11 @@ $totalMasuk = $countMasuk['total'];
                         <!-- PAGINATION -->
                         <div class="d-flex justify-content-between align-items-center mt-3">
 
-                            <div id="paginationInfo"></div>
+                            <div id="paginationInfoHidden"></div>
 
                             <ul
                                 class="pagination mb-0"
-                                id="paginationKomentar">
+                                id="paginationKomentarHidden">
                             </ul>
 
                         </div>
@@ -640,123 +628,95 @@ $totalMasuk = $countMasuk['total'];
 
     <div
         class="modal fade"
-        id="detailKomentar<?= $row['id']; ?>"
+        id="hideCommentModal"
         tabindex="-1">
 
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog">
 
-            <div class="modal-content">
+            <form
+                method="POST"
+                action="logic/comment_hide.php">
 
-                <div class="modal-header">
+                <div class="modal-content">
 
-                    <h5 class="modal-title">
-                        Detail Komentar
-                    </h5>
+                    <div class="modal-header">
 
-                    <button
-                        type="button"
-                        class="close"
-                        data-dismiss="modal">
+                        <h5 class="modal-title">
+                            Sembunyikan Komentar
+                        </h5>
 
-                        &times;
+                        <button
+                            type="button"
+                            class="close"
+                            data-dismiss="modal">
 
-                    </button>
+                            &times;
 
-                </div>
-
-                <div class="modal-body">
-
-                    <h6>Komentar</h6>
-
-                    <div class="border p-3 mb-3">
-
-                        <?= nl2br(htmlspecialchars($row['comment'])) ?>
+                        </button>
 
                     </div>
 
-                    <h6>Reply</h6>
+                    <div class="modal-body">
 
-                    <?php
+                        <input
+                            type="hidden"
+                            name="comment_id"
+                            id="hide_comment_id">
 
-                    $commentId = $row['id'];
+                        <div class="form-group">
 
-                    $replyQuery = mysqli_query(
-                        $conn,
-                        "
-                    SELECT
-                        r.*,
-                        u.email,
-                        pp.full_name,
-                        pp.gender,
-                        pp.photo_profile
+                            <label>
+                                Alasan Disembunyikan
+                            </label>
 
-                    FROM post_comment_reply r
-
-                    INNER JOIN users u
-                        ON u.id = r.user_id
-
-                    LEFT JOIN public_profile pp
-                        ON pp.user_id = u.id
-
-                    WHERE r.comment_id='$commentId'
-
-                    ORDER BY r.created_at ASC
-                    "
-                    );
-
-                    ?>
-
-                    <?php if (mysqli_num_rows($replyQuery) > 0): ?>
-
-                        <?php while ($reply = mysqli_fetch_assoc($replyQuery)): ?>
-
-                            <div class="border rounded p-3 mb-2">
-
-                                <div class="d-flex">
-
-                                    <img
-                                        src="../assets/images/profile/<?= $reply['photo_profile'] ?: 'default.png'; ?>"
-                                        width="40"
-                                        height="40"
-                                        style="border-radius:50%;object-fit:cover;">
-
-                                    <div class="ml-3">
-
-                                        <strong>
-                                            <?= htmlspecialchars($reply['full_name']) ?>
-                                        </strong>
-
-                                        <br>
-
-                                        <small>
-                                            <?= htmlspecialchars($reply['email']) ?>
-                                        </small>
-
-                                        <hr>
-
-                                        <?= nl2br(htmlspecialchars($reply['reply'])) ?>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        <?php endwhile; ?>
-
-                    <?php else: ?>
-
-                        <div class="alert alert-warning mb-0">
-
-                            Belum ada reply.
+                            <input
+                                type="text"
+                                name="reason_status"
+                                class="form-control"
+                                required>
 
                         </div>
 
-                    <?php endif; ?>
+                        <div class="form-group">
+
+                            <label>
+                                Deskripsi Lengkap
+                            </label>
+
+                            <textarea
+                                name="hide_description"
+                                class="form-control"
+                                rows="5"
+                                required></textarea>
+
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-dismiss="modal">
+
+                            Batal
+
+                        </button>
+
+                        <button
+                            type="submit"
+                            class="btn btn-danger">
+
+                            Sembunyikan Komentar
+
+                        </button>
+
+                    </div>
 
                 </div>
 
-            </div>
+            </form>
 
         </div>
 
@@ -810,174 +770,213 @@ $totalMasuk = $countMasuk['total'];
     <script src="assets/js/toastr.js"></script>
 
     <script>
-        const tbody =
-            document.getElementById(
-                "approvedCommentTable"
-            );
+        function initTable(
+            tableId,
+            filterId,
+            entriesId,
+            infoId,
+            paginationId
+        ) {
 
-        const rows =
-            Array.from(
-                tbody.querySelectorAll("tr")
-            );
+            const tbody =
+                document.getElementById(tableId);
 
-        let currentPage = 1;
-        let rowsPerPage = 10;
+            if (!tbody) return;
 
-        function renderTable() {
-            let data = [...rows];
-
-            const sort =
-                document.getElementById(
-                    "filterWaktu"
-                ).value;
-
-            data.sort((a, b) => {
-
-                let dateA =
-                    parseInt(
-                        a.dataset.date
-                    );
-
-                let dateB =
-                    parseInt(
-                        b.dataset.date
-                    );
-
-                return sort === 'baru' ?
-                    dateB - dateA :
-                    dateA - dateB;
-            });
-
-            rows.forEach(
-                row => row.style.display = 'none'
-            );
-
-            const total =
-                data.length;
-
-            const start =
-                (currentPage - 1) *
-                rowsPerPage;
-
-            const end =
-                start + rowsPerPage;
-
-            data
-                .slice(start, end)
-                .forEach(
-                    row => row.style.display = ''
+            const rows =
+                Array.from(
+                    tbody.querySelectorAll('tr')
                 );
 
-            document
-                .getElementById(
-                    'paginationInfo'
-                )
-                .innerHTML =
-                `Showing ${total===0?0:start+1}
-    to ${Math.min(end,total)}
-    of ${total} entries`;
+            let currentPage = 1;
 
-            renderPagination(total);
-        }
-    </script>
-
-    <script>
-        function renderPagination(total) {
-            const totalPages =
-                Math.ceil(
-                    total / rowsPerPage
+            let rowsPerPage =
+                parseInt(
+                    document.getElementById(entriesId).value
                 );
 
-            let html = '';
+            function render() {
 
-            if (currentPage > 1) {
-                html +=
-                    `<li class="page-item">
-            <a class="page-link"
-               href="#"
-               onclick="goPage(${currentPage-1})">
-               Prev
-            </a>
-        </li>`;
+                let data = [...rows];
+
+                const sort =
+                    document.getElementById(filterId).value;
+
+                data.sort((a, b) => {
+
+                    let dateA =
+                        parseInt(a.dataset.date);
+
+                    let dateB =
+                        parseInt(b.dataset.date);
+
+                    return sort === 'baru' ?
+                        dateB - dateA :
+                        dateA - dateB;
+                });
+
+                rows.forEach(row => {
+                    row.style.display = 'none';
+                });
+
+                const total =
+                    data.length;
+
+                const start =
+                    (currentPage - 1) *
+                    rowsPerPage;
+
+                const end =
+                    start + rowsPerPage;
+
+                data
+                    .slice(start, end)
+                    .forEach(row => {
+                        row.style.display = '';
+                    });
+
+                document
+                    .getElementById(infoId)
+                    .innerHTML =
+                    `Showing ${
+                total===0 ? 0 : start+1
+            } to ${
+                Math.min(end,total)
+            } of ${
+                total
+            } entries`;
+
+                renderPagination(total);
             }
 
-            for (let i = 1; i <= totalPages; i++) {
-                if (
-                    i === 1 ||
-                    i === totalPages ||
-                    (i >= currentPage - 2 &&
-                        i <= currentPage + 2)
-                ) {
+            function renderPagination(total) {
+
+                const totalPages =
+                    Math.ceil(total / rowsPerPage);
+
+                let html = '';
+
+                if (currentPage > 1) {
+
                     html +=
-                        `<li class="page-item
-            ${i===currentPage?'active':''}">
+                        `<li class="page-item">
                 <a
-                class="page-link"
-                href="#"
-                onclick="goPage(${i})">
-                ${i}
+                    href="#"
+                    class="page-link"
+                    data-page="${currentPage-1}">
+                    Prev
                 </a>
             </li>`;
                 }
-            }
 
-            if (currentPage < totalPages) {
-                html +=
-                    `<li class="page-item">
-            <a class="page-link"
-               href="#"
-               onclick="goPage(${currentPage+1})">
-               Next
-            </a>
-        </li>`;
+                for (let i = 1; i <= totalPages; i++) {
+
+                    html +=
+                        `<li class="page-item ${
+                i===currentPage ? 'active':''
+            }">
+
+                <a
+                    href="#"
+                    class="page-link"
+                    data-page="${i}">
+                    ${i}
+                </a>
+
+            </li>`;
+                }
+
+                if (currentPage < totalPages) {
+
+                    html +=
+                        `<li class="page-item">
+                <a
+                    href="#"
+                    class="page-link"
+                    data-page="${currentPage+1}">
+                    Next
+                </a>
+            </li>`;
+                }
+
+                document
+                    .getElementById(paginationId)
+                    .innerHTML = html;
+
+                document
+                    .querySelectorAll(
+                        '#' + paginationId + ' .page-link'
+                    )
+                    .forEach(btn => {
+
+                        btn.addEventListener(
+                            'click',
+                            function(e) {
+
+                                e.preventDefault();
+
+                                currentPage =
+                                    parseInt(
+                                        this.dataset.page
+                                    );
+
+                                render();
+
+                            }
+                        );
+
+                    });
+
             }
 
             document
-                .getElementById(
-                    'paginationKomentar'
-                )
-                .innerHTML = html;
+                .getElementById(filterId)
+                .addEventListener(
+                    'change',
+                    function() {
+
+                        currentPage = 1;
+
+                        render();
+
+                    }
+                );
+
+            document
+                .getElementById(entriesId)
+                .addEventListener(
+                    'change',
+                    function() {
+
+                        rowsPerPage =
+                            parseInt(this.value);
+
+                        currentPage = 1;
+
+                        render();
+
+                    }
+                );
+
+            render();
+
         }
-    </script>
 
-    <script>
-        function goPage(page) {
-            currentPage = page;
-            renderTable();
-        }
+        initTable(
+            'approvedCommentTable',
+            'filterWaktuMasuk',
+            'showEntriesMasuk',
+            'paginationInfoMasuk',
+            'paginationKomentarMasuk'
+        );
 
-        document
-            .getElementById(
-                'filterWaktu'
-            )
-            .addEventListener(
-                'change',
-                () => {
-                    currentPage = 1;
-                    renderTable();
-                }
-            );
-
-        document
-            .getElementById(
-                'showEntries'
-            )
-            .addEventListener(
-                'change',
-                function() {
-
-                    rowsPerPage =
-                        parseInt(
-                            this.value
-                        );
-
-                    currentPage = 1;
-
-                    renderTable();
-                }
-            );
-
-        renderTable();
+        initTable(
+            'hiddenCommentTable',
+            'filterWaktuHidden',
+            'showEntriesHidden',
+            'paginationInfoHidden',
+            'paginationKomentarHidden'
+        );
     </script>
 
     <script>
@@ -1005,6 +1004,19 @@ $totalMasuk = $countMasuk['total'];
         );
     </script>
 
+    <script>
+        $(document).on(
+            'click',
+            '.btn-hide-comment',
+            function() {
+
+                $('#hide_comment_id').val(
+                    $(this).data('id')
+                );
+
+            }
+        );
+    </script>
 </body>
 
 </html>

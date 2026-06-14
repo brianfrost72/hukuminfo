@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/../auth.php';
 require_once __DIR__ . "/../koneksi.php";
 
 /*
@@ -16,6 +16,7 @@ SELECT
     pb.created_at,
 
     p.post_title,
+    p.slug,
 
     u.email,
 
@@ -43,15 +44,22 @@ while ($row = mysqli_fetch_assoc($result)) {
 
     $avatar = '';
 
-    if (!empty($row['photo_profile'])) {
+    if (
+        !empty($row['photo_profile']) &&
+        file_exists(
+            __DIR__ . '/../assets/images/uploads/public_photos/' . $row['photo_profile']
+        )
+    ) {
 
         $avatar = '../assets/images/uploads/public_photos/' . $row['photo_profile'];
     } else {
 
-        if ($row['gender'] === 'Perempuan') {
-            $avatar = '../assets/images/avatar/avatar_women.png';
+        if (strtolower($row['gender']) === 'perempuan') {
+
+            $avatar = '../assets/images/avatar/avatar-women.png';
         } else {
-            $avatar = '../assets/images/avatar/avatar_men.png';
+
+            $avatar = '../assets/images/avatar/avatar-men.png';
         }
     }
 
@@ -60,6 +68,7 @@ while ($row = mysqli_fetch_assoc($result)) {
         'full_name' => $row['full_name'] ?: '-',
         'email' => $row['email'],
         'post_title' => $row['post_title'],
+        'slug'       => $row['slug'],
         'avatar' => $avatar,
         'created_at' => $row['created_at'],
         'created_at_format' => date(
@@ -177,8 +186,8 @@ while ($row = mysqli_fetch_assoc($result)) {
                             <div class="col-md-2 ml-auto">
                                 <label>Show Entries</label>
                                 <select class="form-control" id="showEntries">
-                                    <option value="5">5</option>
-                                    <option value="10" selected>10</option>
+                                    <option value="5" selected>5</option>
+                                    <option value="10">10</option>
                                     <option value="25">25</option>
                                 </select>
                             </div>
@@ -195,6 +204,7 @@ while ($row = mysqli_fetch_assoc($result)) {
                                         <th>Email</th>
                                         <th>Postingan</th>
                                         <th>Tanggal Bookmark</th>
+                                        <th width="120">Aksi</th>
                                     </tr>
                                 </thead>
 
@@ -287,7 +297,7 @@ while ($row = mysqli_fetch_assoc($result)) {
                                 ); ?>;
 
         let currentPage = 1;
-        let perPage = 10;
+        let perPage = 5;
 
         function renderBookmarks() {
 
@@ -356,6 +366,14 @@ while ($row = mysqli_fetch_assoc($result)) {
 
                 <td>${item.created_at_format}</td>
 
+                <td class="text-center">
+                    <a href="https://hukuminfo.id/${item.slug}" target="_blank"
+                    class="btn btn-sm btn-info" title="Lihat Artikel">
+                    <i class="fas fa-eye"></i>
+
+                    </a>
+                </td>
+
             </tr>
             `;
                 });
@@ -368,7 +386,8 @@ while ($row = mysqli_fetch_assoc($result)) {
 
         function renderPagination(totalPages, totalRows) {
 
-            const pagination = document.getElementById('paginationBookmark');
+            const pagination =
+                document.getElementById('paginationBookmark');
 
             let html = '';
 
@@ -378,20 +397,67 @@ while ($row = mysqli_fetch_assoc($result)) {
         <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
             <a class="page-link"
                href="#"
-               onclick="changePage(${currentPage - 1})">
-                Prev
+               onclick="changePage(${currentPage - 1}); return false;">
+                <i class="fa fa-chevron-left"></i>
             </a>
         </li>
         `;
 
-                for (let i = 1; i <= totalPages; i++) {
+                let startPage = Math.max(1, currentPage - 2);
+                let endPage = Math.min(totalPages, currentPage + 2);
+
+                if (startPage > 1) {
+
+                    html += `
+            <li class="page-item">
+                <a class="page-link"
+                   href="#"
+                   onclick="changePage(1); return false;">
+                    1
+                </a>
+            </li>
+            `;
+
+                    if (startPage > 2) {
+
+                        html += `
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+                `;
+                    }
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
 
                     html += `
             <li class="page-item ${i === currentPage ? 'active' : ''}">
                 <a class="page-link"
                    href="#"
-                   onclick="changePage(${i})">
+                   onclick="changePage(${i}); return false;">
                     ${i}
+                </a>
+            </li>
+            `;
+                }
+
+                if (endPage < totalPages) {
+
+                    if (endPage < totalPages - 1) {
+
+                        html += `
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+                `;
+                    }
+
+                    html += `
+            <li class="page-item">
+                <a class="page-link"
+                   href="#"
+                   onclick="changePage(${totalPages}); return false;">
+                    ${totalPages}
                 </a>
             </li>
             `;
@@ -401,8 +467,8 @@ while ($row = mysqli_fetch_assoc($result)) {
         <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
             <a class="page-link"
                href="#"
-               onclick="changePage(${currentPage + 1})">
-                Next
+               onclick="changePage(${currentPage + 1}); return false;">
+                <i class="fa fa-chevron-right"></i>
             </a>
         </li>
         `;

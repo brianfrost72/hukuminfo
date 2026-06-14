@@ -3,6 +3,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once __DIR__ . "/../../koneksi.php";
+
+$currentPage = basename($_SERVER['PHP_SELF']);
 // =========================
 // USER PROFILE HEADER
 // =========================
@@ -89,29 +91,40 @@ if (!empty($userData['photo_profile'])) {
     <div class="mdk-drawer__content">
         <div class="sidebar sidebar-light sidebar-left sidebar-p-t"
             data-perfect-scrollbar>
+            <div class="text-center px-3 pb-3 border-bottom mb-3">
+                <a href="https://hukuminfo.id">
+                    <img src="/hukuminfo/dashboard/assets/images/logos/logo.png"
+                        alt="Hukuminfo"
+                        style="
+                max-width:180px;
+                width:100%;
+                height:auto;
+                margin-bottom:10px;
+            ">
+                </a>
+            </div>
             <div class="sidebar-heading">Menu</div>
             <div class="sidebar-block p-0 mb-0">
                 <ul class="sidebar-menu"
                     id="components_menu">
 
 
-                    <li class="sidebar-menu-item">
-                        <a class="sidebar-menu-button"
-                            href="/">
+                    <li class="sidebar-menu-item <?= ($currentPage == 'index.php' || $currentPage == '') ? 'active' : ''; ?>">
+                        <a class="sidebar-menu-button" href="/">
                             <i class="sidebar-menu-icon sidebar-menu-icon--left material-icons">dvr</i>
                             <span class="sidebar-menu-text">Beranda</span>
                         </a>
                     </li>
-                    <li class="sidebar-menu-item">
-                        <a class="sidebar-menu-button"
-                            href="daftar-bookmark.php">
+
+                    <li class="sidebar-menu-item <?= ($currentPage == 'daftar-bookmark.php') ? 'active' : ''; ?>">
+                        <a class="sidebar-menu-button" href="daftar-bookmark.php">
                             <i class="sidebar-menu-icon sidebar-menu-icon--left material-icons">bookmark</i>
                             <span class="sidebar-menu-text">Bookmark Saya</span>
                         </a>
                     </li>
-                    <li class="sidebar-menu-item">
-                        <a class="sidebar-menu-button"
-                            href="daftar-likes.php">
+
+                    <li class="sidebar-menu-item <?= ($currentPage == 'daftar-likes.php') ? 'active' : ''; ?>">
+                        <a class="sidebar-menu-button" href="daftar-likes.php">
                             <i class="sidebar-menu-icon sidebar-menu-icon--left material-icons">favorite</i>
                             <span class="sidebar-menu-text">Artikel Yang Saya Suka</span>
                         </a>
@@ -150,6 +163,55 @@ if (!empty($userData['photo_profile'])) {
                         <a class="dropdown-item"
                             href="logout.php">Logout</a>
                     </div>
+                </div>
+            </div>
+            <div class="mt-auto text-center px-3 py-4 border-top">
+                <small class="text-muted d-block mb-2">
+                    © <?= date('Y'); ?> Hukuminfo
+                </small>
+
+                <p style="
+        font-size:13px;
+        color:#fff;
+        margin-bottom:12px;
+        line-height:1.5;
+    ">
+                    Ikuti terus perkembangan berita, hukum, politik,
+                    dan informasi terpercaya hanya di Hukuminfo.
+                </p>
+
+                <div class="d-flex justify-content-center align-items-center"
+                    style="gap:15px;font-size:22px;">
+
+                    <a href="https://facebook.com"
+                        target="_blank"
+                        style="color:#1877F2;">
+                        <i class="fab fa-facebook"></i>
+                    </a>
+
+                    <a href="https://instagram.com"
+                        target="_blank"
+                        style="color:#E4405F;">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+
+                    <a href="https://x.com"
+                        target="_blank"
+                        style="color:#000;">
+                        <i class="fab fa-x-twitter"></i>
+                    </a>
+
+                    <a href="https://youtube.com"
+                        target="_blank"
+                        style="color:#FF0000;">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+
+                    <a href="https://tiktok.com"
+                        target="_blank"
+                        style="color:#111;">
+                        <i class="fab fa-tiktok"></i>
+                    </a>
                 </div>
             </div>
         </div>

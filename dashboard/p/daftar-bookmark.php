@@ -1,3 +1,50 @@
+<?php
+session_start();
+
+require_once __DIR__ . '/../auth.php';
+require_once __DIR__ . '/../koneksi.php';
+
+$userId = $_SESSION['user_id'] ?? 0;
+
+
+if (!$userId) {
+    die('Silakan login terlebih dahulu.');
+}
+
+$sql = "
+SELECT
+    pb.created_at AS bookmark_date,
+    p.id,
+    p.post_title,
+    p.post_image,
+    p.slug,
+    p.created_at,
+    pp.full_name,
+    pp.photo_profile
+FROM post_bookmarks pb
+INNER JOIN post p
+    ON p.id = pb.post_id
+LEFT JOIN users u
+    ON u.id = p.user_id
+LEFT JOIN public_profile pp
+    ON pp.user_id = u.id
+WHERE pb.user_id = ?
+    AND p.status = 'publish'
+ORDER BY pb.created_at DESC
+";
+
+$stmt = mysqli_prepare($conn, $sql);
+mysqli_stmt_bind_param($stmt, "i", $userId);
+mysqli_stmt_execute($stmt);
+
+$result = mysqli_stmt_get_result($stmt);
+
+$bookmarks = [];
+
+while ($row = mysqli_fetch_assoc($result)) {
+    $bookmarks[] = $row;
+}
+?>
 <!DOCTYPE html>
 <html lang="id">
 
@@ -25,12 +72,16 @@
         rel="stylesheet">
 
     <!-- Font Awesome FREE Icons -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <!-- Font Awesome FREE Icons -->
     <link type="text/css"
         href="assets/css/vendor-fontawesome-free.css"
         rel="stylesheet">
 </head>
 
-<body>
+<body class="layout-fixed">
 
     <div class="preloader"></div>
 
@@ -61,7 +112,7 @@
                             <ol class="breadcrumb mb-0">
                                 <li class="breadcrumb-item"><a href="/"><i class="material-icons icon-20pt">home</i></a></li>
                                 <li class="breadcrumb-item active"
-                                    aria-current="page">Beranda</li>
+                                    aria-current="page"><a href="/">Beranda</a></li>
                                 <li class="breadcrumb-item active"
                                     aria-current="page">Daftar Bookmark</li>
                             </ol>
@@ -74,8 +125,9 @@
             <div class="container page__container">
 
                 <div class="card">
-                    <div class="card-header">
-                        <h4 class="card-title mb-0">Daftar Bookmark</h4>
+                    <div class="card-header d-flex align-items-center">
+                        <i class="material-icons mr-2 text-white">bookmark</i>
+                        <h4 class="card-title mb-0 text-white">Daftar Bookmark</h4>
                     </div>
 
                     <div class="card-body">
@@ -85,8 +137,9 @@
                             <div class="col-md-6">
                                 <div class="d-flex align-items-center">
                                     <span class="mr-2">Show</span>
-                                    <select class="form-control form-control-sm"
+                                    <select id="entriesPerPage" class="form-control form-control-sm"
                                         style="width:80px;">
+                                        <option>5</option>
                                         <option>10</option>
                                         <option>25</option>
                                         <option>50</option>
@@ -97,7 +150,7 @@
                             </div>
 
                             <div class="col-md-6">
-                                <input type="text"
+                                <input type="text" id="searchInput"
                                     class="form-control float-right"
                                     placeholder="Cari judul postingan...">
                             </div>
@@ -116,91 +169,92 @@
                                     </tr>
                                 </thead>
 
-                                <tbody>
+                                <tbody id="bookmarkTableBody">
 
-                                    <tr>
-                                        <td>1</td>
+                                    <?php if (!empty($bookmarks)): ?>
+                                        <?php $no = 1; ?>
 
-                                        <td>
-                                            <img src=""
-                                                class="rounded"
-                                                width="70"
-                                                height="50"
-                                                style="object-fit:cover;">
-                                        </td>
+                                        <?php foreach ($bookmarks as $row): ?>
 
-                                        <td>
-                                            Perubahan Undang-Undang ITE Tahun 2025 dan Dampaknya
-                                        </td>
+                                            <?php
+                                            $gambar = !empty($row['post_image'])
+                                                ? "../assets/images/uploads/posts/" . $row['post_image']
+                                                : "../assets/images/no-image.png";
+                                            ?>
 
-                                        <td>01 Juni 2026</td>
+                                            <tr>
 
-                                        <td class="text-center">
-                                            <a href="#"
-                                                class="btn btn-primary btn-sm"
-                                                title="Lihat Postingan">
-                                                <i class="material-icons">visibility</i>
-                                            </a>
-                                        </td>
-                                    </tr>
+                                                <td><?= $no++; ?></td>
 
-                                    <tr>
-                                        <td>2</td>
+                                                <td>
+                                                    <img src="<?= htmlspecialchars($gambar); ?>"
+                                                        class="rounded"
+                                                        width="70"
+                                                        height="50"
+                                                        style="object-fit:cover;">
+                                                </td>
 
-                                        <td>
-                                            <img src=""
-                                                class="rounded"
-                                                width="70"
-                                                height="50"
-                                                style="object-fit:cover;">
-                                        </td>
+                                                <td>
+                                                    <strong><?= htmlspecialchars($row['post_title']); ?></strong>
 
-                                        <td>
-                                            Panduan Lengkap Gugatan Perdata di Pengadilan Negeri
-                                        </td>
+                                                    <?php if (!empty($row['full_name'])): ?>
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            Oleh <?= htmlspecialchars($row['full_name']); ?>
+                                                        </small>
+                                                    <?php endif; ?>
+                                                </td>
 
-                                        <td>30 Mei 2026</td>
+                                                <td>
+                                                    <?= date('d F Y H:i', strtotime($row['bookmark_date'])); ?> WIB
+                                                </td>
 
-                                        <td class="text-center">
-                                            <a href="#"
-                                                class="btn btn-primary btn-sm"
-                                                title="Lihat Postingan">
-                                                <i class="material-icons">visibility</i>
-                                            </a>
-                                        </td>
-                                    </tr>
+                                                <td class="text-center">
+                                                    <a href="https://hukuminfo.id/<?= urlencode($row['slug']); ?>"
+                                                        target="_blank"
+                                                        class="btn btn-primary btn-sm"
+                                                        title="Lihat Postingan">
+                                                        <i class="material-icons">visibility</i>
+                                                    </a>
+                                                </td>
+
+                                            </tr>
+
+                                        <?php endforeach; ?>
+
+                                    <?php else: ?>
+
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4">
+                                                <i class="material-icons text-muted" style="font-size:48px;">
+                                                    bookmark_border
+                                                </i>
+                                                <br>
+                                                Belum ada artikel yang dibookmark.
+                                            </td>
+                                        </tr>
+
+                                    <?php endif; ?>
 
                                 </tbody>
                             </table>
                         </div>
 
-                        <!-- Footer -->
-                        <div class="row mt-3">
-                            <div class="col-12">
+                        <!-- Pagination -->
+                        <div class="row mt-3 align-items-center">
+
+                            <div class="col-md-6 mb-2 mb-md-0">
+                                <small id="tableInfo">
+                                    Menampilkan 0 dari 0 data
+                                </small>
+                            </div>
+
+                            <div class="col-md-6">
                                 <nav>
-                                    <ul class="pagination justify-content-end mb-0">
-                                        <li class="page-item disabled">
-                                            <a class="page-link" href="#">Previous</a>
-                                        </li>
-
-                                        <li class="page-item active">
-                                            <a class="page-link" href="#">1</a>
-                                        </li>
-
-                                        <li class="page-item">
-                                            <a class="page-link" href="#">2</a>
-                                        </li>
-
-                                        <li class="page-item">
-                                            <a class="page-link" href="#">3</a>
-                                        </li>
-
-                                        <li class="page-item">
-                                            <a class="page-link" href="#">Next</a>
-                                        </li>
-                                    </ul>
+                                    <ul id="pagination" class="pagination justify-content-end mb-0"></ul>
                                 </nav>
                             </div>
+
                         </div>
 
                     </div>
@@ -219,42 +273,12 @@
         <app-settings layout-active="fixed"></app-settings>
     </div>
 
+    <!-- ********************************** // MENU-Drawer ********************************** -->
+    <?php include 'includes/mobile_menu.php'; ?>
+    <!-- ********************************** //END MENU-drawer ********************************** -->
+
     <footer class="dashboard-footer mt-4">
-        <div class="container-fluid">
-            <div class="row align-items-center">
-
-                <!-- LEFT -->
-                <div class="col-md-6 text-md-left text-center mb-2 mb-md-0">
-                    <span class="footer-text">
-                        © 2026 Hukuminfo.id. All rights reserved.
-                    </span>
-                </div>
-
-                <!-- RIGHT -->
-                <div class="col-md-6 text-md-right text-center">
-                    <a href="#" class="footer-social">
-                        <i class="fab fa-facebook-f"></i>
-                    </a>
-
-                    <a href="#" class="footer-social">
-                        <i class="fab fa-instagram"></i>
-                    </a>
-
-                    <a href="#" class="footer-social">
-                        <i class="fab fa-x-twitter"></i>
-                    </a>
-
-                    <a href="#" class="footer-social">
-                        <i class="fab fa-youtube"></i>
-                    </a>
-
-                    <a href="#" class="footer-social">
-                        <i class="fab fa-tiktok"></i>
-                    </a>
-                </div>
-
-            </div>
-        </div>
+        <?php include 'includes/footer.php'; ?>
     </footer>
     <!-- jQuery -->
     <script src="../assets/vendor/jquery.min.js"></script>
@@ -282,6 +306,139 @@
     <!-- App Settings (safe to remove) -->
     <script src="../assets/js/app-settings.js"></script>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const searchInput = document.getElementById('searchInput');
+            const entriesSelect = document.getElementById('entriesPerPage');
+            const tbody = document.getElementById('bookmarkTableBody');
+            const pagination = document.getElementById('pagination');
+            const tableInfo = document.getElementById('tableInfo');
+
+            let currentPage = 1;
+
+            function renderTable() {
+
+                const keyword = searchInput.value.toLowerCase();
+
+                const rows = [...tbody.querySelectorAll('tr')];
+
+                const filteredRows = rows.filter(row => {
+                    return row.innerText.toLowerCase().includes(keyword);
+                });
+
+                const perPage = parseInt(entriesSelect.value);
+
+                const totalRows = filteredRows.length;
+                const totalPages = Math.max(1, Math.ceil(totalRows / perPage));
+
+                if (currentPage > totalPages) {
+                    currentPage = totalPages;
+                }
+
+                rows.forEach(row => row.style.display = 'none');
+
+                const start = (currentPage - 1) * perPage;
+                const end = start + perPage;
+
+                filteredRows.slice(start, end).forEach(row => {
+                    row.style.display = '';
+                });
+
+                const showing = filteredRows.slice(start, end).length;
+
+                tableInfo.innerHTML =
+                    `Menampilkan ${showing} dari ${totalRows} data`;
+
+                renderPagination(totalPages);
+            }
+
+            function renderPagination(totalPages) {
+
+                pagination.innerHTML = '';
+
+                const addItem = (label, page, active = false, disabled = false) => {
+
+                    const li = document.createElement('li');
+
+                    li.className =
+                        `page-item ${active ? 'active' : ''} ${disabled ? 'disabled' : ''}`;
+
+                    li.innerHTML =
+                        `<a href="#" class="page-link">${label}</a>`;
+
+                    if (!disabled) {
+                        li.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            currentPage = page;
+                            renderTable();
+                        });
+                    }
+
+                    pagination.appendChild(li);
+                };
+
+                addItem(
+                    '<i class="material-icons" style="font-size:18px">chevron_left</i>',
+                    currentPage - 1,
+                    false,
+                    currentPage === 1
+                );
+
+                let startPage = Math.max(1, currentPage - 2);
+                let endPage = Math.min(totalPages, currentPage + 2);
+
+                if (startPage > 1) {
+                    addItem(1, 1);
+
+                    if (startPage > 2) {
+                        const dots = document.createElement('li');
+                        dots.className = 'page-item disabled';
+                        dots.innerHTML =
+                            '<span class="page-link">...</span>';
+                        pagination.appendChild(dots);
+                    }
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    addItem(i, i, i === currentPage);
+                }
+
+                if (endPage < totalPages) {
+
+                    if (endPage < totalPages - 1) {
+                        const dots = document.createElement('li');
+                        dots.className = 'page-item disabled';
+                        dots.innerHTML =
+                            '<span class="page-link">...</span>';
+                        pagination.appendChild(dots);
+                    }
+
+                    addItem(totalPages, totalPages);
+                }
+
+                addItem(
+                    '<i class="material-icons" style="font-size:18px">chevron_right</i>',
+                    currentPage + 1,
+                    false,
+                    currentPage === totalPages
+                );
+            }
+
+            searchInput.addEventListener('keyup', function() {
+                currentPage = 1;
+                renderTable();
+            });
+
+            entriesSelect.addEventListener('change', function() {
+                currentPage = 1;
+                renderTable();
+            });
+
+            renderTable();
+
+        });
+    </script>
 </body>
 
 </html>

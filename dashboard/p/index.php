@@ -1,6 +1,9 @@
 <?php
 session_start();
 
+require_once __DIR__ . '/../auth.php';
+require_once __DIR__ . '/../koneksi.php';
+
 $tab = $_GET['tab'] ?? 'terbaru';
 
 $userId = $_SESSION['user_id'] ?? 0;
@@ -8,8 +11,6 @@ $userId = $_SESSION['user_id'] ?? 0;
 if (!$userId) {
     die('Silakan login terlebih dahulu');
 }
-
-require_once __DIR__ . '/../koneksi.php';
 
 
 /*
@@ -74,21 +75,28 @@ if (
 if ($tab == 'terbaru') {
 
     $queryNews = mysqli_query($conn, "
-    SELECT
-        p.*,
-        pc.name_category,
-        pc.slug AS category_slug
-    FROM post p
+        SELECT
+            p.*,
+            pc.name_category,
+            pc.slug AS category_slug,
 
-    LEFT JOIN post_category pc
-        ON pc.id = p.post_category_id
+            up.full_name AS author_name,
+            up.slug AS author_slug
 
-    WHERE p.status='publish'
+        FROM post p
 
-    ORDER BY p.id DESC
+        LEFT JOIN post_category pc
+            ON pc.id = p.post_category_id
 
-    LIMIT 10
-");
+        LEFT JOIN user_profile up
+            ON up.user_id = p.user_id
+
+        WHERE p.status = 'publish'
+
+        ORDER BY p.id DESC
+
+        LIMIT 10
+    ");
 
     if (!$queryNews) {
         die(mysqli_error($conn));
@@ -96,42 +104,47 @@ if ($tab == 'terbaru') {
 } else {
 
     $queryNews = mysqli_query($conn, "
-    SELECT
-        p.*,
-        pc.name_category,
-        pc.slug AS category_slug,
+        SELECT
+            p.*,
+            pc.name_category,
+            pc.slug AS category_slug,
 
-        COUNT(DISTINCT pl.id) AS total_like,
-        COUNT(DISTINCT pv.id) AS total_view
+            up.full_name AS author_name,
+            up.slug AS author_slug,
 
-    FROM post p
+            COUNT(DISTINCT pl.id) AS total_like,
+            COUNT(DISTINCT pv.id) AS total_view
 
-    LEFT JOIN post_category pc
-        ON pc.id = p.post_category_id
+        FROM post p
 
-    LEFT JOIN post_likes pl
-        ON pl.post_id = p.id
+        LEFT JOIN post_category pc
+            ON pc.id = p.post_category_id
 
-    LEFT JOIN post_views pv
-        ON pv.post_id = p.id
+        LEFT JOIN user_profile up
+            ON up.user_id = p.user_id
 
-    WHERE p.status='publish'
+        LEFT JOIN post_likes pl
+            ON pl.post_id = p.id
 
-    GROUP BY p.id
+        LEFT JOIN post_views pv
+            ON pv.post_id = p.id
 
-    ORDER BY
-        total_like DESC,
-        total_view DESC,
-        p.id DESC
+        WHERE p.status = 'publish'
 
-    LIMIT 10
-");
+        GROUP BY p.id
+
+        ORDER BY
+            total_like DESC,
+            total_view DESC,
+            p.id DESC
+
+        LIMIT 10
+    ");
 
     if (!$queryNews) {
         die(mysqli_error($conn));
     }
 }
-
 
 ?>
 
@@ -155,7 +168,7 @@ if ($tab == 'terbaru') {
     <link type="text/css"
         href="../assets/css/app.css"
         rel="stylesheet">
-    <link rel="stylesheet" href="../../css/styles.css">
+    <!-- <link rel="stylesheet" href="../../css/styles.css"> -->
 
     <!-- Material Design Icons -->
     <link type="text/css"
@@ -165,92 +178,6 @@ if ($tab == 'terbaru') {
     <!-- Font Awesome FREE Icons -->
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-
-    <style>
-        .news-card {
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, .08);
-            overflow: hidden;
-            height: 100%;
-        }
-
-        .news-card-header {
-            padding: 15px 20px;
-            font-size: 18px;
-            font-weight: 600;
-            border-bottom: 1px solid #eee;
-        }
-
-        .news-list {
-            padding: 0;
-            margin: 0;
-            list-style: none;
-        }
-
-        .news-item {
-            border-bottom: 1px solid #f1f1f1;
-        }
-
-        .news-item:last-child {
-            border-bottom: none;
-        }
-
-        .news-link {
-            display: flex;
-            align-items: center;
-            padding: 12px 15px;
-            text-decoration: none !important;
-            transition: all .25s ease;
-        }
-
-        .news-link:hover {
-            background: #f8f9fa;
-            transform: translateX(5px);
-        }
-
-        .news-number {
-            width: 35px;
-            min-width: 35px;
-            font-size: 22px;
-            font-weight: 700;
-            color: #6774df;
-            text-align: center;
-            margin-right: 12px;
-        }
-
-        .news-thumb {
-            width: 80px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 6px;
-            margin-right: 12px;
-        }
-
-        .news-title {
-            color: #333;
-            font-size: 14px;
-            font-weight: 500;
-            line-height: 1.4;
-        }
-
-        .news-link:hover .news-title {
-            color: #6774df;
-        }
-
-        @media(max-width:768px) {
-            .news-thumb {
-                width: 70px;
-                height: 50px;
-            }
-
-            .news-number {
-                width: 30px;
-                min-width: 30px;
-                font-size: 18px;
-            }
-        }
-    </style>
 </head>
 
 <body class="layout-fixed">
@@ -318,6 +245,11 @@ if ($tab == 'terbaru') {
 
                             </div>
 
+                            <div class="text-center mb-3">
+                                <a href="edit_profile" class="btn btn-primary">
+                                    Edit Profile
+                                </a>
+                            </div>
                         </div>
 
                     </div>
@@ -383,7 +315,7 @@ if ($tab == 'terbaru') {
 
                                                     <div class="card__post__transition">
 
-                                                        <a href="<?= urlencode($news['slug']); ?>">
+                                                        <a href="https://hukuminfo.id/<?= urlencode($news['slug']); ?>">
 
                                                             <img src="<?= $postImage; ?>"
                                                                 class="img-fluid w-100"
@@ -417,11 +349,12 @@ if ($tab == 'terbaru') {
 
                                                                     <li class="list-inline-item">
 
-                                                                        <span class="text-primary">
+                                                                        <a href="https://hukuminfo.id/redaksi=<?= urlencode($news['author_slug']); ?>"
+                                                                            class="text-primary">
 
-                                                                            <?= htmlspecialchars($userPublic['full_name']); ?>
+                                                                            <?= htmlspecialchars($news['author_name']); ?>
 
-                                                                        </span>
+                                                                        </a>
 
                                                                     </li>
 
@@ -442,7 +375,7 @@ if ($tab == 'terbaru') {
 
                                                                 <h5>
 
-                                                                    <a href="<?= urlencode($news['slug']); ?>">
+                                                                    <a href="https://hukuminfo.id/<?= urlencode($news['slug']); ?>">
 
                                                                         <?= htmlspecialchars($news['post_title']); ?>
 
@@ -512,45 +445,7 @@ if ($tab == 'terbaru') {
     <?php include 'includes/mobile_menu.php'; ?>
 
     <footer class="dashboard-footer mt-4">
-        <div class="container-fluid">
-            <div class="row align-items-center">
-
-                <!-- LEFT -->
-                <div class="col-md-6 text-md-left text-center mb-2 mb-md-0">
-                    <span class="footer-text">
-                        © 2026 Hukuminfo.id. All rights reserved.
-                    </span>
-                </div>
-
-                <!-- RIGHT -->
-                <div class="col-md-6 text-md-right text-center">
-
-                    <span class="follow-text">Follow Our Social Media : </span>
-
-                    <a href="#" class="footer-social">
-                        <i class="fab fa-facebook-f"></i>
-                    </a>
-
-                    <a href="#" class="footer-social">
-                        <i class="fab fa-instagram"></i>
-                    </a>
-
-                    <a href="#" class="footer-social">
-                        <i class="fab fa-x-twitter"></i>
-                    </a>
-
-                    <a href="#" class="footer-social">
-                        <i class="fab fa-youtube"></i>
-                    </a>
-
-                    <a href="#" class="footer-social">
-                        <i class="fab fa-tiktok"></i>
-                    </a>
-
-                </div>
-
-            </div>
-        </div>
+        <?php include 'includes/footer.php'; ?>
     </footer>
     <!-- jQuery -->
     <script src="../assets/vendor/jquery.min.js"></script>
