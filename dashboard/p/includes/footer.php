@@ -34,7 +34,7 @@ if ($qSocmed && mysqli_num_rows($qSocmed) > 0) {
         <!-- LEFT -->
         <div class="col-md-6 text-md-left text-center mb-2 mb-md-0">
             <span class="footer-text">
-                © 2026 Hukuminfo.id. All rights reserved.
+               &copy; 2026 Hukuminfo.id — Media Informasi Hukum Indonesia | All Rights Reserved | Support By : <a href="https://konig.co.id"><strong>Konig Guard Bureau</strong></a>
             </span>
         </div>
 

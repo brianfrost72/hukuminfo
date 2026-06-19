@@ -136,7 +136,7 @@
                                             <td>12/05/2026</td>
 
                                             <td>
-                                                <a href="view_logs.php" class="btn btn-info btn-sm" title="Lihat Logs">
+                                                <a href="view_logs" class="btn btn-info btn-sm" title="Lihat Logs">
                                                     <i class="material-icons">remove_red_eye</i>
                                                 </a>
                                             </td>
@@ -212,7 +212,7 @@
                                             <td>12/05/2026</td>
 
                                             <td>
-                                                <a href="view_logs.php" class="btn btn-info btn-sm" title="Lihat Logs">
+                                                <a href="view_logs" class="btn btn-info btn-sm" title="Lihat Logs">
                                                     <i class="material-icons">remove_red_eye</i>
                                                 </a>
                                             </td>

@@ -281,7 +281,7 @@ $sisaPlatform = mysqli_fetch_assoc($qSisaPlatform);
     SELECT
         sm.id,
         sm.platform_id,
-    sm.name_platform AS socmed_name,
+    sm.account_name AS socmed_name,
         sm.link_platform,
         ls.name_platform AS platform_name
     FROM social_media sm

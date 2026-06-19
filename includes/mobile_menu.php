@@ -362,7 +362,7 @@ function getSocmedIcon($platform)
                 </nav>
             </div>
             <div class="modal-footer">
-                <p>© 2026 Hukuminfo.id — Media Informasi &amp; Edukasi Hukum Indonesia</p>
+                <p>&copy; 2026 Hukuminfo.id — Media Informasi Hukum Indonesia | All Rights Reserved | Support By : <a href="https://konig.co.id"><strong>Konig Guard Bureau</strong></a></p>
             </div>
         </div>
     </div> <!-- modal-bialog .// -->

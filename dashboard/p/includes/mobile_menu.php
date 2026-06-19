@@ -131,22 +131,22 @@ if ($qSocmed && mysqli_num_rows($qSocmed) > 0) {
                     id="components_menu">
 
 
-                    <li class="sidebar-menu-item <?= ($currentPage == 'index.php' || $currentPage == '') ? 'active' : ''; ?>">
+                    <li class="sidebar-menu-item <?= ($currentPage == '/' || $currentPage == '') ? 'active' : ''; ?>">
                         <a class="sidebar-menu-button" href="/">
                             <i class="sidebar-menu-icon sidebar-menu-icon--left material-icons">dvr</i>
                             <span class="sidebar-menu-text">Beranda</span>
                         </a>
                     </li>
 
-                    <li class="sidebar-menu-item <?= ($currentPage == 'daftar-bookmark.php') ? 'active' : ''; ?>">
-                        <a class="sidebar-menu-button" href="daftar-bookmark.php">
+                    <li class="sidebar-menu-item <?= ($currentPage == 'daftar-bookmark') ? 'active' : ''; ?>">
+                        <a class="sidebar-menu-button" href="daftar-bookmark">
                             <i class="sidebar-menu-icon sidebar-menu-icon--left material-icons">bookmark</i>
                             <span class="sidebar-menu-text">Bookmark Saya</span>
                         </a>
                     </li>
 
-                    <li class="sidebar-menu-item <?= ($currentPage == 'daftar-likes.php') ? 'active' : ''; ?>">
-                        <a class="sidebar-menu-button" href="daftar-likes.php">
+                    <li class="sidebar-menu-item <?= ($currentPage == 'daftar-likes') ? 'active' : ''; ?>">
+                        <a class="sidebar-menu-button" href="daftar-likes">
                             <i class="sidebar-menu-icon sidebar-menu-icon--left material-icons">favorite</i>
                             <span class="sidebar-menu-text">Artikel Yang Saya Suka</span>
                         </a>
@@ -155,7 +155,7 @@ if ($qSocmed && mysqli_num_rows($qSocmed) > 0) {
             </div>
 
             <div class="d-flex align-items-center sidebar-p-a border-bottom sidebar-account">
-                <a href="edit_profile.php"
+                <a href="edit_profile"
                     class="flex d-flex align-items-center text-underline-0 text-body">
                     <span class="avatar avatar-sm mr-2">
                         <img src="<?= htmlspecialchars($avatarPath); ?>"
@@ -178,12 +178,12 @@ if ($qSocmed && mysqli_num_rows($qSocmed) > 0) {
                         </div>
                         <div class="dropdown-divider"></div>
                         <a class="dropdown-item"
-                            href="edit_profile.php">Edit profile</a>
+                            href="edit_profile">Edit profile</a>
                         <a class="dropdown-item"
                             href="https://hukuminfo.id">Lihat Website</a>
                         <div class="dropdown-divider"></div>
                         <a class="dropdown-item"
-                            href="logout.php">Logout</a>
+                            href="logout">Logout</a>
                     </div>
                 </div>
             </div>
@@ -199,7 +199,7 @@ if ($qSocmed && mysqli_num_rows($qSocmed) > 0) {
         line-height:1.5;
     ">
                     Ikuti terus perkembangan berita, hukum, politik,
-                    dan informasi terpercaya hanya di Hukuminfo.
+                    dan informasi terpercaya hanya di Hukuminfo. | Support By : <a href="https://konig.co.id"><strong>Konig Guard Bureau</strong></a>
                 </p>
 
                 <div class="d-flex justify-content-center align-items-center flex-wrap"

@@ -293,6 +293,12 @@ $desktop_total = $device_stat['Desktop'] ?? 0;
 $mobile_total  = $device_stat['Mobile'] ?? 0;
 $tablet_total  = $device_stat['Tablet'] ?? 0;
 
+// AKSES ROLES
+function hasAccess($allowed_roles = [])
+{
+    return isset($_SESSION['role_id']) &&
+           in_array($_SESSION['role_id'], $allowed_roles);
+}
 ?>
 
 <!doctype html>
@@ -481,7 +487,9 @@ $tablet_total  = $device_stat['Tablet'] ?? 0;
                 <h4 class="mb-0">
                   Statistik Akun Publik Berdasarkan Wilayah
                 </h4>
+                <?php if (hasAccess([1, 13])): ?>
                 <a href="manage_users" class="btn btn-sm btn-primary">Lihat</a>
+                <?php endif; ?>
               </div>
 
               <div class="card-body">
@@ -892,9 +900,11 @@ $tablet_total  = $device_stat['Tablet'] ?? 0;
                 <h4 class="mb-0">
                   Statistik Komentar
                 </h4>
-                <a href="manage_comments.php" class="btn btn-sm btn-primary">
+                <?php if (hasAccess([1, 13])): ?>
+                <a href="manage_comments" class="btn btn-sm btn-primary">
                   Lihat
                 </a>
+                <?php endif; ?>
               </div>
 
               <div class="card-body">

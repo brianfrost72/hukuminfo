@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         $_SESSION['success'] = 'Iklan berhasil disimpan.';
 
-                        header("Location: manage_ads.php");
+                        header("Location: manage_ads");
                         exit;
                     }
 
@@ -154,7 +154,7 @@ if (isset($_GET['delete'])) {
             'Iklan tidak ditemukan.';
     }
 
-    header("Location: manage_ads.php");
+    header("Location: manage_ads");
     exit;
 }
 ?>

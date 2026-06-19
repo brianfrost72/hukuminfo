@@ -165,7 +165,7 @@ VALUES(
             'message' => 'User berhasil ditambahkan'
         ];
 
-        header("Location: manage_roles.php");
+        header("Location: manage_roles");
         exit;
     } catch (Exception $e) {
 
@@ -176,7 +176,7 @@ VALUES(
             'message' => 'Gagal menambahkan user'
         ];
 
-        header("Location: manage_roles.php");
+        header("Location: manage_roles");
         exit;
     }
 }
@@ -322,7 +322,7 @@ if (isset($_POST['update_user'])) {
         'message' => 'User berhasil diupdate'
     ];
 
-    header("Location: manage_roles.php");
+    header("Location: manage_roles");
     exit;
 }
 
@@ -354,7 +354,7 @@ if (isset($_POST['toggle_status'])) {
         ];
     }
 
-    header("Location: manage_roles.php");
+    header("Location: manage_roles");
     exit;
 }
 
@@ -378,7 +378,7 @@ if (isset($_POST['bulk_inactive'])) {
         'message' => 'User terpilih berhasil dinonaktifkan'
     ];
 
-    header("Location: manage_roles.php");
+    header("Location: manage_roles");
     exit;
 }
 

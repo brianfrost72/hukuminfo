@@ -221,12 +221,12 @@ if (!empty($selectedCategoryData)) {
     $metaTitle =
         'Kategori: ' .
         $selectedCategoryData['name_category'] .
-        ' | Hukuminfo.id - ' .
+        ' | Hukuminfo.id – ' .
         $siteTagline;
 } else {
 
     $metaTitle =
-        'Kategori | Hukuminfo.id - ' .
+        'Kategori | Hukuminfo.id – ' .
         $siteTagline;
 }
 

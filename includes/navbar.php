@@ -196,7 +196,7 @@ $basePostImage = 'dashboard/assets/images/uploads/posts/';
                                 Butuh Bantuan?
                             </span>
 
-                            <a href="tel:08111902759" class="phone__link">
+                            <a href="https://wa.me/628111902759?text=Halo%20Hukuminfo.id!%20saya%20butuh%20bantuan..." target="_blank" class="phone__link">
                                 0811 1902 759
                             </a>
 
@@ -225,7 +225,7 @@ $basePostImage = 'dashboard/assets/images/uploads/posts/';
             <div class="top-search navigation-shadow">
                 <div class="container">
                     <div class="input-group ">
-                        <form action="pencarian.php" method="GET" id="navbarSearchForm">
+                        <form action="pencarian" method="GET" id="navbarSearchForm">
 
                             <div class="row no-gutters mt-3">
 

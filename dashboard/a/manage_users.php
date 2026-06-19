@@ -286,7 +286,7 @@ $provinces = mysqli_query($conn, "
 
                                                 <td>
 
-                                                    <a href="view_user.php?id=<?= $row['profile_id']; ?>"
+                                                    <a href="view_user?id=<?= $row['profile_id']; ?>"
                                                         class="btn btn-info btn-sm">
                                                         <i class="material-icons">remove_red_eye</i>
                                                     </a>

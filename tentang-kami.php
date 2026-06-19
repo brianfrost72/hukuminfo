@@ -3,8 +3,25 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Tentang Kami - Hukuminfo.id</title>
-    <meta name="description" content="">
+    <title>Tentang Kami &ndash; Hukuminfo.id | Portal Berita Hukum Indonesia</title>
+
+    <meta name="description" content="Mengenal Hukuminfo.id, media siber yang menyajikan berita hukum, regulasi, kebijakan publik, bisnis, ekonomi, dan edukasi hukum yang akurat, independen, dan profesional.">
+
+    <meta name="keywords" content="tentang hukuminfo, hukuminfo.id, berita hukum indonesia, media hukum, portal hukum, informasi hukum, regulasi indonesia, edukasi hukum">
+
+    <meta name="robots" content="index, follow">
+
+    <link rel="canonical" href="https://hukuminfo.id/tentang-kami">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Tentang Kami - Hukuminfo.id">
+    <meta property="og:description" content="Portal berita hukum Indonesia yang independen, profesional, dan terpercaya.">
+    <meta property="og:url" content="https://hukuminfo.id/tentang-kami">
+    <meta property="og:image" content="https://hukuminfo.id/images/banner/bg.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Tentang Kami - Hukuminfo.id">
+    <meta name="twitter:description" content="Media siber yang fokus pada berita hukum, regulasi, bisnis, dan kebijakan publik Indonesia.">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- favicon.ico in the root directory -->
@@ -78,10 +95,12 @@
 
                     <div class="position-relative mb-4">
 
-                        <img src="images/banner/bg.png"
+                        <img src="images/banner/bg.png" id="banner"
                             class="img-fluid w-100"
-                            alt="Redaksi"
-                            style="height:250px; width:100%; object-fit:cover; border-radius: 10px;">
+                            alt="Tentang Kami" oncontextmenu="return false;"
+                            ondragstart="return false;"
+                            onselectstart="return false;"
+                            style="height:250px; width:100%; object-fit:cover; border-radius: 10px; user-select:none;">
 
                         <div class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center"
                             style="top:0;left:0;">
@@ -119,9 +138,7 @@
                             <h4>Visi</h4>
 
                             <p>
-                                Menjadi media informasi hukum terpercaya di Indonesia yang berperan aktif dalam
-                                meningkatkan kesadaran hukum, transparansi informasi, serta edukasi publik
-                                melalui jurnalisme yang independen, profesional, dan bertanggung jawab.
+                                Menjadi portal berita hukum, regulasi, ekonomi, bisnis dan terpercaya, independen, profesional, serta memberikan Informasi yang akurat, berimbang dan mencerahkan masyarakat Indonesia.
                             </p>
 
                             <h4>Misi</h4>
@@ -197,6 +214,14 @@
                                 <li>Menjunjung tinggi etika jurnalistik dalam setiap proses pemberitaan.</li>
                                 <li>Terus meningkatkan kualitas layanan dan informasi bagi pembaca.</li>
                             </ul>
+
+                            <hr>
+
+                            <h4>Motto</h4>
+
+                            <p>
+                                **Menyajikan Akurat &ndash; Independen &ndash; Profesional**
+                            </p>
 
                             <hr>
 
@@ -319,6 +344,19 @@
     <a href="javascript:" id="return-to-top"><i class="fa fa-chevron-up"></i></a>
 
     <script type="text/javascript" src="./js/index.bundle.js?537a1bbd0e5129401d28"></script>
+    <script type="text/javascript" src="js/navbar-search.js"></script>
+
+    <script>
+        document.addEventListener('contextmenu', function(e) {
+            if (e.target.id === 'banner') {
+                e.preventDefault();
+            }
+        });
+
+        document.getElementById('banner').addEventListener('dragstart', function(e) {
+            e.preventDefault();
+        });
+    </script>
 </body>
 
 </html>

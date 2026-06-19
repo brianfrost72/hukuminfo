@@ -269,7 +269,7 @@ if (!empty($selectedTagData)) {
 
     <meta
         property="og:url"
-        content="https://hukuminfo.id/tags.php<?= !empty($selectedTagData) ? '?tag=' . urlencode($selectedTagData['tag_slug']) : ''; ?>">
+        content="https://hukuminfo.id/tags<?= !empty($selectedTagData) ? '?tag=' . urlencode($selectedTagData['tag_slug']) : ''; ?>">
 
     <meta
         property="og:site_name"
@@ -592,7 +592,7 @@ if (!empty($selectedTagData)) {
 
                                                 <li class="list-inline-item">
 
-                                                    <a href="kategori.php">
+                                                    <a href="kategori">
 
                                                         +<?= $totalCategoriesSidebar - $maxCategories; ?> Lainnya
 
@@ -778,7 +778,7 @@ if (!empty($selectedTagData)) {
 
         const baseTagUrl = selectedTag ?
             `tags=${selectedTag}` :
-            'tags.php';
+            'tags';
 
         function renderTagPagination() {
             const ul = document.getElementById('tagPagination');

@@ -47,7 +47,7 @@ $query = mysqli_query($conn, "
 while ($row = mysqli_fetch_assoc($query)):
 ?>
 
-    <a href="artikel-detail.php?slug=<?= urlencode($row['slug']); ?>"
+    <a href="<?= urlencode($row['slug']); ?>"
         class="nav-search-item">
 
         <img src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($row['post_image']); ?>">

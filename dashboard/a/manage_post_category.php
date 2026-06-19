@@ -40,7 +40,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'add') {
 
         if (mysqli_num_rows($cek) > 0) {
 
-            header("Location: manage_post_category.php?error=duplicate");
+            header("Location: manage_post_category?error=duplicate");
             exit;
         }
 
@@ -61,7 +61,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'add') {
     )
 ");
 
-        header("Location: manage_post_category.php?success=add");
+        header("Location: manage_post_category?success=add");
         exit;
     }
 }
@@ -80,7 +80,7 @@ if (isset($_GET['delete'])) {
         WHERE id='$id'
     ");
 
-    header("Location: manage_post_category.php?success=delete");
+    header("Location: manage_post_category?success=delete");
     exit;
 }
 
@@ -114,7 +114,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'edit') {
 
     if (mysqli_num_rows($cek) > 0) {
 
-        header("Location: manage_post_category.php?error=duplicate");
+        header("Location: manage_post_category?error=duplicate");
         exit;
     }
 
@@ -129,7 +129,7 @@ SET
 WHERE id='$id'
     ");
 
-    header("Location: manage_post_category.php?success=edit");
+    header("Location: manage_post_category?success=edit");
     exit;
 }
 

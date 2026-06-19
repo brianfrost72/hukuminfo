@@ -100,7 +100,7 @@ if (isset($_POST['save_profile'])) {
 
     $_SESSION['profile_success'] = 'Informasi pribadi berhasil diperbarui';
 
-    header("Location: edit_profile.php");
+    header("Location: edit_profile");
     exit;
 }
 
@@ -142,7 +142,7 @@ if (isset($_POST['save_account'])) {
         $_SESSION['account_success'] = 'Email & Password berhasil diperbarui';
     }
 
-    header("Location: edit_profile.php");
+    header("Location: edit_profile");
     exit;
 }
 
@@ -162,7 +162,7 @@ if (isset($_POST['save_photo'])) {
             $_SESSION['error'] =
                 'Isi nama lengkap terlebih dahulu';
 
-            header("Location: edit_profile.php");
+            header("Location: edit_profile");
             exit;
         }
 
@@ -196,7 +196,7 @@ if (isset($_POST['save_photo'])) {
             $_SESSION['error'] =
                 'Format foto harus JPG, JPEG atau PNG';
 
-            header("Location: edit_profile.php");
+            header("Location: edit_profile");
             exit;
         }
 
@@ -206,7 +206,7 @@ if (isset($_POST['save_photo'])) {
             $_SESSION['error'] =
                 'Ukuran foto maksimal 2 MB';
 
-            header("Location: edit_profile.php");
+            header("Location: edit_profile");
             exit;
         }
 
@@ -242,7 +242,7 @@ if (isset($_POST['save_photo'])) {
         $_SESSION['photo_success'] = 'Foto profile berhasil diperbarui';
     }
 
-    header("Location: edit_profile.php");
+    header("Location: edit_profile");
     exit;
 }
 
@@ -271,7 +271,7 @@ if (isset($_POST['remove_photo'])) {
     $_SESSION['success'] =
         'Foto profile berhasil dihapus';
 
-    header("Location: edit_profile.php");
+    header("Location: edit_profile");
     exit;
 }
 

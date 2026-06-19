@@ -3,8 +3,21 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Pedoman Media Siber - Hukuminfo.id</title>
-    <meta name="description" content="">
+    <title>Pedoman Media Siber &ndash; Hukuminfo.id</title>
+
+    <meta name="description" content="Pedoman Media Siber Hukuminfo.id yang mengacu pada Undang-Undang Pers, Kode Etik Jurnalistik, dan Pedoman Pemberitaan Media Siber Dewan Pers.">
+
+    <meta name="keywords" content="pedoman media siber, dewan pers, kode etik jurnalistik, hukuminfo, media online indonesia">
+
+    <meta name="robots" content="index, follow">
+
+    <link rel="canonical" href="https://hukuminfo.id/pedoman-media-siber">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Pedoman Media Siber - Hukuminfo.id">
+    <meta property="og:description" content="Pedoman jurnalistik dan pengelolaan konten Hukuminfo.id sesuai standar Dewan Pers.">
+    <meta property="og:url" content="https://hukuminfo.id/pedoman-media-siber">
+    <meta property="og:image" content="https://hukuminfo.id/images/banner/bg.png">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- favicon.ico in the root directory -->
@@ -78,16 +91,18 @@
 
                     <div class="position-relative mb-4">
 
-                        <img src="images/banner/bg.png"
+                        <img src="images/banner/bg.png" id="banner"
                             class="img-fluid w-100"
-                            alt="Redaksi"
-                            style="height:250px; width:100%; object-fit:cover; border-radius: 10px;">
+                            alt="Pedoman Media Cyber" oncontextmenu="return false;"
+                            ondragstart="return false;"
+                            onselectstart="return false;"
+                            style="height:250px; width:100%; object-fit:cover; border-radius: 10px; user-select:none;">
 
                         <div class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center"
                             style="top:0;left:0;">
 
                             <h2 class="text-white text-center mb-0">
-                                Pedoman Media Siber
+                                Pedoman Media Cyber
                             </h2>
 
                         </div>
@@ -287,6 +302,19 @@
     <a href="javascript:" id="return-to-top"><i class="fa fa-chevron-up"></i></a>
 
     <script type="text/javascript" src="./js/index.bundle.js?537a1bbd0e5129401d28"></script>
+    <script type="text/javascript" src="js/navbar-search.js"></script>
+
+    <script>
+        document.addEventListener('contextmenu', function(e) {
+            if (e.target.id === 'banner') {
+                e.preventDefault();
+            }
+        });
+
+        document.getElementById('banner').addEventListener('dragstart', function(e) {
+            e.preventDefault();
+        });
+    </script>
 </body>
 
 </html>

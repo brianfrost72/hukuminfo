@@ -81,6 +81,15 @@ if (!empty($userData['photo_profile'])) {
             $photoFile;
     }
 }
+
+// MENU BERDASARKAN ROLES
+$role_id = $_SESSION['role_id'] ?? 0;
+
+function allowRole(array $roles)
+{
+    global $role_id;
+    return in_array($role_id, $roles);
+}
 ?>
 
 <div class="mdk-drawer js-mdk-drawer" id="default-drawer" data-align="end">
@@ -101,6 +110,7 @@ if (!empty($userData['photo_profile'])) {
                 </a>
             </div>
             <!-- *********************************FIRST MENU********************************* -->
+
             <div class="sidebar-heading">Menu</div>
             <ul class="sidebar-menu">
                 <!-- DASHBOARD_MENU -->
@@ -114,62 +124,65 @@ if (!empty($userData['photo_profile'])) {
                 <!-- DASHBOARD_MENU END -->
 
                 <!-- ROLE AKSES MENU -->
+                <?php if (allowRole([1, 12])) : ?>
+                    <li class="sidebar-menu-item">
+                        <a
+                            class="sidebar-menu-button"
+                            data-toggle="collapse"
+                            href="#role_menu">
+                            <i
+                                class="sidebar-menu-icon sidebar-menu-icon--left material-icons">accessibility</i>
+                            <span class="sidebar-menu-text">Master Role</span>
+                            <span class="ml-auto sidebar-menu-toggle-icon"></span>
+                        </a>
+                        <ul class="sidebar-submenu collapse" id="role_menu">
+                            <li class="sidebar-menu-item">
+                                <a
+                                    class="sidebar-menu-button"
+                                    href="add_roles">
+                                    <span class="sidebar-menu-text">Tambah Role</span>
+                                </a>
+                            </li>
+                            <li class="sidebar-menu-item">
+                                <a class="sidebar-menu-button" href="manage_roles">
+                                    <span class="sidebar-menu-text">Manage Role</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
 
-                <li class="sidebar-menu-item">
-                    <a
-                        class="sidebar-menu-button"
-                        data-toggle="collapse"
-                        href="#role_menu">
-                        <i
-                            class="sidebar-menu-icon sidebar-menu-icon--left material-icons">accessibility</i>
-                        <span class="sidebar-menu-text">Master Role</span>
-                        <span class="ml-auto sidebar-menu-toggle-icon"></span>
-                    </a>
-                    <ul class="sidebar-submenu collapse" id="role_menu">
-                        <li class="sidebar-menu-item">
-                            <a
-                                class="sidebar-menu-button"
-                                href="add_roles">
-                                <span class="sidebar-menu-text">Tambah Role</span>
-                            </a>
-                        </li>
-                        <li class="sidebar-menu-item">
-                            <a class="sidebar-menu-button" href="manage_roles">
-                                <span class="sidebar-menu-text">Manage Role</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
+                <?php endif; ?>
                 <!-- ROLE AKSES MENU END -->
             </ul>
             <!-- *********************************FIRST MENU END********************************* -->
 
             <!-- *********************************CLIENT MENU********************************* -->
-            <div class="sidebar-heading">USER MENU</div>
-            <ul class="sidebar-menu" id="components_menu">
+            <?php if (allowRole([1, 12])) : ?>
+                <div class="sidebar-heading">USER MENU</div>
+                <ul class="sidebar-menu" id="components_menu">
 
-                <!-- MASTER CLIENT MENU -->
-                <li class="sidebar-menu-item">
-                    <a
-                        class="sidebar-menu-button"
-                        data-toggle="collapse"
-                        href="#client_menu">
-                        <i
-                            class="sidebar-menu-icon sidebar-menu-icon--left material-icons">account_circle</i>
-                        <span class="sidebar-menu-text">Master User</span>
-                        <span class="ml-auto sidebar-menu-toggle-icon"></span>
-                    </a>
-                    <ul class="sidebar-submenu collapse" id="client_menu">
-                        <li class="sidebar-menu-item">
-                            <a class="sidebar-menu-button" href="manage_users">
-                                <span class="sidebar-menu-text">Manage User</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <!-- MASTER CLIENT MENU END -->
-            </ul>
-
+                    <!-- MASTER CLIENT MENU -->
+                    <li class="sidebar-menu-item">
+                        <a
+                            class="sidebar-menu-button"
+                            data-toggle="collapse"
+                            href="#client_menu">
+                            <i
+                                class="sidebar-menu-icon sidebar-menu-icon--left material-icons">account_circle</i>
+                            <span class="sidebar-menu-text">Master User</span>
+                            <span class="ml-auto sidebar-menu-toggle-icon"></span>
+                        </a>
+                        <ul class="sidebar-submenu collapse" id="client_menu">
+                            <li class="sidebar-menu-item">
+                                <a class="sidebar-menu-button" href="manage_users">
+                                    <span class="sidebar-menu-text">Manage User</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <!-- MASTER CLIENT MENU END -->
+                </ul>
+            <?php endif; ?>
             <!-- *********************************CONTENT MENU********************************* -->
 
             <div class="sidebar-heading">CONTENT MENU</div>
@@ -226,12 +239,14 @@ if (!empty($userData['photo_profile'])) {
                             <span class="ml-auto sidebar-menu-toggle-icon"></span>
                         </a>
                         <ul class="sidebar-submenu collapse" id="manage_article_menu">
-                            <li class="sidebar-menu-item">
-                                <a class="sidebar-menu-button" href="manage_comments">
-                                    <span class="sidebar-menu-text">Manage Komentar</span>
-                                    <!-- <span class="badge badge-primary badge-pill ml-1">3</span> -->
-                                </a>
-                            </li>
+                            <?php if (allowRole([1, 12])) : ?>
+                                <li class="sidebar-menu-item">
+                                    <a class="sidebar-menu-button" href="manage_comments">
+                                        <span class="sidebar-menu-text">Manage Komentar</span>
+                                        <!-- <span class="badge badge-primary badge-pill ml-1">3</span> -->
+                                    </a>
+                                </li>
+                            <?php endif; ?>
                             <li class="sidebar-menu-item">
                                 <a class="sidebar-menu-button" href="list_likes">
                                     <span class="sidebar-menu-text">List Likes</span>
@@ -247,47 +262,51 @@ if (!empty($userData['photo_profile'])) {
                     <!-- BERITA / ARTIKEL MENU END -->
 
                     <!-- SOCIAL MEDIA MENU -->
-                    <li class="sidebar-menu-item">
-                        <a
-                            class="sidebar-menu-button"
-                            data-toggle="collapse"
-                            href="#social_menu">
-                            <i
-                                class="sidebar-menu-icon sidebar-menu-icon--left fa fa-bullhorn"></i>
-                            <span class="sidebar-menu-text">Manage Sosial Media</span>
-                            <!-- <span class="badge badge-primary badge-pill ml-1">3</span> -->
-                            <span class="ml-auto sidebar-menu-toggle-icon"></span>
-                        </a>
-                        <ul class="sidebar-submenu collapse" id="social_menu">
-                            <li class="sidebar-menu-item">
-                                <a class="sidebar-menu-button" href="manage_socmed">
-                                    <span class="sidebar-menu-text">Manage SosMed</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+                    <?php if (allowRole([1, 12])) : ?>
+                        <li class="sidebar-menu-item">
+                            <a
+                                class="sidebar-menu-button"
+                                data-toggle="collapse"
+                                href="#social_menu">
+                                <i
+                                    class="sidebar-menu-icon sidebar-menu-icon--left fa fa-bullhorn"></i>
+                                <span class="sidebar-menu-text">Manage Sosial Media</span>
+                                <!-- <span class="badge badge-primary badge-pill ml-1">3</span> -->
+                                <span class="ml-auto sidebar-menu-toggle-icon"></span>
+                            </a>
+                            <ul class="sidebar-submenu collapse" id="social_menu">
+                                <li class="sidebar-menu-item">
+                                    <a class="sidebar-menu-button" href="manage_socmed">
+                                        <span class="sidebar-menu-text">Manage SosMed</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    <?php endif; ?>
                     <!-- SOCIAL MEDIA MENU END -->
 
                     <!-- IKLAN MENU -->
-                    <li class="sidebar-menu-item">
-                        <a
-                            class="sidebar-menu-button"
-                            data-toggle="collapse"
-                            href="#ads_menu">
-                            <i
-                                class="sidebar-menu-icon sidebar-menu-icon--left fa fa-ad"></i>
-                            <span class="sidebar-menu-text">Manage Iklan</span>
-                            <!-- <span class="badge badge-primary badge-pill ml-1">3</span> -->
-                            <span class="ml-auto sidebar-menu-toggle-icon"></span>
-                        </a>
-                        <ul class="sidebar-submenu collapse" id="ads_menu">
-                            <li class="sidebar-menu-item">
-                                <a class="sidebar-menu-button" href="manage_ads">
-                                    <span class="sidebar-menu-text">Manage Iklan</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+                    <?php if (allowRole([1, 12])) : ?>
+                        <li class="sidebar-menu-item">
+                            <a
+                                class="sidebar-menu-button"
+                                data-toggle="collapse"
+                                href="#ads_menu">
+                                <i
+                                    class="sidebar-menu-icon sidebar-menu-icon--left fa fa-ad"></i>
+                                <span class="sidebar-menu-text">Manage Iklan</span>
+                                <!-- <span class="badge badge-primary badge-pill ml-1">3</span> -->
+                                <span class="ml-auto sidebar-menu-toggle-icon"></span>
+                            </a>
+                            <ul class="sidebar-submenu collapse" id="ads_menu">
+                                <li class="sidebar-menu-item">
+                                    <a class="sidebar-menu-button" href="manage_ads">
+                                        <span class="sidebar-menu-text">Manage Iklan</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    <?php endif; ?>
                     <!-- IKLAN MENU END -->
                 </ul>
                 <!-- *********************************FIRST MENU END********************************* -->

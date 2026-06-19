@@ -1023,7 +1023,7 @@ while ($row = mysqli_fetch_assoc($qTags)) {
                         clearInterval(timer);
 
                         window.location.href =
-                            'manage_post.php';
+                            'manage_post';
                     }
 
                 }, 1000);
@@ -1031,7 +1031,7 @@ while ($row = mysqli_fetch_assoc($qTags)) {
                 $('#btnOkayPosting').on('click', function() {
 
                     window.location.href =
-                        'manage_post.php';
+                        'manage_post';
 
                 });
 

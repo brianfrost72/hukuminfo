@@ -11,7 +11,7 @@ if (
 ) {
 
     header(
-        "Location: ../manage_comments.php?hidden=failed"
+        "Location: ../manage_comments?hidden=failed"
     );
 
     exit;
@@ -83,12 +83,12 @@ if (
 ) {
 
     header(
-        "Location: ../manage_comments.php?hidden=success"
+        "Location: ../manage_comments?hidden=success"
     );
 } else {
 
     header(
-        "Location: ../manage_comments.php?hidden=failed"
+        "Location: ../manage_comments?hidden=failed"
     );
 }
 

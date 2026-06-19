@@ -32,7 +32,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'add') {
     ");
 
     if (mysqli_num_rows($cek) > 0) {
-        header("Location: manage_post_subcategory.php?error=duplicate");
+        header("Location: manage_post_subcategory?error=duplicate");
         exit;
     }
 
@@ -51,7 +51,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'add') {
         )
     ");
 
-    header("Location: manage_post_subcategory.php?success=add");
+    header("Location: manage_post_subcategory?success=add");
     exit;
 }
 
@@ -87,7 +87,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'edit') {
     ");
 
     if (mysqli_num_rows($cek) > 0) {
-        header("Location: manage_post_subcategory.php?error=duplicate");
+        header("Location: manage_post_subcategory?error=duplicate");
         exit;
     }
 
@@ -100,7 +100,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'edit') {
         WHERE id='$id'
     ");
 
-    header("Location: manage_post_subcategory.php?success=edit");
+    header("Location: manage_post_subcategory?success=edit");
     exit;
 }
 
@@ -155,7 +155,7 @@ if (
     }
 
     header(
-        "Location: manage_post_subcategory.php?success=delete"
+        "Location: manage_post_subcategory?success=delete"
     );
     exit;
 }
@@ -175,7 +175,7 @@ if (
     );
 
     header(
-        "Location: manage_post_subcategory.php?success=delete"
+        "Location: manage_post_subcategory?success=delete"
     );
     exit;
 }

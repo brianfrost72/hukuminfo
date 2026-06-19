@@ -15657,3 +15657,10 @@ body.offcanvas-active {
 .mobile-socmed a:hover{
     transform:translateY(-3px);
 }
+
+#banner{
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+    pointer-events: none;
+}

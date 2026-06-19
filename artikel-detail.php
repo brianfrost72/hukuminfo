@@ -66,7 +66,7 @@ $postQuery = mysqli_query($conn, "
 ");
 
 if (!$postQuery || mysqli_num_rows($postQuery) == 0) {
-    header("Location: 404.php");
+    header("Location: 404");
     exit;
 }
 

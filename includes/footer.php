@@ -147,7 +147,7 @@ if ($qSocmed && mysqli_num_rows($qSocmed) > 0) {
                 </p>
 
                 <small style="color: #acaaaa;">
-                    © 2026 Hukuminfo.id — Media Informasi Hukum Indonesia
+                    &copy; 2026 Hukuminfo.id — Media Informasi Hukum Indonesia | All Rights Reserved | Support By : <a href="https://konig.co.id"><strong>Konig Guard Bureau</strong></a>
                 </small>
 
             </div>

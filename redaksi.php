@@ -190,222 +190,233 @@ while ($row = mysqli_fetch_assoc($queryRedaksi)) {
 
                     <div class="position-relative mb-4">
 
-                        <img src="images/banner/bg.png"
+                        <img src="images/banner/bg.png" id="banner"
                             class="img-fluid w-100"
-                            alt="Redaksi"
-                            style="height:250px; width:100%; object-fit:cover; border-radius: 10px;">
+                            alt="Redaksi" oncontextmenu="return false;"
+                            ondragstart="return false;"
+                            onselectstart="return false;"
+                            style="height:250px; width:100%; object-fit:cover; border-radius: 10px; user-select:none;">
 
-                        <div class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center"
+                        <div class=" position-absolute w-100 h-100 d-flex align-items-center justify-content-center"
                             style="top:0;left:0;">
 
-                            <h2 class="text-white text-center mb-0">
-                                Redaksi
-                            </h2>
-
-                        </div>
+                        <h2 class="text-white text-center mb-0">
+                            Redaksi
+                        </h2>
 
                     </div>
 
-                    <p>
-                        Susunan redaksi dan manajemen Hukuminfo.id.
-                    </p>
+                </div>
 
-                    <?php if (!empty($redaksi)): ?>
+                <p>
+                    Susunan redaksi dan manajemen Hukuminfo.id.
+                </p>
 
-                        <?php foreach ($redaksi as $roleName => $members): ?>
+                <?php if (!empty($redaksi)): ?>
 
-                            <details class="mb-3">
+                    <?php foreach ($redaksi as $roleName => $members): ?>
 
-                                <summary>
-                                    <strong><?= htmlspecialchars($roleName); ?></strong>
-                                </summary>
+                        <details class="mb-3">
 
-                                <?php if (count($members) == 1): ?>
+                            <summary>
+                                <strong><?= htmlspecialchars($roleName); ?></strong>
+                            </summary>
 
-                                    <?php $member = $members[0]; ?>
+                            <?php if (count($members) == 1): ?>
 
-                                    <div class="mt-3">
+                                <?php $member = $members[0]; ?>
 
-                                        <a href="redaksi/<?= urlencode($member['slug']); ?>"
-                                            class="text-dark text-decoration-none">
+                                <div class="mt-3">
+
+                                    <a href="redaksi/<?= urlencode($member['slug']); ?>"
+                                        class="text-dark text-decoration-none">
 
 
-                                            <div class="media">
+                                        <div class="media">
 
-                                                <img src="<?= $member['photo']; ?>"
-                                                    class="rounded-circle mr-3"
-                                                    width="80"
-                                                    height="80"
-                                                    style="object-fit:cover;"
-                                                    alt="<?= htmlspecialchars($member['full_name']); ?>">
+                                            <img src="<?= $member['photo']; ?>"
+                                                class="rounded-circle mr-3"
+                                                width="80"
+                                                height="80"
+                                                style="object-fit:cover;"
+                                                alt="<?= htmlspecialchars($member['full_name']); ?>">
 
-                                                <div>
+                                            <div>
 
-                                                    <h5 class="mb-1">
+                                                <h5 class="mb-1">
+                                                    <?= htmlspecialchars($member['full_name']); ?>
+                                                </h5>
+
+                                                <p class="mb-0">
+                                                    <?= htmlspecialchars($roleName); ?>
+                                                </p>
+
+                                            </div>
+
+                                        </div>
+
+                                    </a>
+
+                                </div>
+
+                            <?php else: ?>
+
+                                <div class="row mt-3">
+
+                                    <?php foreach ($members as $member): ?>
+
+                                        <div class="col-lg-4 col-md-4 col-6 mb-3">
+
+                                            <a href="redaksi=<?= urlencode($member['slug']); ?>"
+                                                class="text-decoration-none text-dark">
+
+                                                <div class="text-center">
+
+                                                    <img src="<?= $member['photo']; ?>"
+                                                        class="rounded-circle mb-2"
+                                                        width="90"
+                                                        height="90"
+                                                        style="object-fit:cover;"
+                                                        alt="<?= htmlspecialchars($member['full_name']); ?>">
+
+                                                    <h6 class="mb-1">
                                                         <?= htmlspecialchars($member['full_name']); ?>
-                                                    </h5>
+                                                    </h6>
 
-                                                    <p class="mb-0">
+                                                    <small class="text-muted">
                                                         <?= htmlspecialchars($roleName); ?>
-                                                    </p>
+                                                    </small>
 
                                                 </div>
 
-                                            </div>
+                                            </a>
 
-                                        </a>
+                                        </div>
 
-                                    </div>
+                                    <?php endforeach; ?>
 
-                                <?php else: ?>
+                                </div>
 
-                                    <div class="row mt-3">
+                            <?php endif; ?>
 
-                                        <?php foreach ($members as $member): ?>
+                        </details>
 
-                                            <div class="col-lg-4 col-md-4 col-6 mb-3">
+                    <?php endforeach; ?>
 
-                                                <a href="redaksi=<?= urlencode($member['slug']); ?>"
-                                                    class="text-decoration-none text-dark">
+                <?php else: ?>
 
-                                                    <div class="text-center">
+                    <div class="alert alert-warning">
+                        Belum ada data redaksi.
+                    </div>
 
-                                                        <img src="<?= $member['photo']; ?>"
-                                                            class="rounded-circle mb-2"
-                                                            width="90"
-                                                            height="90"
-                                                            style="object-fit:cover;"
-                                                            alt="<?= htmlspecialchars($member['full_name']); ?>">
+                <?php endif; ?>
 
-                                                        <h6 class="mb-1">
-                                                            <?= htmlspecialchars($member['full_name']); ?>
-                                                        </h6>
+                <hr>
 
-                                                        <small class="text-muted">
-                                                            <?= htmlspecialchars($roleName); ?>
-                                                        </small>
+                <h4>Alamat Redaksi</h4>
 
-                                                    </div>
+                <p>
+                    Puri Botanical Residence Blok H9 No.11, Jakarta - Indonesia.
+                </p>
 
-                                                </a>
+                <h4>Email Redaksi</h4>
 
-                                            </div>
+                <p>
+                    <a href="mailto:redaksi@hukuminfo.id">
+                        redaksi@hukuminfo.id
+                    </a>
+                </p>
 
-                                        <?php endforeach; ?>
+                <hr>
 
-                                    </div>
+                <h4>Support By</h4>
 
-                                <?php endif; ?>
+                <a href="https://konig.co.id" target="_blank">
+                    <img src="images/placeholder/konigguard.png" style="width: 180px; height: auto; border-radius: 10px;"
+                        class="img-fluid"
+                        alt="Konig.co.id">
+                </a>
+            </div>
 
-                            </details>
+            <!-- SIDEBAR -->
+            <div class="col-lg-4">
 
-                        <?php endforeach; ?>
+                <div class="sticky-top" style="top:170px;">
 
-                    <?php else: ?>
+                    <div class="card">
+                        <div class="card-body">
+                            <?php
+                            $current_page = pathinfo($_SERVER['PHP_SELF'], PATHINFO_FILENAME);
+                            ?>
 
-                        <div class="alert alert-warning">
-                            Belum ada data redaksi.
+                            <h4 class="mb-3">Informasi</h4>
+
+                            <ul class="list-group">
+
+                                <li class="list-group-item">
+                                    <a href="tentang-kami">
+                                        <?php if ($current_page == 'tentang-kami'): ?>
+                                            <i class="fa fa-angle-right mr-2"></i>
+                                        <?php endif; ?>
+                                        Tentang Kami
+                                    </a>
+                                </li>
+
+                                <li class="list-group-item">
+                                    <a href="redaksi">
+                                        <?php if ($current_page == 'redaksi'): ?>
+                                            <i class="fa fa-angle-right mr-2"></i>
+                                        <?php endif; ?>
+                                        Redaksi
+                                    </a>
+                                </li>
+
+                                <li class="list-group-item">
+                                    <a href="pedoman-media-siber">
+                                        <?php if ($current_page == 'pedoman-media-siber'): ?>
+                                            <i class="fa fa-angle-right mr-2"></i>
+                                        <?php endif; ?>
+                                        Pedoman Media Siber
+                                    </a>
+                                </li>
+
+                                <li class="list-group-item">
+                                    <a href="disclaimer">
+                                        <?php if ($current_page == 'disclaimer'): ?>
+                                            <i class="fa fa-angle-right mr-2"></i>
+                                        <?php endif; ?>
+                                        Disclaimer
+                                    </a>
+                                </li>
+
+                                <li class="list-group-item">
+                                    <a href="terms-of-service">
+                                        <?php if ($current_page == 'terms-of-service'): ?>
+                                            <i class="fa fa-angle-right mr-2"></i>
+                                        <?php endif; ?>
+                                        Terms of Service
+                                    </a>
+                                </li>
+
+                                <li class="list-group-item">
+                                    <a href="privacy-policy">
+                                        <?php if ($current_page == 'privacy-policy'): ?>
+                                            <i class="fa fa-angle-right mr-2"></i>
+                                        <?php endif; ?>
+                                        Kebijakan Privasi
+                                    </a>
+                                </li>
+
+                            </ul>
+
                         </div>
-
-                    <?php endif; ?>
-
-                    <hr>
-
-                    <h4>Alamat Redaksi</h4>
-
-                    <p>
-                        Puri Botanical Residence Blok H9 No.11, Jakarta - Indonesia.
-                    </p>
-
-                    <h4>Email Redaksi</h4>
-
-                    <p>
-                        <a href="mailto:redaksi@hukuminfo.id">
-                            redaksi@hukuminfo.id
-                        </a>
-                    </p>
-
-                </div>
-
-                <!-- SIDEBAR -->
-                <div class="col-lg-4">
-
-                    <div class="sticky-top" style="top:170px;">
-
-                        <div class="card">
-                            <div class="card-body">
-                                <?php
-                               $current_page = pathinfo($_SERVER['PHP_SELF'], PATHINFO_FILENAME);
-                                ?>
-
-                                <h4 class="mb-3">Informasi</h4>
-
-                                <ul class="list-group">
-
-                                    <li class="list-group-item">
-                                        <a href="tentang-kami">
-                                            <?php if ($current_page == 'tentang-kami'): ?>
-                                                <i class="fa fa-angle-right mr-2"></i>
-                                            <?php endif; ?>
-                                            Tentang Kami
-                                        </a>
-                                    </li>
-
-                                    <li class="list-group-item">
-                                        <a href="redaksi">
-                                            <?php if ($current_page == 'redaksi'): ?>
-                                                <i class="fa fa-angle-right mr-2"></i>
-                                            <?php endif; ?>
-                                            Redaksi
-                                        </a>
-                                    </li>
-
-                                    <li class="list-group-item">
-                                        <a href="pedoman-media-siber">
-                                            <?php if ($current_page == 'pedoman-media-siber'): ?>
-                                                <i class="fa fa-angle-right mr-2"></i>
-                                            <?php endif; ?>
-                                            Pedoman Media Siber
-                                        </a>
-                                    </li>
-
-                                    <li class="list-group-item">
-                                        <a href="disclaimer">
-                                            <?php if ($current_page == 'disclaimer'): ?>
-                                                <i class="fa fa-angle-right mr-2"></i>
-                                            <?php endif; ?>
-                                            Disclaimer
-                                        </a>
-                                    </li>
-
-                                    <li class="list-group-item">
-                                        <a href="terms-of-service">
-                                            <?php if ($current_page == 'terms-of-service'): ?>
-                                                <i class="fa fa-angle-right mr-2"></i>
-                                            <?php endif; ?>
-                                            Terms of Service
-                                        </a>
-                                    </li>
-
-                                    <li class="list-group-item">
-                                        <a href="privacy-policy">
-                                            <?php if ($current_page == 'privacy-policy'): ?>
-                                                <i class="fa fa-angle-right mr-2"></i>
-                                            <?php endif; ?>
-                                            Kebijakan Privasi
-                                        </a>
-                                    </li>
-
-                                </ul>
-
-                            </div>
-                        </div>
-
                     </div>
 
                 </div>
 
             </div>
+
+        </div>
         </div>
     </section>
 
@@ -423,5 +434,17 @@ while ($row = mysqli_fetch_assoc($queryRedaksi)) {
     <script type="text/javascript" src="./js/index.bundle.js?537a1bbd0e5129401d28"></script>
     <script type="text/javascript" src="js/navbar-search.js"></script>
 
+    <script>
+        document.addEventListener('contextmenu', function(e) {
+            if (e.target.id === 'banner') {
+                e.preventDefault();
+            }
+        });
+
+        document.getElementById('banner').addEventListener('dragstart', function(e) {
+            e.preventDefault();
+        });
+    </script>
 </body>
+
 </html>

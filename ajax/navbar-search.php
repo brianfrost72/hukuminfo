@@ -49,7 +49,7 @@ while ($row = mysqli_fetch_assoc($query)):
 ?>
 
     <a
-        href="artikel-detail.php?slug=<?= $row['slug']; ?>"
+        href="<?= $row['slug']; ?>"
         class="nav-search-item">
 
         <img

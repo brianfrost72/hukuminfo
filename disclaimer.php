@@ -3,8 +3,21 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Disclaimer - Hukuminfo.id</title>
-    <meta name="description" content="">
+    <title>Disclaimer &ndash; Hukuminfo.id</title>
+
+    <meta name="description" content="Disclaimer Hukuminfo.id mengenai penggunaan informasi, berita, opini, tautan pihak ketiga, komentar pengguna, dan tanggung jawab penggunaan situs.">
+
+    <meta name="keywords" content="disclaimer hukuminfo, penafian, informasi hukum, berita hukum indonesia">
+
+    <meta name="robots" content="index, follow">
+
+    <link rel="canonical" href="https://hukuminfo.id/disclaimer">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Disclaimer - Hukuminfo.id">
+    <meta property="og:description" content="Ketentuan penafian penggunaan informasi dan layanan pada Hukuminfo.id.">
+    <meta property="og:url" content="https://hukuminfo.id/disclaimer">
+    <meta property="og:image" content="https://hukuminfo.id/images/banner/bg.png">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- favicon.ico in the root directory -->
@@ -79,10 +92,12 @@
 
                     <div class="position-relative mb-4">
 
-                        <img src="images/banner/bg.png"
+                        <img src="images/banner/bg.png" id="banner"
                             class="img-fluid w-100"
-                            alt="Redaksi"
-                            style="height:250px; width:100%; object-fit:cover; border-radius: 10px;">
+                            alt="Disclaimer" oncontextmenu="return false;"
+                            ondragstart="return false;"
+                            onselectstart="return false;"
+                            style="height:250px; width:100%; object-fit:cover; border-radius: 10px; user-select:none;">
 
                         <div class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center"
                             style="top:0;left:0;">
@@ -304,6 +319,19 @@
     <a href="javascript:" id="return-to-top"><i class="fa fa-chevron-up"></i></a>
 
     <script type="text/javascript" src="./js/index.bundle.js?537a1bbd0e5129401d28"></script>
+    <script type="text/javascript" src="js/navbar-search.js"></script>
+
+    <script>
+        document.addEventListener('contextmenu', function(e) {
+            if (e.target.id === 'banner') {
+                e.preventDefault();
+            }
+        });
+
+        document.getElementById('banner').addEventListener('dragstart', function(e) {
+            e.preventDefault();
+        });
+    </script>
 </body>
 
 </html>

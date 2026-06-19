@@ -101,12 +101,23 @@ if ($qSocmed && mysqli_num_rows($qSocmed) > 0) {
 
 <head>
     <meta charset="utf-8">
-    <title>Kontak Kami - Hukuminfo.id</title>
-    <meta name="description" content="">
+    <title>Kontak Kami &ndash; Hukuminfo.id</title>
+
+    <meta name="description" content="Hubungi Hukuminfo.id untuk pertanyaan, pengaduan, kerja sama media, hak jawab, koreksi berita, dan layanan informasi lainnya.">
+
+    <meta name="keywords" content="kontak hukuminfo, hubungi hukuminfo, redaksi hukuminfo, pengaduan berita, hak jawab">
+
+    <link rel="canonical" href="https://hukuminfo.id/kontak-kami">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Kontak Kami - Hukuminfo.id">
+    <meta property="og:description" content="Hubungi tim Hukuminfo.id melalui email, WhatsApp, atau formulir kontak resmi.">
+    <meta property="og:url" content="https://hukuminfo.id/kontak-kami">
+    <meta property="og:image" content="https://hukuminfo.id/images/banner/bg.png">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link rel="manifest" href="site.webmanifest">
-    
+
     <!-- favicon.ico in the root directory -->
     <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
 
@@ -373,6 +384,23 @@ if ($qSocmed && mysqli_num_rows($qSocmed) > 0) {
     <a href="javascript:" id="return-to-top"><i class="fa fa-chevron-up"></i></a>
 
     <script type="text/javascript" src="./js/index.bundle.js?537a1bbd0e5129401d28"></script>
+    <script type="text/javascript" src="js/navbar-search.js"></script>
+
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "NewsMediaOrganization",
+            "name": "Hukuminfo.id",
+            "url": "https://hukuminfo.id",
+            "logo": "https://hukuminfo.id/dashboard/assets/images/logos/logos.png",
+            "sameAs": [
+                "https://facebook.com/",
+                "https://instagram.com/",
+                "https://youtube.com/",
+                "https://linkedin.com/"
+            ]
+        }
+    </script>
 </body>
 
 </html>

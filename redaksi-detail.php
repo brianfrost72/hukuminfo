@@ -39,7 +39,7 @@ $slug = mysqli_real_escape_string(
 );
 
 if (empty($slug)) {
-    header('Location: redaksi.php');
+    header('Location: redaksi');
     exit;
 }
 

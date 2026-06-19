@@ -391,7 +391,7 @@ while ($row = mysqli_fetch_assoc($qTags)) {
                             </nav>
                             <h1 class="m-0">Manage Postingan</h1>
                         </div>
-                        <a href="manage_post.php" class="btn btn-primary ml-3">
+                        <a href="manage_post" class="btn btn-primary ml-3">
                             <i class="material-icons">keyboard_backspace</i> Kembali
                         </a>
                     </div>
@@ -1131,7 +1131,7 @@ while ($row = mysqli_fetch_assoc($qTags)) {
                         clearInterval(timer);
 
                         window.location.href =
-                            'manage_post.php';
+                            'manage_post';
                     }
 
                 }, 1000);
@@ -1139,7 +1139,7 @@ while ($row = mysqli_fetch_assoc($qTags)) {
                 $('#btnOkayPosting').on('click', function() {
 
                     window.location.href =
-                        'manage_post.php';
+                        'manage_post';
 
                 });
 
