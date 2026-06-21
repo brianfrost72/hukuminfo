@@ -1,6 +1,5 @@
 <?php
-session_start();
-
+require_once 'session.php';
 require_once 'koneksi.php';
 
 function tanggalIndonesia($datetime)
@@ -70,24 +69,24 @@ while ($row = mysqli_fetch_assoc($queryRedaksi)) {
         !empty($row['photo_profile']) &&
         file_exists(
             __DIR__ .
-                '/dashboard/assets/images/uploads/user_photos/' .
+                '/hufo/dashboard/assets/images/uploads/user_photos/' .
                 $row['photo_profile']
         )
     ) {
 
         $photo =
-            'dashboard/assets/images/uploads/user_photos/' .
+            'hufo/dashboard/assets/images/uploads/user_photos/' .
             $row['photo_profile'];
     } else {
 
         if ($row['gender'] == 'Perempuan') {
 
             $photo =
-                'dashboard/assets/images/avatar/avatar-women.png';
+                'hufo/dashboard/assets/images/avatar/avatar-women.png';
         } else {
 
             $photo =
-                'dashboard/assets/images/avatar/avatar-men.png';
+                'hufo/dashboard/assets/images/avatar/avatar-men.png';
         }
     }
 
@@ -200,223 +199,223 @@ while ($row = mysqli_fetch_assoc($queryRedaksi)) {
                         <div class=" position-absolute w-100 h-100 d-flex align-items-center justify-content-center"
                             style="top:0;left:0;">
 
-                        <h2 class="text-white text-center mb-0">
-                            Redaksi
-                        </h2>
+                            <h2 class="text-white text-center mb-0">
+                                Redaksi
+                            </h2>
+
+                        </div>
 
                     </div>
 
-                </div>
+                    <p>
+                        Susunan redaksi dan manajemen Hukuminfo.id.
+                    </p>
 
-                <p>
-                    Susunan redaksi dan manajemen Hukuminfo.id.
-                </p>
+                    <?php if (!empty($redaksi)): ?>
 
-                <?php if (!empty($redaksi)): ?>
+                        <?php foreach ($redaksi as $roleName => $members): ?>
 
-                    <?php foreach ($redaksi as $roleName => $members): ?>
+                            <details class="mb-3">
 
-                        <details class="mb-3">
+                                <summary>
+                                    <strong><?= htmlspecialchars($roleName); ?></strong>
+                                </summary>
 
-                            <summary>
-                                <strong><?= htmlspecialchars($roleName); ?></strong>
-                            </summary>
+                                <?php if (count($members) == 1): ?>
 
-                            <?php if (count($members) == 1): ?>
+                                    <?php $member = $members[0]; ?>
 
-                                <?php $member = $members[0]; ?>
+                                    <div class="mt-3">
 
-                                <div class="mt-3">
-
-                                    <a href="redaksi/<?= urlencode($member['slug']); ?>"
-                                        class="text-dark text-decoration-none">
+                                        <a href="redaksi=<?= urlencode($member['slug']); ?>"
+                                            class="text-dark text-decoration-none">
 
 
-                                        <div class="media">
+                                            <div class="media">
 
-                                            <img src="<?= $member['photo']; ?>"
-                                                class="rounded-circle mr-3"
-                                                width="80"
-                                                height="80"
-                                                style="object-fit:cover;"
-                                                alt="<?= htmlspecialchars($member['full_name']); ?>">
+                                                <img src="<?= $member['photo']; ?>"
+                                                    class="rounded-circle mr-3"
+                                                    width="80"
+                                                    height="80"
+                                                    style="object-fit:cover;"
+                                                    alt="<?= htmlspecialchars($member['full_name']); ?>">
 
-                                            <div>
+                                                <div>
 
-                                                <h5 class="mb-1">
-                                                    <?= htmlspecialchars($member['full_name']); ?>
-                                                </h5>
-
-                                                <p class="mb-0">
-                                                    <?= htmlspecialchars($roleName); ?>
-                                                </p>
-
-                                            </div>
-
-                                        </div>
-
-                                    </a>
-
-                                </div>
-
-                            <?php else: ?>
-
-                                <div class="row mt-3">
-
-                                    <?php foreach ($members as $member): ?>
-
-                                        <div class="col-lg-4 col-md-4 col-6 mb-3">
-
-                                            <a href="redaksi=<?= urlencode($member['slug']); ?>"
-                                                class="text-decoration-none text-dark">
-
-                                                <div class="text-center">
-
-                                                    <img src="<?= $member['photo']; ?>"
-                                                        class="rounded-circle mb-2"
-                                                        width="90"
-                                                        height="90"
-                                                        style="object-fit:cover;"
-                                                        alt="<?= htmlspecialchars($member['full_name']); ?>">
-
-                                                    <h6 class="mb-1">
+                                                    <h5 class="mb-1">
                                                         <?= htmlspecialchars($member['full_name']); ?>
-                                                    </h6>
+                                                    </h5>
 
-                                                    <small class="text-muted">
+                                                    <p class="mb-0">
                                                         <?= htmlspecialchars($roleName); ?>
-                                                    </small>
+                                                    </p>
 
                                                 </div>
 
-                                            </a>
+                                            </div>
 
-                                        </div>
+                                        </a>
 
-                                    <?php endforeach; ?>
+                                    </div>
 
-                                </div>
+                                <?php else: ?>
 
-                            <?php endif; ?>
+                                    <div class="row mt-3">
 
-                        </details>
+                                        <?php foreach ($members as $member): ?>
 
-                    <?php endforeach; ?>
+                                            <div class="col-lg-4 col-md-4 col-6 mb-3">
 
-                <?php else: ?>
+                                                <a href="redaksi=<?= urlencode($member['slug']); ?>"
+                                                    class="text-decoration-none text-dark">
 
-                    <div class="alert alert-warning">
-                        Belum ada data redaksi.
-                    </div>
+                                                    <div class="text-center">
 
-                <?php endif; ?>
+                                                        <img src="<?= $member['photo']; ?>"
+                                                            class="rounded-circle mb-2"
+                                                            width="90"
+                                                            height="90"
+                                                            style="object-fit:cover;"
+                                                            alt="<?= htmlspecialchars($member['full_name']); ?>">
 
-                <hr>
+                                                        <h6 class="mb-1">
+                                                            <?= htmlspecialchars($member['full_name']); ?>
+                                                        </h6>
 
-                <h4>Alamat Redaksi</h4>
+                                                        <small class="text-muted">
+                                                            <?= htmlspecialchars($roleName); ?>
+                                                        </small>
 
-                <p>
-                    Puri Botanical Residence Blok H9 No.11, Jakarta - Indonesia.
-                </p>
+                                                    </div>
 
-                <h4>Email Redaksi</h4>
+                                                </a>
 
-                <p>
-                    <a href="mailto:redaksi@hukuminfo.id">
-                        redaksi@hukuminfo.id
-                    </a>
-                </p>
+                                            </div>
 
-                <hr>
+                                        <?php endforeach; ?>
 
-                <h4>Support By</h4>
+                                    </div>
 
-                <a href="https://konig.co.id" target="_blank">
-                    <img src="images/placeholder/konigguard.png" style="width: 180px; height: auto; border-radius: 10px;"
-                        class="img-fluid"
-                        alt="Konig.co.id">
-                </a>
-            </div>
+                                <?php endif; ?>
 
-            <!-- SIDEBAR -->
-            <div class="col-lg-4">
+                            </details>
 
-                <div class="sticky-top" style="top:170px;">
+                        <?php endforeach; ?>
 
-                    <div class="card">
-                        <div class="card-body">
-                            <?php
-                            $current_page = pathinfo($_SERVER['PHP_SELF'], PATHINFO_FILENAME);
-                            ?>
+                    <?php else: ?>
 
-                            <h4 class="mb-3">Informasi</h4>
-
-                            <ul class="list-group">
-
-                                <li class="list-group-item">
-                                    <a href="tentang-kami">
-                                        <?php if ($current_page == 'tentang-kami'): ?>
-                                            <i class="fa fa-angle-right mr-2"></i>
-                                        <?php endif; ?>
-                                        Tentang Kami
-                                    </a>
-                                </li>
-
-                                <li class="list-group-item">
-                                    <a href="redaksi">
-                                        <?php if ($current_page == 'redaksi'): ?>
-                                            <i class="fa fa-angle-right mr-2"></i>
-                                        <?php endif; ?>
-                                        Redaksi
-                                    </a>
-                                </li>
-
-                                <li class="list-group-item">
-                                    <a href="pedoman-media-siber">
-                                        <?php if ($current_page == 'pedoman-media-siber'): ?>
-                                            <i class="fa fa-angle-right mr-2"></i>
-                                        <?php endif; ?>
-                                        Pedoman Media Siber
-                                    </a>
-                                </li>
-
-                                <li class="list-group-item">
-                                    <a href="disclaimer">
-                                        <?php if ($current_page == 'disclaimer'): ?>
-                                            <i class="fa fa-angle-right mr-2"></i>
-                                        <?php endif; ?>
-                                        Disclaimer
-                                    </a>
-                                </li>
-
-                                <li class="list-group-item">
-                                    <a href="terms-of-service">
-                                        <?php if ($current_page == 'terms-of-service'): ?>
-                                            <i class="fa fa-angle-right mr-2"></i>
-                                        <?php endif; ?>
-                                        Terms of Service
-                                    </a>
-                                </li>
-
-                                <li class="list-group-item">
-                                    <a href="privacy-policy">
-                                        <?php if ($current_page == 'privacy-policy'): ?>
-                                            <i class="fa fa-angle-right mr-2"></i>
-                                        <?php endif; ?>
-                                        Kebijakan Privasi
-                                    </a>
-                                </li>
-
-                            </ul>
-
+                        <div class="alert alert-warning">
+                            Belum ada data redaksi.
                         </div>
+
+                    <?php endif; ?>
+
+                    <hr>
+
+                    <h4>Alamat Redaksi</h4>
+
+                    <p>
+                        Puri Botanical Residence Blok H9 No.11, Jakarta - Indonesia.
+                    </p>
+
+                    <h4>Email Redaksi</h4>
+
+                    <p>
+                        <a href="mailto:redaksi@hukuminfo.id">
+                            redaksi@hukuminfo.id
+                        </a>
+                    </p>
+
+                    <hr>
+
+                    <h4>Support By</h4>
+
+                    <a href="https://konig.co.id" target="_blank">
+                        <img src="images/placeholder/konigguard.png" style="width: 180px; height: auto; border-radius: 10px;"
+                            class="img-fluid"
+                            alt="Konig.co.id">
+                    </a>
+                </div>
+
+                <!-- SIDEBAR -->
+                <div class="col-lg-4">
+
+                    <div class="sticky-top" style="top:170px;">
+
+                        <div class="card">
+                            <div class="card-body">
+                                <?php
+                                $current_page = pathinfo($_SERVER['PHP_SELF'], PATHINFO_FILENAME);
+                                ?>
+
+                                <h4 class="mb-3">Informasi</h4>
+
+                                <ul class="list-group">
+
+                                    <li class="list-group-item">
+                                        <a href="tentang-kami">
+                                            <?php if ($current_page == 'tentang-kami'): ?>
+                                                <i class="fa fa-angle-right mr-2"></i>
+                                            <?php endif; ?>
+                                            Tentang Kami
+                                        </a>
+                                    </li>
+
+                                    <li class="list-group-item">
+                                        <a href="redaksi">
+                                            <?php if ($current_page == 'redaksi'): ?>
+                                                <i class="fa fa-angle-right mr-2"></i>
+                                            <?php endif; ?>
+                                            Redaksi
+                                        </a>
+                                    </li>
+
+                                    <li class="list-group-item">
+                                        <a href="pedoman-media-siber">
+                                            <?php if ($current_page == 'pedoman-media-siber'): ?>
+                                                <i class="fa fa-angle-right mr-2"></i>
+                                            <?php endif; ?>
+                                            Pedoman Media Siber
+                                        </a>
+                                    </li>
+
+                                    <li class="list-group-item">
+                                        <a href="disclaimer">
+                                            <?php if ($current_page == 'disclaimer'): ?>
+                                                <i class="fa fa-angle-right mr-2"></i>
+                                            <?php endif; ?>
+                                            Disclaimer
+                                        </a>
+                                    </li>
+
+                                    <li class="list-group-item">
+                                        <a href="terms-of-service">
+                                            <?php if ($current_page == 'terms-of-service'): ?>
+                                                <i class="fa fa-angle-right mr-2"></i>
+                                            <?php endif; ?>
+                                            Terms of Service
+                                        </a>
+                                    </li>
+
+                                    <li class="list-group-item">
+                                        <a href="privacy-policy">
+                                            <?php if ($current_page == 'privacy-policy'): ?>
+                                                <i class="fa fa-angle-right mr-2"></i>
+                                            <?php endif; ?>
+                                            Kebijakan Privasi
+                                        </a>
+                                    </li>
+
+                                </ul>
+
+                            </div>
+                        </div>
+
                     </div>
 
                 </div>
 
             </div>
-
-        </div>
         </div>
     </section>
 

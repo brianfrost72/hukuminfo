@@ -1,5 +1,5 @@
 <?php
-
+require_once 'session.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -392,7 +392,7 @@ if ($qSocmed && mysqli_num_rows($qSocmed) > 0) {
             "@type": "NewsMediaOrganization",
             "name": "Hukuminfo.id",
             "url": "https://hukuminfo.id",
-            "logo": "https://hukuminfo.id/dashboard/assets/images/logos/logos.png",
+            "logo": "https://hukuminfo.id/hufo/dashboard/assets/images/logos/logos.png",
             "sameAs": [
                 "https://facebook.com/",
                 "https://instagram.com/",

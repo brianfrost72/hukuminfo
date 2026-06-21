@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../session.php';
 require_once __DIR__ . "/../koneksi.php";
 
 if ($_SERVER['REQUEST_METHOD'] != 'POST') {

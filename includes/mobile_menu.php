@@ -1,7 +1,5 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../session.php';
 
 require_once __DIR__ . '/../koneksi.php';
 
@@ -17,7 +15,7 @@ function getUserPhoto($folder, $filename)
     $fullPath = __DIR__ . '/../dashboard/assets/images/uploads/' . $folder . '/' . $filename;
 
     if (file_exists($fullPath)) {
-        return 'dashboard/assets/images/uploads/' . $folder . '/' . $filename;
+        return 'hufo/dashboard/assets/images/uploads/' . $folder . '/' . $filename;
     }
 
     return '';
@@ -70,7 +68,7 @@ LIMIT 1
                     $photoFile = __DIR__ . '/../dashboard/assets/images/uploads/user_photos/' . $profile['photo_profile'];
 
                     if (file_exists($photoFile)) {
-                        $userPhoto = 'dashboard/assets/images/uploads/user_photos/' . $profile['photo_profile'];
+                        $userPhoto = 'hufo/dashboard/assets/images/uploads/user_photos/' . $profile['photo_profile'];
                     }
                 }
             }
@@ -100,7 +98,7 @@ LIMIT 1
                     $photoFile = __DIR__ . '/../dashboard/assets/images/uploads/public_photos/' . $profile['photo_profile'];
 
                     if (file_exists($photoFile)) {
-                        $userPhoto = 'dashboard/assets/images/uploads/public_photos/' . $profile['photo_profile'];
+                        $userPhoto = 'hufo/dashboard/assets/images/uploads/public_photos/' . $profile['photo_profile'];
                     }
                 }
             }
@@ -121,20 +119,20 @@ if (empty($userPhoto)) {
     ) {
 
         $userPhoto =
-            'dashboard/assets/images/avatar/avatar-women.png';
+            'hufo/dashboard/assets/images/avatar/avatar-women.png';
     } else {
 
         $userPhoto =
-            'dashboard/assets/images/avatar/avatar-men.png';
+            'hufo/dashboard/assets/images/avatar/avatar-men.png';
     }
 }
 
-$dashboardUrl = 'dashboard/';
+$dashboardUrl = 'hufo/dashboard/';
 
 if ($userType === 'internal') {
-    $dashboardUrl = 'dashboard/a/';
+    $dashboardUrl = 'hufo/dashboard/a/';
 } elseif ($userType === 'public') {
-    $dashboardUrl = 'dashboard/p/';
+    $dashboardUrl = 'hufo/dashboard/p/';
 }
 
 // SOCIAL MEDIA QUERY
@@ -295,7 +293,7 @@ function getSocmedIcon($platform)
 
                             <div class="mt-3">
 
-                                <a href="<?= ($userType === 'internal') ? 'dashboard/a/' : 'dashboard/p/'; ?>"
+                                <a href="<?= ($userType === 'internal') ? 'hufo/dashboard/a/' : 'hufo/dashboard/p/'; ?>"
                                     class="btn btn-primary btn-sm mr-1">
 
                                     <i class="fa fa-user-circle"></i>

@@ -50,7 +50,7 @@ while ($row = mysqli_fetch_assoc($query)):
     <a href="<?= urlencode($row['slug']); ?>"
         class="nav-search-item">
 
-        <img src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($row['post_image']); ?>">
+        <img src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($row['post_image']); ?>">
 
         <div>
 

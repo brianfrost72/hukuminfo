@@ -1,7 +1,5 @@
 <?php
-
-session_start();
-
+require_once 'session.php';
 require_once 'koneksi.php';
 
 function tanggalIndonesia($datetime)
@@ -312,7 +310,7 @@ while ($row = mysqli_fetch_assoc($bookmarkQuery)) {
                                                         <a href="<?= htmlspecialchars($post['slug']); ?>">
 
                                                             <img
-                                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']); ?>"
+                                                                src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']); ?>"
                                                                 class="img-fluid"
                                                                 alt="<?= htmlspecialchars($post['post_title']); ?>">
 

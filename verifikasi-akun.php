@@ -1,7 +1,5 @@
 <?php
-
-session_start();
-
+require_once 'session.php';
 if (
     !isset($_SESSION['register_data']) ||
     !isset($_SESSION['verification_email'])

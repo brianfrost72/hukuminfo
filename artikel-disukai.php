@@ -1,7 +1,5 @@
 <?php
-
-session_start();
-
+require_once 'session.php';
 require_once 'koneksi.php';
 
 function tanggalIndonesia($datetime)
@@ -328,7 +326,7 @@ $seoImage = 'https://hukuminfo.id/images/logo-hukuminfo.png';
                                                         <a href="<?= htmlspecialchars($post['slug']); ?>">
 
                                                             <img
-                                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']); ?>"
+                                                                src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']); ?>"
                                                                 class="img-fluid"
                                                                 alt="<?= htmlspecialchars($post['post_title']); ?>">
 
@@ -620,7 +618,7 @@ $seoImage = 'https://hukuminfo.id/images/logo-hukuminfo.png';
                                             <figure class="mb-0">
 
                                                 <img
-                                                    src="dashboard/assets/images/uploads/ads/<?= htmlspecialchars($adsData['ad_img']); ?>"
+                                                    src="hufo/dashboard/assets/images/uploads/ads/<?= htmlspecialchars($adsData['ad_img']); ?>"
                                                     alt="<?= htmlspecialchars($adsData['ad_title']); ?>"
                                                     title="<?= htmlspecialchars($adsData['ad_title']); ?>"
                                                     class="img-fluid w-100">
@@ -651,7 +649,7 @@ $seoImage = 'https://hukuminfo.id/images/logo-hukuminfo.png';
                                             <figure class="mb-0">
 
                                                 <img
-                                                    src="dashboard/assets/images/uploads/ads/<?= htmlspecialchars($adsData['ad_img']); ?>"
+                                                    src="hufo/dashboard/assets/images/uploads/ads/<?= htmlspecialchars($adsData['ad_img']); ?>"
                                                     alt="<?= htmlspecialchars($adsData['ad_title']); ?>"
                                                     title="<?= htmlspecialchars($adsData['ad_title']); ?>"
                                                     class="img-fluid w-100">

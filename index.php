@@ -1,6 +1,5 @@
 <?php
-session_start();
-
+require_once 'session.php';
 require_once 'koneksi.php';
 
 function tanggalIndonesia($datetime)
@@ -658,7 +657,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
                                     <div class="image-sm">
                                         <a href="<?= urlencode($trending['slug']) ?>">
                                             <img
-                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($trending['post_image']) ?>"
+                                                src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($trending['post_image']) ?>"
                                                 class="img-fluid"
                                                 alt="<?= htmlspecialchars($trending['post_title']) ?>">
                                         </a>
@@ -730,7 +729,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                                             <a href="<?= urlencode($highlight['slug']) ?>">
                                                 <img
-                                                    src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($highlight['post_image']) ?>"
+                                                    src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($highlight['post_image']) ?>"
                                                     class="img-fluid"
                                                     alt="<?= htmlspecialchars($highlight['post_title']) ?>">
                                             </a>
@@ -794,7 +793,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                                         <a href="<?= urlencode($highlight2['slug']) ?>">
                                             <img
-                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($highlight2['post_image']) ?>"
+                                                src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($highlight2['post_image']) ?>"
                                                 class="img-fluid"
                                                 alt="<?= htmlspecialchars($highlight2['post_title']) ?>">
                                         </a>
@@ -842,7 +841,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                                         <a href="<?= urlencode($highlight3['slug']) ?>">
                                             <img
-                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($highlight3['post_image']) ?>"
+                                                src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($highlight3['post_image']) ?>"
                                                 class="img-fluid"
                                                 alt="<?= htmlspecialchars($highlight3['post_title']) ?>">
                                         </a>
@@ -905,7 +904,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
                                         <div class="article__image">
                                             <a href="<?= urlencode($post['slug']) ?>">
                                                 <img
-                                                    src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']) ?>"
+                                                    src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']) ?>"
                                                     alt="<?= htmlspecialchars($post['post_title']) ?>"
                                                     class="img-fluid">
                                             </a>
@@ -972,7 +971,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                                             <a href="<?= urlencode($bookmarkHighlightLeft['slug']) ?>">
                                                 <img
-                                                    src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($bookmarkHighlightLeft['post_image']) ?>"
+                                                    src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($bookmarkHighlightLeft['post_image']) ?>"
                                                     class="img-fluid"
                                                     alt="<?= htmlspecialchars($bookmarkHighlightLeft['post_title']) ?>">
                                             </a>
@@ -1027,7 +1026,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
 
                                             <a href="<?= urlencode($bookmarkHighlightRight['slug']) ?>">
                                                 <img
-                                                    src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($bookmarkHighlightRight['post_image']) ?>"
+                                                    src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($bookmarkHighlightRight['post_image']) ?>"
                                                     class="img-fluid"
                                                     alt="<?= htmlspecialchars($bookmarkHighlightRight['post_title']) ?>">
                                             </a>
@@ -1089,7 +1088,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
                                                     <div class="image-sm">
                                                         <a href="<?= urlencode($post['slug']) ?>">
                                                             <img
-                                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']) ?>"
+                                                                src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']) ?>"
                                                                 class="img-fluid"
                                                                 alt="<?= htmlspecialchars($post['post_title']) ?>">
                                                         </a>
@@ -1149,7 +1148,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
                                                     <div class="image-sm">
                                                         <a href="<?= urlencode($post['slug']) ?>">
                                                             <img
-                                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']) ?>"
+                                                                src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']) ?>"
                                                                 class="img-fluid"
                                                                 alt="<?= htmlspecialchars($post['post_title']) ?>">
                                                         </a>
@@ -1290,7 +1289,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
                                                         <a href="<?= urlencode($post['slug']); ?>">
 
                                                             <img
-                                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']); ?>"
+                                                                src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']); ?>"
                                                                 class="img-fluid"
                                                                 alt="<?= htmlspecialchars($post['post_title']); ?>">
 
@@ -1373,7 +1372,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
                                                         <a href="<?= urlencode($post['slug']); ?>">
 
                                                             <img
-                                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']); ?>"
+                                                                src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']); ?>"
                                                                 class="img-fluid w-100"
                                                                 alt="<?= htmlspecialchars($post['post_title']); ?>">
 
@@ -1467,7 +1466,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
                                             <div class="article__image">
                                                 <a href="<?= urlencode($latestBig['slug']) ?>">
                                                     <img
-                                                        src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($latestBig['post_image']) ?>"
+                                                        src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($latestBig['post_image']) ?>"
                                                         alt="<?= htmlspecialchars($latestBig['post_title']) ?>"
                                                         class="img-fluid">
                                                 </a>
@@ -1528,7 +1527,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
                                                         <a href="<?= urlencode($post['slug']) ?>">
 
                                                             <img
-                                                                src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']) ?>"
+                                                                src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($post['post_image']) ?>"
                                                                 class="img-fluid"
                                                                 alt="<?= htmlspecialchars($post['post_title']) ?>">
 
@@ -1743,7 +1742,7 @@ $adsData = mysqli_fetch_assoc($adsQuery);
                                         <figure class="mb-0">
 
                                             <img
-                                                src="dashboard/assets/images/uploads/ads/<?= htmlspecialchars($adsData['ad_img']); ?>"
+                                                src="hufo/dashboard/assets/images/uploads/ads/<?= htmlspecialchars($adsData['ad_img']); ?>"
                                                 alt="<?= htmlspecialchars($adsData['ad_title']); ?>"
                                                 title="<?= htmlspecialchars($adsData['ad_title']); ?>"
                                                 class="img-fluid w-100">

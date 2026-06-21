@@ -2,8 +2,7 @@
 
 require_once __DIR__ . "/../koneksi.php";
 require_once __DIR__ ."/../PHPMailer/verify.php";
-
-session_start();
+require_once __DIR__ . '/../session.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: ../registrasi.php");

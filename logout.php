@@ -1,6 +1,5 @@
 <?php
-session_start();
-
+require_once 'session.php';
 require 'koneksi.php';
 
 if (isset($_SESSION['user_id'])) {
@@ -17,5 +16,5 @@ if (isset($_SESSION['user_id'])) {
 
 session_destroy();
 
-header("Location: /");
+header("Location: https://hukuminfo.id");
 exit;

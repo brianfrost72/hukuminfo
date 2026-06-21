@@ -1,8 +1,5 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
+require_once __DIR__ . '/../session.php';
 require_once __DIR__ . '/../koneksi.php';
 
 $userName  = '';
@@ -96,6 +93,17 @@ if ($qSocmed && mysqli_num_rows($qSocmed) > 0) {
         $socialMedia[] = $row;
     }
 }
+
+// BERDASARKAN USER TYPE
+$dashboardUrl = 'https://hufo.hukuminfo.id';
+
+if (!empty($_SESSION['logged_in']) && !empty($user['user_type'])) {
+    if ($user['user_type'] === 'internal') {
+        $dashboardUrl = 'https://hufo.hukuminfo.id/dashboard/a/';
+    } else {
+        $dashboardUrl = 'https://hufo.hukuminfo.id/dashboard/p/';
+    }
+}
 ?>
 
 <div class="container ">
@@ -155,7 +163,7 @@ if ($qSocmed && mysqli_num_rows($qSocmed) > 0) {
                             <ul class="user-dropdown">
 
                                 <li>
-                                    <a href="dashboard/index">
+                                    <a href="<?= $dashboardUrl ?>">
                                         <i class="fa fa-address-card"></i>
                                         Dashboard
                                     </a>

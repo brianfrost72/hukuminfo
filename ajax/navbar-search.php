@@ -53,7 +53,7 @@ while ($row = mysqli_fetch_assoc($query)):
         class="nav-search-item">
 
         <img
-            src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($row['post_image']); ?>"
+            src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($row['post_image']); ?>"
             alt="">
 
         <div>

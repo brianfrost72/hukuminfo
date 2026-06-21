@@ -1,7 +1,5 @@
 <?php
-
-session_start();
-
+require_once 'session.php';
 require_once 'koneksi.php';
 
 function tanggalIndonesia($datetime)
@@ -321,7 +319,7 @@ while ($ad = mysqli_fetch_assoc($adsResult)) {
                                                 <a href="<?= $row['slug']; ?>">
 
                                                     <img
-                                                        src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($row['post_image']); ?>"
+                                                        src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($row['post_image']); ?>"
                                                         class="img-fluid w-100"
                                                         alt="<?= htmlspecialchars($row['post_title']); ?>">
 
@@ -592,7 +590,7 @@ while ($ad = mysqli_fetch_assoc($adsResult)) {
 
         <a href="${ad.ad_link}" target="_blank">
 
-            <img src="dashboard/assets/images/uploads/ads/${ad.ad_img}"
+            <img src="hufo/dashboard/assets/images/uploads/ads/${ad.ad_img}"
                  alt="${ad.ad_title}">
 
         </a>

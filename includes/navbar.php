@@ -1,8 +1,5 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
+require_once __DIR__ . '/../session.php';
 require_once __DIR__ . '/../koneksi.php';
 
 $popularQuery = mysqli_query($conn, "
@@ -32,7 +29,7 @@ $popularQuery = mysqli_query($conn, "
     LIMIT 10
 ");
 
-$basePostImage = 'dashboard/assets/images/uploads/posts/';
+$basePostImage = 'hufo/dashboard/assets/images/uploads/posts/';
 ?>
 <nav class="navbar navbar-hover navbar-expand-lg navbar-soft">
     <div class="container">

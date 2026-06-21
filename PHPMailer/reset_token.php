@@ -4,8 +4,7 @@ require 'autoload.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
-
-session_start();
+require_once __DIR__ . '/../session.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: ../reset_password.php");

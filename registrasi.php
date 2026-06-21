@@ -1,7 +1,5 @@
 <?php
-
-session_start();
-
+require_once 'session.php';
 /*
 |--------------------------------------------------------------------------
 | CEGAH AKSES HALAMAN REGISTRASI JIKA SUDAH LOGIN

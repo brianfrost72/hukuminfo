@@ -1,6 +1,5 @@
 <?php
-session_start();
-
+require_once 'session.php';
 require_once 'koneksi.php';
 
 function tanggalIndonesia($datetime)
@@ -95,20 +94,20 @@ if (
     !empty($author['photo_profile']) &&
     file_exists(
         __DIR__ .
-            '/dashboard/assets/images/uploads/user_photos/' .
+            '/hufo/dashboard/assets/images/uploads/user_photos/' .
             $author['photo_profile']
     )
 ) {
 
     $authorPhoto =
-        'dashboard/assets/images/uploads/user_photos/' .
+        'hufo/dashboard/assets/images/uploads/user_photos/' .
         $author['photo_profile'];
 } else {
 
     $authorPhoto =
         ($author['gender'] == 'Perempuan')
-        ? 'dashboard/assets/images/avatar/avatar-women.png'
-        : 'dashboard/assets/images/avatar/avatar-men.png';
+        ? 'hufo/dashboard/assets/images/avatar/avatar-women.png'
+        : 'hufo/dashboard/assets/images/avatar/avatar-men.png';
 }
 
 $page = max(1, (int)($_GET['page'] ?? 1));
@@ -371,13 +370,13 @@ $queryOthers = mysqli_query($conn, "
                                         !empty($news['post_image']) &&
                                         file_exists(
                                             __DIR__ .
-                                                '/dashboard/assets/images/uploads/posts/' .
+                                                '/hufo/dashboard/assets/images/uploads/posts/' .
                                                 $news['post_image']
                                         )
                                     ) {
 
                                         $postImage =
-                                            'dashboard/assets/images/uploads/posts/' .
+                                            'hufo/dashboard/assets/images/uploads/posts/' .
                                             $news['post_image'];
                                     }
 
@@ -586,20 +585,20 @@ $queryOthers = mysqli_query($conn, "
                                 !empty($other['photo_profile']) &&
                                 file_exists(
                                     __DIR__ .
-                                        '/dashboard/assets/images/uploads/user_photos/' .
+                                        '/hufo/dashboard/assets/images/uploads/user_photos/' .
                                         $other['photo_profile']
                                 )
                             ) {
 
                                 $otherPhoto =
-                                    'dashboard/assets/images/uploads/user_photos/' .
+                                    'hufo/dashboard/assets/images/uploads/user_photos/' .
                                     $other['photo_profile'];
                             } else {
 
                                 $otherPhoto =
                                     ($other['gender'] == 'Perempuan')
-                                    ? 'dashboard/assets/images/avatar/avatar-women.png'
-                                    : 'dashboard/assets/images/avatar/avatar-men.png';
+                                    ? 'hufo/dashboard/assets/images/avatar/avatar-women.png'
+                                    : 'hufo/dashboard/assets/images/avatar/avatar-men.png';
                             }
 
                             ?>

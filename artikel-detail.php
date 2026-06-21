@@ -1,6 +1,5 @@
 <?php
-session_start();
-
+require_once 'session.php';
 require_once 'koneksi.php';
 
 function tanggalIndonesia($datetime)
@@ -139,10 +138,10 @@ if (mysqli_num_rows($viewCheck) == 0) {
 */
 
 $defaultMale =
-    'dashboard/assets/images/avatar/avatar-men.png';
+    'hufo/dashboard/assets/images/avatar/avatar-men.png';
 
 $defaultFemale =
-    'dashboard/assets/images/avatar/avatar-women.png';
+    'hufo/dashboard/assets/images/avatar/avatar-women.png';
 
 $authorPhotoName = trim($post['photo_profile'] ?? '');
 
@@ -153,7 +152,7 @@ if (
 ) {
 
     $authorPhoto =
-        'dashboard/assets/images/uploads/user_photos/' .
+        'hufo/dashboard/assets/images/uploads/user_photos/' .
         $authorPhotoName;
 } else {
 
@@ -323,12 +322,12 @@ function getPublicAvatar($photo, $gender)
 {
     if (!empty($photo)) {
 
-        return 'dashboard/assets/images/uploads/public_photos/' . $photo;
+        return 'hufo/dashboard/assets/images/uploads/public_photos/' . $photo;
     }
 
     return ($gender == 'Perempuan')
-        ? 'dashboard/assets/images/avatar/avatar-women.png'
-        : 'dashboard/assets/images/avatar/avatar-men.png';
+        ? 'hufo/dashboard/assets/images/avatar/avatar-women.png'
+        : 'hufo/dashboard/assets/images/avatar/avatar-men.png';
 }
 
 /*
@@ -382,10 +381,10 @@ $tagsQuery = mysqli_query($conn, "
 function getUserAvatar($user)
 {
     $defaultMale =
-        'dashboard/assets/images/avatar/avatar-men.png';
+        'hufo/dashboard/assets/images/avatar/avatar-men.png';
 
     $defaultFemale =
-        'dashboard/assets/images/avatar/avatar-women.png';
+        'hufo/dashboard/assets/images/avatar/avatar-women.png';
 
     if ($user['user_type'] == 'public') {
 
@@ -398,7 +397,7 @@ function getUserAvatar($user)
             $photo != 'avatar-women.png'
         ) {
             return
-                'dashboard/assets/images/uploads/public_photos/' .
+                'hufo/dashboard/assets/images/uploads/public_photos/' .
                 $photo;
         }
 
@@ -416,7 +415,7 @@ function getUserAvatar($user)
         $photo != 'avatar-women.png'
     ) {
         return
-            'dashboard/assets/images/uploads/user_photos/' .
+            'hufo/dashboard/assets/images/uploads/user_photos/' .
             $photo;
     }
 
@@ -782,7 +781,7 @@ $shareTitle = urlencode($post['post_title']);
 
                         <div class="wrap__article-detail-image mt-4">
                             <figure>
-                                <img src="dashboard/assets/images/uploads/posts/<?= $post['post_image']; ?>"
+                                <img src="hufo/dashboard/assets/images/uploads/posts/<?= $post['post_image']; ?>"
                                     alt="<?= htmlspecialchars($post['post_title']); ?>"
                                     class="img-fluid">
                             </figure>
@@ -1325,7 +1324,7 @@ $shareTitle = urlencode($post['post_title']);
                                             <a href="<?= $related['slug']; ?>">
 
                                                 <img
-                                                    src="dashboard/assets/images/uploads/posts/<?= htmlspecialchars($related['post_image']); ?>"
+                                                    src="hufo/dashboard/assets/images/uploads/posts/<?= htmlspecialchars($related['post_image']); ?>"
                                                     alt="<?= htmlspecialchars($related['post_title']); ?>"
                                                     class="img-fluid">
 
@@ -1434,7 +1433,7 @@ $shareTitle = urlencode($post['post_title']);
                                                 <a href="<?= $postMix[$i]['slug']; ?>">
 
                                                     <img
-                                                        src="dashboard/assets/images/uploads/posts/<?= $postMix[$i]['post_image']; ?>"
+                                                        src="hufo/dashboard/assets/images/uploads/posts/<?= $postMix[$i]['post_image']; ?>"
                                                         class="img-fluid"
                                                         alt="<?= htmlspecialchars($postMix[$i]['post_title']); ?>">
 
@@ -1509,7 +1508,7 @@ $shareTitle = urlencode($post['post_title']);
                                             <a href="<?= $postMix[3]['slug']; ?>">
 
                                                 <img
-                                                    src="dashboard/assets/images/uploads/posts/<?= $postMix[3]['post_image']; ?>"
+                                                    src="hufo/dashboard/assets/images/uploads/posts/<?= $postMix[3]['post_image']; ?>"
                                                     alt="<?= htmlspecialchars($postMix[3]['post_title']); ?>"
                                                     class="img-fluid">
 
@@ -1796,7 +1795,7 @@ $shareTitle = urlencode($post['post_title']);
                                     <figure class="mb-0">
 
                                         <img
-                                            src="dashboard/assets/images/uploads/ads/<?= htmlspecialchars($adsData['ad_img']); ?>"
+                                            src="hufo/dashboard/assets/images/uploads/ads/<?= htmlspecialchars($adsData['ad_img']); ?>"
                                             alt="<?= htmlspecialchars($adsData['ad_title']); ?>"
                                             title="<?= htmlspecialchars($adsData['ad_title']); ?>"
                                             class="img-fluid w-100">
