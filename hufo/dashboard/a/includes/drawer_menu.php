@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../../../session.php';
 require_once __DIR__ . "/../../koneksi.php";
+$dashboardUrl = '/dashboard/';
 // =========================
 // USER PROFILE SIDEBAR
 // =========================
@@ -113,7 +114,7 @@ function allowRole(array $roles)
             <ul class="sidebar-menu">
                 <!-- DASHBOARD_MENU -->
                 <li class="sidebar-menu-item">
-                    <a class="sidebar-menu-button" href="fluid-ui-buttons.html">
+                    <a class="sidebar-menu-button" href="/">
                         <i
                             class="sidebar-menu-icon sidebar-menu-icon--left material-icons">dvr</i>
                         <span class="sidebar-menu-text">Dashboard</span>
@@ -137,12 +138,12 @@ function allowRole(array $roles)
                             <li class="sidebar-menu-item">
                                 <a
                                     class="sidebar-menu-button"
-                                    href="add_roles">
+                                    href="<?= $dashboardUrl ?>add_roles">
                                     <span class="sidebar-menu-text">Tambah Role</span>
                                 </a>
                             </li>
                             <li class="sidebar-menu-item">
-                                <a class="sidebar-menu-button" href="manage_roles">
+                                <a class="sidebar-menu-button" href="<?= $dashboardUrl ?>manage_roles">
                                     <span class="sidebar-menu-text">Manage Role</span>
                                 </a>
                             </li>
@@ -172,7 +173,7 @@ function allowRole(array $roles)
                         </a>
                         <ul class="sidebar-submenu collapse" id="client_menu">
                             <li class="sidebar-menu-item">
-                                <a class="sidebar-menu-button" href="manage_users">
+                                <a class="sidebar-menu-button" href="<?= $dashboardUrl ?>manage_users">
                                     <span class="sidebar-menu-text">Manage User</span>
                                 </a>
                             </li>
@@ -201,22 +202,22 @@ function allowRole(array $roles)
                         </a>
                         <ul class="sidebar-submenu collapse" id="article_menu">
                             <li class="sidebar-menu-item">
-                                <a class="sidebar-menu-button" href="manage_post_category">
+                                <a class="sidebar-menu-button" href="<?= $dashboardUrl ?>manage_post_category">
                                     <span class="sidebar-menu-text">Manage Kategori</span>
                                 </a>
                             </li>
                             <li class="sidebar-menu-item">
-                                <a class="sidebar-menu-button" href="manage_post_subcategory">
+                                <a class="sidebar-menu-button" href="<?= $dashboardUrl ?>manage_post_subcategory">
                                     <span class="sidebar-menu-text">Manage Sub-Kategori</span>
                                 </a>
                             </li>
                             <li class="sidebar-menu-item">
-                                <a class="sidebar-menu-button" href="add_post">
+                                <a class="sidebar-menu-button" href="<?= $dashboardUrl ?>add_post">
                                     <span class="sidebar-menu-text">Tambah Postingan</span>
                                 </a>
                             </li>
                             <li class="sidebar-menu-item">
-                                <a class="sidebar-menu-button" href="manage_post">
+                                <a class="sidebar-menu-button" href="<?= $dashboardUrl ?>manage_post">
                                     <span class="sidebar-menu-text">Manage Postingan</span>
                                 </a>
                             </li>
@@ -239,19 +240,19 @@ function allowRole(array $roles)
                         <ul class="sidebar-submenu collapse" id="manage_article_menu">
                             <?php if (allowRole([1, 12])) : ?>
                                 <li class="sidebar-menu-item">
-                                    <a class="sidebar-menu-button" href="manage_comments">
+                                    <a class="sidebar-menu-button" href="<?= $dashboardUrl ?>manage_comments">
                                         <span class="sidebar-menu-text">Manage Komentar</span>
                                         <!-- <span class="badge badge-primary badge-pill ml-1">3</span> -->
                                     </a>
                                 </li>
                             <?php endif; ?>
                             <li class="sidebar-menu-item">
-                                <a class="sidebar-menu-button" href="list_likes">
+                                <a class="sidebar-menu-button" href="<?= $dashboardUrl ?>list_likes">
                                     <span class="sidebar-menu-text">List Likes</span>
                                 </a>
                             </li>
                             <li class="sidebar-menu-item">
-                                <a class="sidebar-menu-button" href="list_bookmarks">
+                                <a class="sidebar-menu-button" href="<?= $dashboardUrl ?>list_bookmarks">
                                     <span class="sidebar-menu-text">List Bookmark</span>
                                 </a>
                             </li>
@@ -274,7 +275,7 @@ function allowRole(array $roles)
                             </a>
                             <ul class="sidebar-submenu collapse" id="social_menu">
                                 <li class="sidebar-menu-item">
-                                    <a class="sidebar-menu-button" href="manage_socmed">
+                                    <a class="sidebar-menu-button" href="<?= $dashboardUrl ?>manage_socmed">
                                         <span class="sidebar-menu-text">Manage SosMed</span>
                                     </a>
                                 </li>
@@ -298,7 +299,7 @@ function allowRole(array $roles)
                             </a>
                             <ul class="sidebar-submenu collapse" id="ads_menu">
                                 <li class="sidebar-menu-item">
-                                    <a class="sidebar-menu-button" href="manage_ads">
+                                    <a class="sidebar-menu-button" href="<?= $dashboardUrl ?>manage_ads">
                                         <span class="sidebar-menu-text">Manage Iklan</span>
                                     </a>
                                 </li>
@@ -373,14 +374,14 @@ function allowRole(array $roles)
                         </a>
 
                         <a class="dropdown-item"
-                            href="edit_profile">
+                            href="<?= $dashboardUrl ?>edit_profile">
                             Edit Profile
                         </a>
 
                         <div class="dropdown-divider"></div>
 
                         <a class="dropdown-item"
-                            href="logout">
+                            href="<?= $dashboardUrl ?>logout">
                             Logout
                         </a>
 

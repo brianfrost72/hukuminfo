@@ -53,6 +53,7 @@ $provinces = mysqli_query($conn, "
 <html lang="id">
 
 <head>
+    <base href="/dashboard/a/">
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="" />
     <meta

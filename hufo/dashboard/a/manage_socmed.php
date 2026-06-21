@@ -136,6 +136,7 @@ $sisaPlatform = mysqli_fetch_assoc($qSisaPlatform);
 <html lang="id">
 
 <head>
+    <base href="/dashboard/a/">
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="" />
     <meta

@@ -1,0 +1,14 @@
+RewriteEngine On
+RewriteBase /dashboard/
+
+# Hilangkan .php
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.+)$ $1.php [L]
+
+# Root dashboard
+RewriteRule ^$ index.php?page=index [L,QSA]
+
+# Semua URL dashboard
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_-]+)/?$ index.php?page=$1 [L,QSA]

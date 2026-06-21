@@ -1,22 +1,28 @@
 <?php
+
 require_once __DIR__ . '/../../session.php';
 
-if (!isset($_SESSION['logged_in'])) {
-    header("Location: ../../login.php");
+if (empty($_SESSION['logged_in'])) {
+    header("Location: https://hukuminfo.id/login");
     exit;
 }
 
-if ($_SESSION['user_type'] == 'internal') {
+$page = $_GET['page'] ?? 'index';
 
-    header("Location: https://hufo.hukuminfo.id/dashboard/a/");
-    exit;
-} elseif ($_SESSION['user_type'] == 'public') {
+// cegah ../ atau karakter aneh
+$page = preg_replace('/[^a-zA-Z0-9_-]/', '', $page);
 
-    header("Location: https://hufo.hukuminfo.id/dashboard/p/");
-    exit;
+if ($_SESSION['user_type'] === 'internal') {
+    $base = __DIR__ . '/a/';
+} else {
+    $base = __DIR__ . '/p/';
 }
 
-session_destroy();
+$file = $base . $page . '.php';
 
-header("Location: https//hukuminfo.id");
-exit;
+if (is_file($file)) {
+    require $file;
+} else {
+    http_response_code(404);
+    exit('404 Not Found');
+}

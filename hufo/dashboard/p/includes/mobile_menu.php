@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../../../../session.php';
 require_once __DIR__ . "/../../koneksi.php";
 
+$dashboardUrl = '/dashboard/';
+
 $currentPage = basename($_SERVER['PHP_SELF']);
 // =========================
 // USER PROFILE HEADER
@@ -136,15 +138,15 @@ if ($qSocmed && mysqli_num_rows($qSocmed) > 0) {
                         </a>
                     </li>
 
-                    <li class="sidebar-menu-item <?= ($currentPage == 'daftar-bookmark') ? 'active' : ''; ?>">
-                        <a class="sidebar-menu-button" href="daftar-bookmark">
+                    <li class="sidebar-menu-item <?= ($currentPage == '<?= $dashboardUrl ?>daftar-bookmark') ? 'active' : ''; ?>">
+                        <a class="sidebar-menu-button" href="<?= $dashboardUrl ?>daftar-bookmark">
                             <i class="sidebar-menu-icon sidebar-menu-icon--left material-icons">bookmark</i>
                             <span class="sidebar-menu-text">Bookmark Saya</span>
                         </a>
                     </li>
 
-                    <li class="sidebar-menu-item <?= ($currentPage == 'daftar-likes') ? 'active' : ''; ?>">
-                        <a class="sidebar-menu-button" href="daftar-likes">
+                    <li class="sidebar-menu-item <?= ($currentPage == '<?= $dashboardUrl ?>daftar-likes') ? 'active' : ''; ?>">
+                        <a class="sidebar-menu-button" href="<?= $dashboardUrl ?>daftar-likes">
                             <i class="sidebar-menu-icon sidebar-menu-icon--left material-icons">favorite</i>
                             <span class="sidebar-menu-text">Artikel Yang Saya Suka</span>
                         </a>
@@ -176,12 +178,12 @@ if ($qSocmed && mysqli_num_rows($qSocmed) > 0) {
                         </div>
                         <div class="dropdown-divider"></div>
                         <a class="dropdown-item"
-                            href="edit_profile">Edit profile</a>
+                            href="<?= $dashboardUrl ?>edit_profile">Edit profile</a>
                         <a class="dropdown-item"
                             href="https://hukuminfo.id">Lihat Website</a>
                         <div class="dropdown-divider"></div>
                         <a class="dropdown-item"
-                            href="logout">Logout</a>
+                            href="<?= $dashboardUrl ?>logout">Logout</a>
                     </div>
                 </div>
             </div>

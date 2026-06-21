@@ -1,5 +1,7 @@
 <?php
 $currentPage = basename($_SERVER['PHP_SELF']);
+
+$dashboardUrl = '/dashboard/';
 ?>
 
 
@@ -22,15 +24,15 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                     </a>
                 </li>
 
-                <li class="sidebar-menu-item <?= ($currentPage == 'daftar-bookmark') ? 'active' : ''; ?>">
-                    <a class="sidebar-menu-button" href="daftar-bookmark">
+                <li class="sidebar-menu-item <?= ($currentPage == '<?= $dashboardUrl ?>daftar-bookmark') ? 'active' : ''; ?>">
+                    <a class="sidebar-menu-button" href="<?= $dashboardUrl ?>daftar-bookmark">
                         <i class="sidebar-menu-icon sidebar-menu-icon--left material-icons">bookmark</i>
                         <span class="sidebar-menu-text">Bookmarks</span>
                     </a>
                 </li>
 
-                <li class="sidebar-menu-item <?= ($currentPage == 'daftar-likes') ? 'active' : ''; ?>">
-                    <a class="sidebar-menu-button" href="daftar-likes">
+                <li class="sidebar-menu-item <?= ($currentPage == '<?= $dashboardUrl ?>daftar-likes') ? 'active' : ''; ?>">
+                    <a class="sidebar-menu-button" href="<?= $dashboardUrl ?>daftar-likes">
                         <i class="sidebar-menu-icon sidebar-menu-icon--left material-icons">favorite</i>
                         <span class="sidebar-menu-text">Like Post</span>
                     </a>

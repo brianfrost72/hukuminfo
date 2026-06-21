@@ -144,11 +144,6 @@ if (!empty($_SESSION['logged_in']) && !empty($user['user_type'])) {
         </div>
         <div class="col-sm-12 col-md-7">
             <div class="list-unstyled topbar-right">
-                <?php
-                if (session_status() === PHP_SESSION_NONE) {
-                    session_start();
-                }
-                ?>
 
                 <ul class="topbar-link">
 

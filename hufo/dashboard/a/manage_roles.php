@@ -51,11 +51,13 @@ SELECT
     r.role_name
 
 FROM users u
-LEFT JOIN user_profile up ON up.user_id=u.id
-LEFT JOIN roles r ON r.id=u.role_id
+LEFT JOIN user_profile up ON up.user_id = u.id
+LEFT JOIN roles r ON r.id = u.role_id
+
+WHERE u.user_type = 'internal'
 
 ORDER BY u.id ASC
-LIMIT $offset,$limit
+LIMIT $offset, $limit
 ";
 
 $result = mysqli_query($conn, $sql);
@@ -273,11 +275,12 @@ if (isset($_POST['update_user'])) {
     }
 
     mysqli_query($conn, "
-        UPDATE users
-        SET
-            email='$email',
-            role_id='$role_id'
-        WHERE id='$id'
+       UPDATE users
+    SET
+    email='$email',
+    role_id='$role_id'
+    WHERE id='$id'
+    AND user_type='internal'
     ");
 
     $cekProfile = mysqli_query(
@@ -355,8 +358,9 @@ if (isset($_POST['toggle_status'])) {
     mysqli_query(
         $conn,
         "UPDATE users
-         SET account_status='$status'
-         WHERE id='$id'"
+        SET account_status='$status'
+        WHERE id='$id'
+        AND user_type='internal'"
     );
 
     if ($status == 'Inactive') {
@@ -388,8 +392,9 @@ if (isset($_POST['bulk_inactive'])) {
         mysqli_query(
             $conn,
             "UPDATE users
-             SET account_status='Inactive'
-             WHERE id='" . (int)$id . "'"
+            SET account_status='Inactive'
+            WHERE id='" . (int)$id . "'
+            AND user_type='internal'"
         );
     }
     $_SESSION['toast'] = [
@@ -404,8 +409,9 @@ if (isset($_POST['bulk_inactive'])) {
 // QUERY COUNT TOTAL ROWS
 $countQuery = mysqli_query(
     $conn,
-    "SELECT COUNT(*) total
-     FROM users"
+    "SELECT COUNT(*) AS total
+     FROM users
+     WHERE user_type = 'internal'"
 );
 
 $totalData =
@@ -433,13 +439,14 @@ $totalRows = mysqli_num_rows($result);
 <html lang="id">
 
 <head>
+    <base href="/dashboard/a/">
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Manage User Role - Dashboard | Hukuminfo.id</title>
-    
+
     <!-- favicon.ico in the root directory -->
     <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
 

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../../session.php';
 require_once __DIR__ . '/../auth.php';
+$dashboardUrl = '/dashboard/';
 
 if (
   !isset($_SESSION['logged_in']) ||
@@ -296,8 +297,8 @@ $tablet_total  = $device_stat['Tablet'] ?? 0;
 // AKSES ROLES
 function hasAccess($allowed_roles = [])
 {
-    return isset($_SESSION['role_id']) &&
-           in_array($_SESSION['role_id'], $allowed_roles);
+  return isset($_SESSION['role_id']) &&
+    in_array($_SESSION['role_id'], $allowed_roles);
 }
 ?>
 
@@ -305,6 +306,7 @@ function hasAccess($allowed_roles = [])
 <html lang="id">
 
 <head>
+  <base href="/dashboard/a/">
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="" />
   <meta
@@ -488,7 +490,7 @@ function hasAccess($allowed_roles = [])
                   Statistik Akun Publik Berdasarkan Wilayah
                 </h4>
                 <?php if (hasAccess([1, 13])): ?>
-                <a href="manage_users" class="btn btn-sm btn-primary">Lihat</a>
+                  <a href="<?= $dashboardUrl ?>manage_users" class="btn btn-sm btn-primary">Lihat</a>
                 <?php endif; ?>
               </div>
 
@@ -791,7 +793,7 @@ function hasAccess($allowed_roles = [])
                           <?= number_format($total_likes, 0, ',', '.') ?>
                         </h1>
 
-                        <a href="list_likes"
+                        <a href="<?= $dashboardUrl ?>list_likes"
                           class="btn btn-light btn-sm">
                           Lihat Detail
                         </a>
@@ -826,7 +828,7 @@ function hasAccess($allowed_roles = [])
                           <?= number_format($total_bookmarks, 0, ',', '.') ?>
                         </h1>
 
-                        <a href="list_bookmarks"
+                        <a href="<?= $dashboardUrl ?>list_bookmarks"
                           class="btn btn-light btn-sm">
                           Lihat Detail
                         </a>
@@ -901,9 +903,9 @@ function hasAccess($allowed_roles = [])
                   Statistik Komentar
                 </h4>
                 <?php if (hasAccess([1, 13])): ?>
-                <a href="manage_comments" class="btn btn-sm btn-primary">
-                  Lihat
-                </a>
+                  <a href="<?= $dashboardUrl ?>manage_comments" class="btn btn-sm btn-primary">
+                    Lihat
+                  </a>
                 <?php endif; ?>
               </div>
 
